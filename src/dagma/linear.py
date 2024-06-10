@@ -274,6 +274,7 @@ class DagmaLinear:
             beta_2: float = 0.999,
             exclude_edges: typing.Optional[typing.List[typing.Tuple[int, int]]] = None, 
             include_edges: typing.Optional[typing.List[typing.Tuple[int, int]]] = None,
+            return_no_filter: bool = False
         ) -> np.ndarray :
         r"""
         Runs the DAGMA algorithm and returns a weighted adjacency matrix.
@@ -391,8 +392,11 @@ class DagmaLinear:
         ## Store final h and score values and threshold
         self.h_final, _ = self._h(self.W_est)
         self.score_final, _ = self._score(self.W_est)
+        W_est_no_filter = self.W_est.copy()
         self.W_est[np.abs(self.W_est) < w_threshold] = 0
         assert self.check_diag(self.W_est)
+        if return_no_filter:
+            return W_est_no_filter, self.W_est
         return self.W_est
 
 def test():

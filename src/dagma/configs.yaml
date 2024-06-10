@@ -1,0 +1,20 @@
+n : 2000
+d: 20
+s0: 50
+graph_type : ER
+sem_type : gauss
+est_type : tau+ # [tau, tau+]
+fdr : 0.2
+device : 7
+numeric: False # let values < numeric_precision be 0.
+numeric_precision : 1e-1
+# True: t_list = concat([0], sort.unique.abs(Z))
+# False: t_list = sort.concat([0], unique(Z))
+# change little, should be True as
+## negatives of Z will affect denorminator
+abs_t_list : True
+# True : mask = (np.abs(Z) >= t_last)
+# False : mask = (Z >= t_last)
+# change little, should be False
+## negative parts are usually too small (< selected threshold)
+abs_selection : False
