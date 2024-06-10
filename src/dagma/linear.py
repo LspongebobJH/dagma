@@ -218,17 +218,47 @@ class DagmaLinear:
             if iter % self.checkpoint == 0 or iter == max_iter:
                 obj_new, score, h = self._func(W, mu, s)
                 self.vprint(f'\nInner iteration {iter}')
-                self.vprint(f'\th(W_est): {h:.4e}')
-                self.vprint(f'\tscore(W_est): {score:.4e}')
-                self.vprint(f'\tobj(W_est): {obj_new:.4e}')
+                self.vprint(f'\th(W_est): {h:.4e}') # loss of DAG
+                self.vprint(f'\tscore(W_est): {score:.4e}') # loss of score
+                self.vprint(f'\tobj(W_est): {obj_new:.4e}') # total loss with mu
                 if np.abs((obj_prev - obj_new) / obj_prev) <= tol:
                     pbar.update(max_iter-iter+1)
                     break
                 obj_prev = obj_new
             pbar.update(1)
         return W, True
+
+    def clean_diag(self, w):
+        """
+        w is of shape [d/2 + d/2, d/2 + d/2], that is, w is
+            [w11 | w12]
+            [----|----]
+            [w21 | w22]
+        where wij in d/2 * d/2 matrix
+        set diagonal of wij to 0
+        """
+        w[np.eye(self.d).astype(bool)] = 0.
+        w[np.eye(self.d, k = self.d // 2).astype(bool)] = 0.
+        w[np.eye(self.d, k = - self.d // 2).astype(bool)] = 0.
+        return w
+
+    def check_diag(self, w):
+        """
+        w is of shape [d/2 + d/2, d/2 + d/2], that is, w is
+            [w11 | w12]
+            [----|----]
+            [w21 | w22]
+        where wij in d/2 * d/2 matrix
+        ckech whether diagonal of wij to 0
+        """
+        if (w[np.eye(self.d).astype(bool)] != 0.).any() or \
+            (w[np.eye(self.d, k = self.d // 2).astype(bool)] != 0.).any() or \
+            (w[np.eye(self.d, k = - self.d // 2).astype(bool)] != 0.).any():
+                return False
+        return True
     
     def fit(self, 
+            dagma_type: str,
             X: np.ndarray,
             lambda1: float = 0.03, 
             w_threshold: float = 0.3, 
@@ -250,6 +280,8 @@ class DagmaLinear:
 
         Parameters
         ----------
+        dagma_type : str
+            Which type of dagma
         X : np.ndarray
             :math:`(n,d)` dataset.
         lambda1 : float
@@ -301,6 +333,7 @@ class DagmaLinear:
         ## INITALIZING VARIABLES 
         self.X, self.lambda1, self.checkpoint = X, lambda1, checkpoint
         self.n, self.d = X.shape
+        self.dagma_type = dagma_type
         self.Id = np.eye(self.d).astype(self.dtype)
         
         if self.loss_type == 'l2':
@@ -323,6 +356,10 @@ class DagmaLinear:
             
         self.cov = X.T @ X / float(self.n)    
         self.W_est = np.zeros((self.d,self.d)).astype(self.dtype) # init W0 at zero matrix
+        if dagma_type == 'dagma_1':
+            self.W_est = self.clean_diag(self.W_est)
+            assert self.check_diag(self.W_est)
+
         mu = mu_init
         if type(s) == list:
             if len(s) < T: 
@@ -341,6 +378,9 @@ class DagmaLinear:
                 inner_iters = int(max_iter) if i == T - 1 else int(warm_iter)
                 while success is False:
                     W_temp, success = self.minimize(self.W_est.copy(), mu, inner_iters, s[i], lr=lr_adam, beta_1=beta_1, beta_2=beta_2, pbar=pbar)
+                    if dagma_type == 'dagma_1':
+                        W_temp = self.clean_diag(W_temp)
+                        assert self.check_diag(W_temp)
                     if success is False:
                         self.vprint(f'Retrying with larger s')
                         lr_adam *= 0.5
@@ -352,23 +392,26 @@ class DagmaLinear:
         self.h_final, _ = self._h(self.W_est)
         self.score_final, _ = self._score(self.W_est)
         self.W_est[np.abs(self.W_est) < w_threshold] = 0
+        assert self.check_diag(self.W_est)
         return self.W_est
 
 def test():
-    from . import utils
+    import utils
     from timeit import default_timer as timer
     utils.set_random_seed(1)
     
-    n, d, s0 = 500, 20, 20 # the ground truth is a DAG of 20 nodes and 20 edges in expectation
+    # n, d, s0 = 500, 20, 20 # the ground truth is a DAG of 20 nodes and 20 edges in expectation
+    n, d, s0 = 2000, 20, 50
     graph_type, sem_type = 'ER', 'gauss'
+    dagma_type = "dagma_1"
     
     B_true = utils.simulate_dag(d, s0, graph_type)
     W_true = utils.simulate_parameter(B_true)
     X = utils.simulate_linear_sem(W_true, n, sem_type)
     
-    model = DagmaLinear(loss_type='l2')
+    model = DagmaLinear(loss_type='l2', verbose=True)
     start = timer()
-    W_est = model.fit(X, lambda1=0.02)
+    W_est = model.fit(dagma_type, X, lambda1=0.02)
     end = timer()
     acc = utils.count_accuracy(B_true, W_est != 0)
     print(acc)

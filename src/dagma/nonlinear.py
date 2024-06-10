@@ -7,7 +7,7 @@ import copy
 from tqdm.auto import tqdm
 import typing
 
-
+# TODO(jiahang): not use GPU yet. can be largely accelerated.
 __all__ = ["DagmaMLP", "DagmaNonlinear"]
 
 
