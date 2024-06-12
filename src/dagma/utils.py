@@ -2,6 +2,8 @@ import os
 import numpy as np
 import pickle
 import random
+import logging
+logging.getLogger('tensorflow').disabled = True
 import tensorflow as tf
 import torch
 import yaml
@@ -46,15 +48,24 @@ def process_simulated_data(data, configs, behavior):
     else: # knockoff or W
         _seed = str(configs['seed_knockoff']) if gen_type == 'knockoff' else f"{configs['seed_knockoff']}_{configs['seed_model']}"
 
-   
     if behavior == 'save':
         logger.debug(f"save {gen_type} with seed {_seed} in {data_dir}")
-        with open(os.path.join(data_dir, f'{gen_type}_{_seed}_configs.yaml'), 'w') as f:
+
+        path_config = os.path.join(data_dir, f'{gen_type}_{_seed}_configs.yaml')
+        if os.path.exists(path_config):
+            raise Exception(f"{path_config} already exists.")
+        with open(path_config, 'w') as f:
             yaml.dump(configs, f)
-        with open(os.path.join(data_dir, f'{gen_type}_{_seed}.pkl'), 'wb') as f:
+
+        path_data = os.path.join(data_dir, f'{gen_type}_{_seed}.pkl')
+        if os.path.exists(path_data):
+            raise Exception(f"{path_data} already exists.")
+        with open(path_data, 'wb') as f:
             pickle.dump(data, f)
+
     elif behavior == 'load':
         logger.debug(f"load {gen_type} with seed {_seed} in {data_dir}")
+
         with open(os.path.join(data_dir, f'{gen_type}_{_seed}.pkl'), 'rb') as f:
             data = pickle.load(f)
         with open(os.path.join(data_dir, f'{gen_type}_{_seed}_configs.yaml'), 'r') as f:

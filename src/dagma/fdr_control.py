@@ -5,7 +5,7 @@ import utils_dagma as utils_dagma
 import torch
 import logging
 
-with open('./configs.yaml', 'r') as f:
+with open('./configs_dagma.yaml', 'r') as f:
     configs = yaml.safe_load(f)
 
 n = configs['n']

@@ -15,15 +15,8 @@ s0: expected number of edges (one directional)
 graph_type: random graph generator, ['ER', 'SF', 'BP']
 sem_type: noise model, ['gauss', 'exp', 'gumbel', 'uniform', 'logistic', 'poisson']
 """
-with open('./configs.yaml', 'r') as f:
+with open('./configs_dagma.yaml', 'r') as f:
     configs = yaml.safe_load(f)
-
-n = configs['n']
-d = configs['d']
-s0 = configs['s0']
-graph_type = configs['graph_type']
-sem_type = configs['sem_type']
-num_feat = d
 
 parser = ArgumentParser()
 parser.add_argument('--knock_type', type=str, default='knockoff_gan', 
@@ -39,6 +32,13 @@ parser.add_argument('--seed_model', type=int, default=0)
 parser.add_argument('--version', type=int, default=1)
 
 args = parser.parse_args()
+
+n = configs['n']
+d = configs['d']
+s0 = configs['s0']
+graph_type = configs['graph_type']
+sem_type = configs['sem_type']
+num_feat = d
 
 knock_type = args.knock_type
 gen_type = args.gen_type

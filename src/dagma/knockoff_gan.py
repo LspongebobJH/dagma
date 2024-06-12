@@ -6,7 +6,9 @@ Jinsung Yoon (9/27/2018)
 #%% Necessary Packages
 import numpy as np
 from tqdm import tqdm
+import logging
 # import tensorflow as tf
+logging.getLogger('tensorflow').disabled = True
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import logging

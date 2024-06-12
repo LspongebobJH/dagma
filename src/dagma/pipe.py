@@ -3,7 +3,7 @@ import pickle
 import os
 import utils
 from fdr_control import type_1_control, type_3_control, type_3_control_global
-import utils
+import utils_dagma
 
 from argparse import ArgumentParser
 import pprint
@@ -20,21 +20,6 @@ s0: expected number of edges (one directional)
 graph_type: random graph generator, ['ER', 'SF', 'BP']
 sem_type: noise model, ['gauss', 'exp', 'gumbel', 'uniform', 'logistic', 'poisson']
 """
-with open('./configs_dagma.yaml', 'r') as f:
-    configs = yaml.safe_load(f)
-
-n = configs['n']
-d = configs['d']
-s0 = configs['s0']
-graph_type = configs['graph_type']
-sem_type = configs['sem_type']
-est_type = configs['est_type']
-fdr = configs['fdr']
-numeric = configs['numeric']
-numeric_precision = eval(configs['numeric_precision'])
-abs_t_list = configs['abs_t_list']
-abs_selection = configs['abs_selection']
-num_feat = d
 
 parser = ArgumentParser()
 parser.add_argument('--control_type', type=str, default='type_3', 
@@ -47,7 +32,27 @@ parser.add_argument('--seed_model_list', type=str, required=True)
 parser.add_argument('--version', type=int, default=1)
 parser.add_argument('--log_file', type=str, default='temp')
 
+# overwrite config file
+parser.add_argument('--d', type=int, default=None)
+
 args = parser.parse_args()
+
+with open('./configs_dagma.yaml', 'r') as f:
+    configs = yaml.safe_load(f)
+
+n = configs['n']
+d = configs['d'] if args.d is None else args.d
+# s0 = configs['s0']
+s0 = 4 * d # according to DAGMA
+graph_type = configs['graph_type']
+sem_type = configs['sem_type']
+est_type = configs['est_type']
+fdr = configs['fdr']
+numeric = configs['numeric']
+numeric_precision = eval(configs['numeric_precision'])
+abs_t_list = configs['abs_t_list']
+abs_selection = configs['abs_selection']
+num_feat = d
 
 control_type = args.control_type
 dagma_type = args.dagma_type
@@ -94,53 +99,33 @@ configs = {
 logger.info("configs")
 logger.info("%s\n", pformat(configs, width=20))
 
-
 if __name__ == '__main__':
-        
-    _configs = configs.copy()
-    _configs['gen_type'] = 'X'
-    # type_3_global and type_3 have the same knockoff statistics, but different 
-    ## FDR estimation
-    if control_type == 'type_3_global':
-        _configs['control_type'] = 'type_3'
+    """
+    Generating X
+    """
+    utils.set_random_seed(seed_X)
 
-    data_X, _ = utils.process_simulated_data(None, _configs, behavior='load')
-    W_true = data_X['W_true']
+    B_true = utils_dagma.simulate_dag(d, s0, graph_type)
+    W_true = utils_dagma.simulate_parameter(B_true)
+    X = utils_dagma.simulate_linear_sem(W_true, n, sem_type)
+    data_X = {'X': X, 'W_true': W_true}
 
-    fdp_true_list, power_list = [], []
+    utils.process_simulated_data(data_X, configs, behavior='save')
 
-    _configs['gen_type'] = 'W'
-    fdr = 0.2
+    """
+    Generating knockoff
+    """
     for seed_knockoff in seed_knockoff_list:
-        for seed_model in seed_model_list:
-            
-            logger.info(f"knockoff: {seed_knockoff} | model: {seed_model}")
-            
-            _configs['seed_knockoff'] = seed_knockoff
-            _configs['seed_model'] = seed_model
-            
-            data_W, W_configs = utils.process_simulated_data(None, _configs, behavior='load')
+        _configs = configs.copy()
+        _configs['gen_type'] = 'X' # hack, dirty codes
+        data_X, _ = utils.process_simulated_data(None, _configs, behavior='load')
+        X, W_true = data_X['X'], data_X['W_true']
+        utils.set_random_seed(seed_knockoff)
 
-            W_est = data_W['W_est']
-            if dagma_type == 'dagma_1':
-                W_est = W_est[:, :d]
+        X_tilde = utils.knockoff(X, configs)
+        
+        utils.process_simulated_data(X_tilde, configs, behavior='save')
 
-            """
-            FDR Control based on learned adjacent matrix
-            """
-            if control_type == 'type_3':
-                fdp_true, power = type_3_control(W_est, W_true, fdr)
-            elif control_type == 'type_3_global':
-                fdp_true, power = type_3_control_global(W_est, W_true, fdr)
-            else:
-                raise Exception(f"{control_type} not implemented yet.")
-            fdp_true_list.append(fdp_true)
-            power_list.append(power)
-
-    fdr_mean = np.mean(fdp_true_list)
-    fdr_std = np.std(fdp_true_list)
-
-    power_mean = np.mean(power_list)
-    power_std = np.std(power_list)
-
-    logger.info(f"expected fdr {fdr} | fdr {fdr_mean:.4f}±{fdr_std:.4f} | power {power_mean:.4f}±{power_std:.4f}")
+    """
+    Generating W
+    """
