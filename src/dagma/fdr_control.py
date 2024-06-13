@@ -5,25 +5,11 @@ import utils_dagma as utils_dagma
 import torch
 import logging
 
-with open('./configs_dagma.yaml', 'r') as f:
-    configs = yaml.safe_load(f)
-
-n = configs['n']
-d = configs['d']
-s0 = configs['s0']
-graph_type = configs['graph_type']
-sem_type = configs['sem_type']
-est_type = configs['est_type']
-fdr = configs['fdr']
-numeric = configs['numeric']
-numeric_precision = eval(configs['numeric_precision'])
-abs_t_list = configs['abs_t_list']
-abs_selection = configs['abs_selection']
-num_feat = d
-
 logger = logging.getLogger(__name__)
 
-def type_1_threshold(W : np.ndarray, B_true : np.ndarray):
+def type_1_threshold(configs : dict, W : np.ndarray, B_true : np.ndarray):
+    num_feat = configs['d']
+
     print("start FDR threshold")
     t_list = np.sort(np.unique(np.abs(W)))
     for t in t_list:
@@ -49,7 +35,7 @@ def type_1_threshold(W : np.ndarray, B_true : np.ndarray):
         # if _fdr <= fdr:
         #     return t, _fdr
 
-def type_1_control(W : np.ndarray, W_true : np.ndarray, fdr : int):
+def type_1_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int):
     """
     W: a 2p * 2p block matrix, W = 
         [ T_T | T_D ]
@@ -61,6 +47,7 @@ def type_1_control(W : np.ndarray, W_true : np.ndarray, fdr : int):
 
     fdr: the expected FDR.
     """
+    num_feat = configs['d']
     print(f"==============================")
     print(f"expected FDR {fdr}")
     t_list = np.sort(np.unique(np.abs(W[:num_feat, :num_feat])))
@@ -107,7 +94,14 @@ def type_1_control(W : np.ndarray, W_true : np.ndarray, fdr : int):
 def type_2_control(W : np.ndarray, W_true : np.ndarray, fdr : int):
     pass
 
-def type_3_control(W : np.ndarray, W_true : np.ndarray, fdr : int, Z_true : torch.Tensor = None, Z_knock : torch.Tensor = None):
+def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int, Z_true : torch.Tensor = None, Z_knock : torch.Tensor = None):
+    num_feat = configs['d']
+    est_type = configs['est_type']
+    numeric = configs['numeric']
+    numeric_precision = eval(configs['numeric_precision'])
+    abs_t_list = configs['abs_t_list']
+    abs_selection = configs['abs_selection']
+
     logger.info(f"==============================")
     logger.info(f"expected FDR {fdr}")
 
@@ -172,7 +166,14 @@ def type_3_control(W : np.ndarray, W_true : np.ndarray, fdr : int, Z_true : torc
     logger.info(f"==============================")
     return fdr_true, power
 
-def type_3_control_global(W : np.ndarray, W_true : np.ndarray, fdr : int): # TODO: not finished
+def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int):
+    num_feat = configs['d']
+    est_type = configs['est_type']
+    numeric = configs['numeric']
+    numeric_precision = eval(configs['numeric_precision'])
+    abs_t_list = configs['abs_t_list']
+    abs_selection = configs['abs_selection']
+
     logger.info(f"==============================")
     logger.info(f"expected FDR {fdr}")
 
@@ -232,4 +233,164 @@ def type_3_control_global(W : np.ndarray, W_true : np.ndarray, fdr : int): # TOD
     logger.info(f"==============================")
     return fdr_true, power
 
+def extract_dag_mask(A : np.ndarray, extract_type : int):
+    """
+    Assuming that the original graph is NOT dag. This func will not help to test whether
+    the original graph is a dag.
+    Here A can be knockoff statistic matrix Z, or q-value matrix Q
+    extract_type:
+    0: the removal is from the smallest to the largest until DAG is satisified
+    1: the inclusion is from the largest to the smallest until DAG is not satisfied
+    2: the removal is from the largest to the smallest until DAG is satisfied
+    3: the inclusion is from the smallest to the largest until DAG is not satisfied
+
+    hypothesis: if A == Z, extract_type == 0 / 1 (or 2 / 3) are the same results. but
+    if A == Q, 0 / 1 (or 2 / 3) are different since q-value is not completely monotonic with number of edges
+    """
+    assert extract_type in [0, 1, 2, 3]
+    a_list = np.sort(np.unique(A.flatten()))
+
+    if extract_type == 0:
+        for a in a_list:
+            _A = A.copy()
+            mask = (_A >= a)
+            _A[mask], _A[~mask] = 1, 0
+
+            if utils_dagma.is_dag(_A):
+                break
+
+    elif extract_type == 1:
+        a_list = np.flip(a_list)
+        mask_last = np.full(A.shape, fill_value = True)
+        for a in a_list:
+            _A = A.copy()
+            mask = (_A >= a)
+            _A[mask], _A[~mask] = 1, 0
+
+            if not utils_dagma.is_dag(_A):
+                break
+            mask_last = mask
+        mask = mask_last
+
+    elif extract_type == 2:
+        a_list = np.flip(a_list)
+        for a in a_list:
+            _A = A.copy()
+            mask = (_A <= a)
+            _A[mask], _A[~mask] = 1, 0
+
+            if utils_dagma.is_dag(_A):
+                break
+
+    elif extract_type == 3:
+        mask_last = np.full(A.shape, fill_value = True)
+        for a in a_list:
+            _A = A.copy()
+            mask = (_A <= a)
+            _A[mask], _A[~mask] = 1, 0
+
+            if not utils_dagma.is_dag(_A):
+                break
+            mask_last = mask
+        mask = mask_last
+
+    return mask
+
+def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int):
+    num_feat = configs['d']
+    est_type = configs['est_type']
+    numeric = configs['numeric']
+    numeric_precision = eval(configs['numeric_precision'])
+    dag_control = configs['dag_control']
+    abs_t_list = configs['abs_t_list']
+    abs_selection = configs['abs_selection']
+
+    logger.info(f"==============================")
+    logger.info(f"expected FDR {fdr}")
+
+    Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])
+
+    if numeric:
+        Z[(Z <= numeric_precision) & (Z >= -numeric_precision)] = 0.
     
+    T_T_true = np.abs(W_true)
+    mask = (T_T_true > 0.)
+    T_T_true[mask], T_T_true[~mask] = 1, 0
+
+    fdr_est_last = 1.
+    t_last = np.inf
+
+    if dag_control == 'dag_1':
+        mask = extract_dag_mask(Z, 0)
+        Z[mask], Z[~mask] = 1, 0
+    elif dag_control == 'dag_2':
+        mask = extract_dag_mask(Z, 1)
+        Z[mask], Z[~mask] = 1, 0
+    
+    if abs_t_list:
+        t_list = np.concatenate(([0], np.sort(np.unique(np.abs(Z)))))
+    else:
+        t_list = np.sort(np.concatenate(([0], np.unique(Z))))
+
+    Q = np.full(Z.shape, fill_value=1.)
+    for t in reversed(t_list):
+        if t < 0.:
+            break
+        if est_type == 'tau':
+            fdr_est = ((Z <= -t).sum()) / np.max((1, (Z >= t).sum()))
+        else:
+            fdr_est = (1 + (Z <= -t).sum()) / np.max((1, (Z >= t).sum()))
+        Q[Z == t] = fdr_est
+        
+        T_T = Z.copy()
+        mask = (T_T >= t)
+        T_T[mask], T_T[~mask] = 1, 0
+        perf = utils_dagma.count_accuracy(T_T_true, T_T)
+        fdr_true, power = perf['fdr'], perf['tpr']
+
+        logger.debug(f"thresh {t:.4f} | est fdr {fdr_est:.4f} | true fdr {fdr_true:.4f} | true power {power:.4f}")
+
+        if fdr_est <= fdr:
+            t_last = t
+            fdr_est_last = fdr_est
+
+    if abs_selection:
+        mask = (np.abs(Z >= t_last))
+    else:
+        mask = (Z >= t_last)
+    _Z = Z.copy()
+    _Z[mask], _Z[~mask] = 1, 0
+
+    dag_mask = np.full(mask.shape, fill_value=True)
+    if not utils_dagma.is_dag(_Z):
+        if dag_control == 'dag_3':
+            _Z = Z.copy()
+            _Z[~mask] = 0.
+            dag_mask = extract_dag_mask(_Z, 0)
+        elif dag_control == 'dag_4':
+            _Z = Z.copy()
+            _Z[~mask] = 0.
+            dag_mask = extract_dag_mask(_Z, 1)
+        elif dag_control == 'dag_5':
+            _Q = Q.copy()
+            _Q[~mask] = 1.
+            dag_mask = extract_dag_mask(_Q, 2)
+        elif dag_control == 'dag_6':
+            _Q = Q.copy()
+            _Q[~mask] = 1.
+            dag_mask = extract_dag_mask(_Q, 3)
+    Z[mask * dag_mask], Z[~(mask * dag_mask)] = 1, 0
+    T_T = Z
+
+    perf = utils_dagma.count_accuracy(T_T_true, T_T)
+    fdr_true, power = perf['fdr'], perf['tpr']
+
+    if utils_dagma.is_dag(T_T):
+        logger.info("W_est is DAG")
+    else:
+        logger.info("W_est is NOT DAG")
+    logger.info(f"expected fdr {fdr:.1f} | sel thresh {t_last:.4e} | "
+          f"est fdr {fdr_est_last:.4f} | true fdr {fdr_true:.4f} | true power {power:.4f}")
+    logger.info(f"==============================")
+    return fdr_true, power
+

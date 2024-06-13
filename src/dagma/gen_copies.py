@@ -33,80 +33,68 @@ parser.add_argument('--version', type=int, default=1)
 
 args = parser.parse_args()
 
-n = configs['n']
-d = configs['d']
-s0 = configs['s0']
-graph_type = configs['graph_type']
-sem_type = configs['sem_type']
-num_feat = d
+configs = utils.combine_configs(configs, args)
 
-knock_type = args.knock_type
-gen_type = args.gen_type
-dagma_type = args.dagma_type
-version = args.version
-seed_X, seed_knockoff, seed_model = args.seed_X, args.seed_knockoff, args.seed_model
+assert configs['seed_model'] == 0, "no need for random model seeds now."
 
-assert seed_model == 0, "no need for random model seeds now."
-
-configs = {
-    'n': n, 'd': d, 's0': s0, 
-    'graph_type': graph_type, 'sem_type': sem_type, 
-    'knock_type': knock_type, 'gen_type': gen_type, 'dagma_type': dagma_type,
-    'seed_X': seed_X, 'seed_knockoff': seed_knockoff, 'seed_model': seed_model,
-    'version': version
-}
 print("configs")
 pprint.PrettyPrinter(width=20).pprint(configs)
 print()
 
 
 if __name__ == '__main__':
-    if gen_type == 'X':
-        # only one X for now
-        assert seed_X == 1
-        utils.set_random_seed(seed_X)
 
-        B_true = utils_dagma.simulate_dag(d, s0, graph_type)
-        W_true = utils_dagma.simulate_parameter(B_true)
-        X = utils_dagma.simulate_linear_sem(W_true, n, sem_type)
-        data_X = {'X': X, 'W_true': W_true}
+    _, _, path_config, path_data = utils.get_data_path(configs)
+    if os.path.exists(path_config) or os.path.exists(path_data):
+        print(f"{path_config} or {path_data} already exists, jump.")
+    
+    else:
+        if configs['gen_type'] == 'X':
+            # only one X for now
+            assert configs['seed_X'] == 1
+            utils.set_random_seed(configs['seed_X'])
 
-        utils.process_simulated_data(data_X, configs, behavior='save')
+            B_true = utils_dagma.simulate_dag(configs['d'], configs['s0'], configs['graph_type'])
+            W_true = utils_dagma.simulate_parameter(B_true)
+            X = utils_dagma.simulate_linear_sem(W_true, configs['n'], configs['sem_type'])
+            data_X = {'X': X, 'W_true': W_true}
 
-    elif gen_type == 'knockoff':
-        
-        assert seed_knockoff is not None
+            utils.process_simulated_data(data_X, configs, behavior='save')
 
-        _configs = configs.copy()
-        _configs['gen_type'] = 'X' # hack, dirty codes
-        data_X, _ = utils.process_simulated_data(None, _configs, behavior='load')
-        X, W_true = data_X['X'], data_X['W_true']
-        utils.set_random_seed(seed_knockoff)
+        elif configs['gen_type'] == 'knockoff':
+            
+            assert configs['seed_knockoff'] is not None
 
-        X_tilde = utils.knockoff(X, configs)
-        
-        utils.process_simulated_data(X_tilde, configs, behavior='save')
+            _configs = configs.copy()
+            _configs['gen_type'] = 'X' # hack, dirty codes
+            data_X, _ = utils.process_simulated_data(None, _configs, behavior='load')
+            X, W_true = data_X['X'], data_X['W_true']
+            utils.set_random_seed(configs['seed_knockoff'])
 
-    else: # W
+            X_tilde = utils.knockoff(X, configs)
+            
+            utils.process_simulated_data(X_tilde, configs, behavior='save')
 
-        assert seed_knockoff is not None and seed_model is not None
+        else: # W
 
-        _configs = configs.copy()
-        _configs['gen_type'] = 'X' # hack, dirty codes
-        data_X, _ = utils.process_simulated_data(None, _configs, behavior='load')
-        X, W_true = data_X['X'], data_X['W_true']
+            assert configs['seed_knockoff'] is not None and configs['seed_model'] is not None
 
-        _configs = configs.copy()
-        _configs['gen_type'] = 'knockoff' # hack, dirty codes
-        X_tilde, _ = utils.process_simulated_data(None, _configs, behavior='load')
+            _configs = configs.copy()
+            _configs['gen_type'] = 'X' # hack, dirty codes
+            data_X, _ = utils.process_simulated_data(None, _configs, behavior='load')
+            X, W_true = data_X['X'], data_X['W_true']
 
-        utils.set_random_seed(seed_model)
-        X_all = np.concatenate([X, X_tilde], axis=-1)
+            _configs = configs.copy()
+            _configs['gen_type'] = 'knockoff' # hack, dirty codes
+            X_tilde, _ = utils.process_simulated_data(None, _configs, behavior='load')
 
-        W_est_no_filter, Z_true, Z_knock = utils.fit(X, X_all, configs)
-        data_W = {
-            'W_est': W_est_no_filter, 'Z_true': Z_true, 'Z_knock': Z_knock
-        }
-        
-        utils.process_simulated_data(data_W, configs, behavior='save')
+            utils.set_random_seed(configs['seed_model'])
+            X_all = np.concatenate([X, X_tilde], axis=-1)
+
+            W_est_no_filter, Z_true, Z_knock = utils.fit(X, X_all, configs)
+            data_W = {
+                'W_est': W_est_no_filter, 'Z_true': Z_true, 'Z_knock': Z_knock
+            }
+            
+            utils.process_simulated_data(data_W, configs, behavior='save')
         

@@ -8,6 +8,7 @@ import tensorflow as tf
 import torch
 import yaml
 import logging
+from argparse import ArgumentParser
 
 from linear import DagmaLinear
 from knockoff_gan import KnockoffGAN
@@ -25,9 +26,6 @@ def set_random_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
 
-def get_file_path(n, d, s0, knock_type, control_type, seed): # deprecated
-    return os.path.join('/home/jiahang/knockoff/simulated_data', 
-            f'{n}_{d}_{s0}_{knock_type}_{control_type}_seed_{seed}.pkl')
 
 def process_simulated_data(data, configs, behavior):
     assert behavior in ['save', 'load']
@@ -35,11 +33,8 @@ def process_simulated_data(data, configs, behavior):
         assert data is None
 
     gen_type = configs['gen_type']
-    root_path = 'simulated_data'
-    version = configs['version']
+    data_dir, _seed, path_config, path_data = get_data_path(configs)
     
-    data_dir = os.path.join(root_path, f'v{version}', f'{gen_type}')
-
     if behavior == 'save' and not os.path.exists(data_dir):
         os.makedirs(data_dir)
     
@@ -51,26 +46,43 @@ def process_simulated_data(data, configs, behavior):
     if behavior == 'save':
         logger.debug(f"save {gen_type} with seed {_seed} in {data_dir}")
 
-        path_config = os.path.join(data_dir, f'{gen_type}_{_seed}_configs.yaml')
         if os.path.exists(path_config):
-            raise Exception(f"{path_config} already exists.")
+            logger.debug(f"{path_config} already exists.")
+            return
         with open(path_config, 'w') as f:
             yaml.dump(configs, f)
 
-        path_data = os.path.join(data_dir, f'{gen_type}_{_seed}.pkl')
         if os.path.exists(path_data):
-            raise Exception(f"{path_data} already exists.")
+            logger.debug(f"{path_config} already exists.")
+            return
         with open(path_data, 'wb') as f:
             pickle.dump(data, f)
 
     elif behavior == 'load':
         logger.debug(f"load {gen_type} with seed {_seed} in {data_dir}")
 
-        with open(os.path.join(data_dir, f'{gen_type}_{_seed}.pkl'), 'rb') as f:
+        with open(os.path.join(path_data), 'rb') as f:
             data = pickle.load(f)
-        with open(os.path.join(data_dir, f'{gen_type}_{_seed}_configs.yaml'), 'r') as f:
+        with open(os.path.join(path_config), 'r') as f:
             config = yaml.safe_load(f)
         return data, config
+
+def get_data_path(configs : dict):
+    gen_type = configs['gen_type']
+    root_path = 'simulated_data'
+    version = configs['version']
+    data_dir = os.path.join(root_path, f'v{version}', f'{gen_type}')
+
+    if gen_type == 'X':
+        _seed = configs['seed_X']
+    else: # knockoff or W
+        _seed = str(configs['seed_knockoff']) if gen_type == 'knockoff' else f"{configs['seed_knockoff']}_{configs['seed_model']}"
+
+    path_config = os.path.join(data_dir, f'{gen_type}_{_seed}_configs.yaml')
+    path_data = os.path.join(data_dir, f'{gen_type}_{_seed}.pkl')
+
+    return data_dir, _seed, path_config, path_data
+
         
 def knockoff(X : np.ndarray, configs):
     n = configs['n']
@@ -129,3 +141,20 @@ def fit(X, X_all, configs):
     W_est_no_filter, _ = model.fit(dagma_type, X_all, lambda1=0.02, return_no_filter=True)
 
     return W_est_no_filter, Z_true, Z_knock
+
+def combine_configs(configs_yaml : dict, args : ArgumentParser):
+    configs = {}
+    for key, val in configs_yaml.items():
+        configs[key] = val
+
+    _args = vars(args)
+    for key, val in _args.items():
+        if key in configs.keys():
+            if val is not None:
+                logger.debug(f"{key}:{_args[key]} will be updated by {val}")
+            else:
+                continue
+        if key in ['seed_knockoff_list', 'seed_model_list']:
+            val = [int(s.strip()) for s in val.split(",")]
+        configs[key] = val
+    return configs

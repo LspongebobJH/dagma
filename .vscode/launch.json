@@ -13,6 +13,23 @@
             "cwd": "/home/jiahang/dagma/src/dagma"
         },
         {
+            "name": "multi_main.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "multi_main.py",
+            "console": "integratedTerminal",
+            "cwd": "/home/jiahang/dagma/src/dagma",
+            "args": [
+                "--control_type=type_4_global",
+                "--seed_knockoff_list=2",
+                "--seed_model_list=0",
+                "--version=5",
+                "--s0=120",
+                "--dag_control=dag_6"
+                // "--log_file=log_10"
+            ]
+        },
+        {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",

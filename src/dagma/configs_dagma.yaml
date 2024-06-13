@@ -8,13 +8,28 @@ fdr : 0.2
 device : 7
 numeric: False # let values < numeric_precision be 0.
 numeric_precision : 1e-1
+
 # True: t_list = concat([0], sort.unique.abs(Z))
 # False: t_list = sort.concat([0], unique(Z))
 # change little, should be True as
 ## negatives of Z will affect denorminator
 abs_t_list : True
+
 # True : mask = (np.abs(Z) >= t_last)
 # False : mask = (Z >= t_last)
 # change little, should be False
 ## negative parts are usually too small (< selected threshold)
 abs_selection : False
+
+# dag_1: first remove Z from min to max, until dag, then fdr control filter
+# dag_2: first include Z from max to min, until not dag, then fdr control filter
+# dag_3: first compute fdr control z and q-value matrix Q, then remove Z from min to max until dag.
+## it's obvious max(dag(Z), fdr(Z)) will be chosen. 
+## if dag_control is excuted only when fdr(Z)-filtered graph is not dag, the dag(Z) must be chosen.
+
+# dag_4: first compute fdr control z and q-value matrix Q, then include Z from max to min until not dag.
+# dag_5: first compute fdr control z and q-value matrix Q, then remove Q from max to min until dag.
+## in this case, no selected threshold.
+
+# dag_6: first compute fdr control z and q-value matrix Q, then include Q from min to max until not dag.
+dag_control : dag_3
