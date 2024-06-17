@@ -19,6 +19,10 @@ with open('./configs_dagma.yaml', 'r') as f:
     configs = yaml.safe_load(f)
 
 parser = ArgumentParser()
+parser.add_argument('--n', type=int, default=None)
+parser.add_argument('--d', type=int, default=None)
+parser.add_argument('--s0', type=int, default=None)
+
 parser.add_argument('--knock_type', type=str, default='knockoff_gan', 
                     choices=['permutation', 'knockoff_gan', 'deep_knockoff'])
 parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W'], 
