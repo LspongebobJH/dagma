@@ -21,10 +21,11 @@ expected fdr 0.2, ALL DAG
 *** fdr 0.2750±0.0095 | power 0.9442±0.0053
 ** _4: dag_4, first fdr control, then include Z from max to min, until not dag.
 *** same as _3
-** _5: dag_5, first fdr control, then remove Q from min to max, until dag.
+** _5(deprecated -> _7): dag_5, first fdr control, then remove Q from min to max, until dag.
 *** fdr 0.4038±0.2049 | power 0.6783±0.4060
-** _6: dag_6, first fdr control, then include Q from max to min, until not dag.
+** _6(deprecated -> _8): dag_6, first fdr control, then include Q from max to min, until not dag.
 *** same as _5
+** _9: dag_7, first remove W from min to max, until dag, then fdr control
 
 * log_16: 2000 samples, 20 nodes, 80 edges, type_3_global (when using dag control, then become type_4_global),
 expected fdr 0.2, ALL DAG
@@ -36,9 +37,8 @@ expected fdr 0.2, ALL DAG
 *** fdr 0.2341±0.1083 | power 0.9625±0.0000
 ** _4: dag_4, first fdr control, then include Z from max to min, until not dag.
 *** same as _3
-** _5: dag_5, first fdr control, then remove Q from min to max, until dag.
+** _5(deprecated -> _7): dag_5, first fdr control, then remove Q from min to max, until dag.
 *** fdr 0.2822±0.2037 | power 0.7800±0.3650
-** _6: dag_6, first fdr control, then include Q from max to min, until not dag.
+** _6(deprecated -> _8): dag_6, first fdr control, then include Q from max to min, until not dag.
 *** same as _5
-
-
+** _9: dag_7, first remove W from min to max, until dag, then fdr control

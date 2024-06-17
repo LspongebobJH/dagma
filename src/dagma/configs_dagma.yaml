@@ -23,13 +23,15 @@ abs_selection : False
 
 # dag_1: first remove Z from min to max, until dag, then fdr control filter
 # dag_2: first include Z from max to min, until not dag, then fdr control filter
+
 # dag_3: first compute fdr control z and q-value matrix Q, then remove Z from min to max until dag.
 ## it's obvious max(dag(Z), fdr(Z)) will be chosen. 
 ## if dag_control is excuted only when fdr(Z)-filtered graph is not dag, the dag(Z) must be chosen.
-
 # dag_4: first compute fdr control z and q-value matrix Q, then include Z from max to min until not dag.
+
 # dag_5: first compute fdr control z and q-value matrix Q, then remove Q from max to min until dag.
 ## in this case, no selected threshold.
-
 # dag_6: first compute fdr control z and q-value matrix Q, then include Q from min to max until not dag.
+
+# dag_7L first remove W from min to max, until dag, then fdr control filter
 dag_control : dag_3

@@ -233,7 +233,7 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
     logger.info(f"==============================")
     return fdr_true, power
 
-def extract_dag_mask(A : np.ndarray, extract_type : int):
+def extract_dag_mask(A : np.ndarray, extract_type : int, pre_mask : np.ndarray = None):
     """
     Assuming that the original graph is NOT dag. This func will not help to test whether
     the original graph is a dag.
@@ -249,12 +249,14 @@ def extract_dag_mask(A : np.ndarray, extract_type : int):
     """
     assert extract_type in [0, 1, 2, 3]
     a_list = np.sort(np.unique(A.flatten()))
+    if pre_mask is None:
+        pre_mask = np.full(A.shape, fill_value = True)
 
     if extract_type == 0:
         for a in a_list:
             _A = A.copy()
             mask = (_A >= a)
-            _A[mask], _A[~mask] = 1, 0
+            _A[mask * pre_mask], _A[~(mask * pre_mask)] = 1, 0
 
             if utils_dagma.is_dag(_A):
                 break
@@ -265,7 +267,7 @@ def extract_dag_mask(A : np.ndarray, extract_type : int):
         for a in a_list:
             _A = A.copy()
             mask = (_A >= a)
-            _A[mask], _A[~mask] = 1, 0
+            _A[mask * pre_mask], _A[~(mask * pre_mask)] = 1, 0
 
             if not utils_dagma.is_dag(_A):
                 break
@@ -277,7 +279,7 @@ def extract_dag_mask(A : np.ndarray, extract_type : int):
         for a in a_list:
             _A = A.copy()
             mask = (_A <= a)
-            _A[mask], _A[~mask] = 1, 0
+            _A[mask * pre_mask], _A[~(mask * pre_mask)] = 1, 0
 
             if utils_dagma.is_dag(_A):
                 break
@@ -287,7 +289,7 @@ def extract_dag_mask(A : np.ndarray, extract_type : int):
         for a in a_list:
             _A = A.copy()
             mask = (_A <= a)
-            _A[mask], _A[~mask] = 1, 0
+            _A[mask * pre_mask], _A[~(mask * pre_mask)] = 1, 0
 
             if not utils_dagma.is_dag(_A):
                 break
@@ -296,7 +298,10 @@ def extract_dag_mask(A : np.ndarray, extract_type : int):
 
     return mask
 
-def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int):
+def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int, W_full: np.ndarray = None):
+    """
+    W_full: dag_7 is applied to the whole W11, W12, W21, W22, then W = [W11 || W21], rather than the input one.
+    """
     num_feat = configs['d']
     est_type = configs['est_type']
     numeric = configs['numeric']
@@ -307,6 +312,12 @@ def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
 
     logger.info(f"==============================")
     logger.info(f"expected FDR {fdr}")
+
+    if dag_control == 'dag_7':
+        W_full = np.abs(W_full)
+        mask = extract_dag_mask(W_full, 0)
+        W_full[~mask] = 0
+        W = W_full[:, :configs['d']]
 
     Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])
 
@@ -321,11 +332,13 @@ def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
     t_last = np.inf
 
     if dag_control == 'dag_1':
+        Z_min = Z.min()
         mask = extract_dag_mask(Z, 0)
-        Z[mask], Z[~mask] = 1, 0
+        Z[~mask] = Z_min
     elif dag_control == 'dag_2':
+        Z_min = Z.min()
         mask = extract_dag_mask(Z, 1)
-        Z[mask], Z[~mask] = 1, 0
+        Z[~mask] = Z_min
     
     if abs_t_list:
         t_list = np.concatenate(([0], np.sort(np.unique(np.abs(Z)))))
@@ -365,20 +378,16 @@ def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
     if not utils_dagma.is_dag(_Z):
         if dag_control == 'dag_3':
             _Z = Z.copy()
-            _Z[~mask] = 0.
-            dag_mask = extract_dag_mask(_Z, 0)
+            dag_mask = extract_dag_mask(_Z, 0, pre_mask = mask)
         elif dag_control == 'dag_4':
             _Z = Z.copy()
-            _Z[~mask] = 0.
-            dag_mask = extract_dag_mask(_Z, 1)
+            dag_mask = extract_dag_mask(_Z, 1, pre_mask = mask)
         elif dag_control == 'dag_5':
             _Q = Q.copy()
-            _Q[~mask] = 1.
-            dag_mask = extract_dag_mask(_Q, 2)
+            dag_mask = extract_dag_mask(_Q, 2, pre_mask = mask)
         elif dag_control == 'dag_6':
             _Q = Q.copy()
-            _Q[~mask] = 1.
-            dag_mask = extract_dag_mask(_Q, 3)
+            dag_mask = extract_dag_mask(_Q, 3, pre_mask = mask)
     Z[mask * dag_mask], Z[~(mask * dag_mask)] = 1, 0
     T_T = Z
 
@@ -394,3 +403,111 @@ def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
     logger.info(f"==============================")
     return fdr_true, power
 
+def type_4_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int, W_full : np.ndarray = None):
+    num_feat = configs['d']
+    est_type = configs['est_type']
+    numeric = configs['numeric']
+    numeric_precision = eval(configs['numeric_precision'])
+    abs_t_list = configs['abs_t_list']
+    abs_selection = configs['abs_selection']
+    dag_control = configs['dag_control']
+
+    logger.info(f"==============================")
+    logger.info(f"expected FDR {fdr}")
+
+    if dag_control == 'dag_7':
+        W_full = np.abs(W_full)
+        mask = extract_dag_mask(W_full, 0)
+        W_full[~mask] = 0
+        W = W_full[:, :configs['d']]
+
+    Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])
+
+    if numeric:
+        Z[(Z <= numeric_precision) & (Z >= -numeric_precision)] = 0.
+    
+    T_T_true = np.abs(W_true)
+    mask = (T_T_true > 0.)
+    T_T_true[mask], T_T_true[~mask] = 1, 0
+
+    if dag_control == 'dag_1':
+        Z_min = Z.min()
+        mask = extract_dag_mask(Z, 0)
+        Z[~mask] = Z_min
+    elif dag_control == 'dag_2':
+        Z_min = Z.min()
+        mask = extract_dag_mask(Z, 1)
+        Z[~mask] = Z_min
+
+    _Z = Z.copy()
+    Q = np.full(Z.shape, fill_value=1.)
+    mask_list = []
+    for i, col in enumerate(_Z.T):
+        if abs_t_list:
+            t_list = np.concatenate(([0], np.sort(np.unique(np.abs(col)))))
+        else:
+            t_list = np.sort(np.concatenate(([0], np.unique(col))))
+        fdr_est_last = 1.
+        fdr_true_last, power_last = 1., 1.
+        t_last = np.inf
+            
+        for t in reversed(t_list):
+            if t < 0.:
+                break
+            if est_type == 'tau':
+                fdr_est = ((col <= -t).sum()) / np.max((1, (col >= t).sum()))
+            else:
+                fdr_est = (1 + (col <= -t).sum()) / np.max((1, (col >= t).sum()))
+
+            Q[col == t, i] = fdr_est
+            
+            T_T = col.copy()
+            mask = (T_T >= t)
+            T_T[mask], T_T[~mask] = 1, 0
+            perf = utils_dagma.count_accuracy(T_T_true[:, i], T_T, verify_dag = False)
+            fdr_true, power = perf['fdr'], perf['tpr']
+
+            logger.debug(f"feat {i} | thresh {t:.4f} | est fdr {fdr_est:.4f} | true fdr {fdr_true:.4f}")
+
+            if fdr_est <= fdr:
+                t_last = t
+                fdr_est_last = fdr_est
+                fdr_true_last, power_last = fdr_true, power
+
+        logger.debug(f"end feat {i} | expected fdr {fdr:.4f} | sel thresh {t_last:.4e} | "
+              f"est fdr {fdr_est_last:.4f} | true fdr {fdr_true_last:.4f} | true power {power_last:.4f}")
+        if abs_selection:
+            mask = (np.abs(_Z[:, i] >= t_last))
+        else:
+            mask = (_Z[:, i] >= t_last)
+        mask_list.append(mask)
+        _Z[mask, i], _Z[~mask, i] = 1, 0
+    
+    mask = np.stack(mask_list).T
+    dag_mask = np.full(mask.shape, fill_value=True)
+
+    if not utils_dagma.is_dag(_Z):
+        if dag_control == 'dag_3':
+            _Z = Z.copy()
+            dag_mask = extract_dag_mask(_Z, 0, pre_mask = mask)
+        elif dag_control == 'dag_4':
+            _Z = Z.copy()
+            dag_mask = extract_dag_mask(_Z, 1, pre_mask = mask)
+        elif dag_control == 'dag_5':
+            _Q = Q.copy()
+            dag_mask = extract_dag_mask(_Q, 2, pre_mask = mask)
+        elif dag_control == 'dag_6':
+            _Q = Q.copy()
+            dag_mask = extract_dag_mask(_Q, 3, pre_mask = mask)
+    Z[mask * dag_mask], Z[~(mask * dag_mask)] = 1, 0
+    T_T = Z
+    
+    perf = utils_dagma.count_accuracy(T_T_true, T_T)
+    fdr_true, power = perf['fdr'], perf['tpr']
+    if utils_dagma.is_dag(T_T):
+        logger.info("W_est is DAG")
+    else:
+        logger.info("W_est is NOT DAG")
+    logger.info(f"expected fdr {fdr:.4f} | true fdr {fdr_true:.4f} | true power {power:.4f}")
+    logger.info(f"==============================")
+    return fdr_true, power

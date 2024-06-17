@@ -6,7 +6,8 @@ from fdr_control import (
     type_1_control, 
     type_3_control, 
     type_3_control_global,
-    type_4_control_global
+    type_4_control_global,
+    type_4_control,
 )
 
 from argparse import ArgumentParser
@@ -31,7 +32,7 @@ parser = ArgumentParser()
 parser.add_argument('--s0', type=int, default=None)
 
 parser.add_argument('--control_type', type=str, default='type_3', 
-                    choices=['type_3', 'type_3_global', 'type_4_global'])
+                    choices=['type_3', 'type_3_global', 'type_4', 'type_4_global'])
 parser.add_argument('--dagma_type', type=str, default='dagma_1', 
                     choices = ['dagma_1'])
 parser.add_argument('--dag_control', type=str, default=None)
@@ -48,7 +49,7 @@ configs = utils.combine_configs(configs, args)
 """
 logging
 """
-# set up logging to file - see previous section for more details
+
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
@@ -112,7 +113,9 @@ if __name__ == '__main__':
             elif configs['control_type'] == 'type_3_global':
                 fdp_true, power = type_3_control_global(configs, W_est, W_true, fdr)
             elif configs['control_type'] == 'type_4_global':
-                fdp_true, power = type_4_control_global(configs, W_est, W_true, fdr)
+                fdp_true, power = type_4_control_global(configs, W_est, W_true, fdr, W_full = data_W['W_est'])
+            elif configs['control_type'] == 'type_4':
+                fdp_true, power = type_4_control(configs, W_est, W_true, fdr, W_full = data_W['W_est'])
             else:
                 raise Exception(f"{configs['control_type']} not implemented yet.")
             fdp_true_list.append(fdp_true)

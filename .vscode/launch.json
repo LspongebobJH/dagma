@@ -23,9 +23,9 @@
                 "--control_type=type_4_global",
                 "--seed_knockoff_list=2",
                 "--seed_model_list=0",
-                "--version=5",
-                "--s0=120",
-                "--dag_control=dag_6"
+                "--version=2",
+                "--s0=80",
+                "--dag_control=dag_1"
                 // "--log_file=log_10"
             ]
         },
