@@ -1,4 +1,4 @@
-from .locally_connected import LocallyConnected
+from locally_connected import LocallyConnected
 import torch
 import torch.nn as nn
 import numpy as np
@@ -7,8 +7,7 @@ import copy
 from tqdm.auto import tqdm
 import typing
 
-# TODO(jiahang): not use GPU yet. can be largely accelerated.
-__all__ = ["DagmaMLP", "DagmaNonlinear"]
+__all__ = ["DagmaMLP", "DagmaTorch"]
 
 
 class DagmaMLP(nn.Module): 
@@ -16,7 +15,8 @@ class DagmaMLP(nn.Module):
     Class that models the structural equations for the causal graph using MLPs.
     """
     
-    def __init__(self, dims: typing.List[int], bias: bool = True, dtype: torch.dtype = torch.double):
+    def __init__(self, dims: typing.List[int], bias: bool = True, dtype: torch.dtype = torch.double, 
+                 device : str = 'cuda:7'):
         r"""
         Parameters
         ----------
@@ -28,11 +28,12 @@ class DagmaMLP(nn.Module):
             Float precision, by default ``torch.double``
         """
         torch.set_default_dtype(dtype)
+        self.device = device
         super(DagmaMLP, self).__init__()
         assert len(dims) >= 2
         assert dims[-1] == 1
         self.dims, self.d = dims, dims[0]
-        self.I = torch.eye(self.d)
+        self.I = torch.eye(self.d).to(self.device)
         self.fc1 = nn.Linear(self.d, self.d * dims[1], bias=bias)
         nn.init.zeros_(self.fc1.weight)
         nn.init.zeros_(self.fc1.bias)
@@ -114,13 +115,102 @@ class DagmaMLP(nn.Module):
         W = W.cpu().detach().numpy()  # [i, j]
         return W
 
+class DagmaLinear(nn.Module): 
+    """
+    Class that models the structural equations for the linear causal graph.
+    """
+    
+    def __init__(self, d : int, dtype: torch.dtype = torch.double, 
+                 device : str = 'cuda:7'):
+        r"""
+        Parameters
+        ----------
+        dims : typing.List[int]
+            Number of neurons in hidden layers of each MLP representing each structural equation.
+        bias : bool, optional
+            Flag whether to consider bias or not, by default ``True``
+        dtype : torch.dtype, optional
+            Float precision, by default ``torch.double``
+        """
+        torch.set_default_dtype(dtype)
+        self.d = 2 * d
+        self.device = device
+        super(DagmaLinear, self).__init__()
+        self.I = torch.eye(self.d).to(self.device)
+        self.fc1 = nn.Linear(self.d, self.d, bias=False)
+        nn.init.zeros_(self.fc1.weight)
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # [n, d] -> [n, d]
+        r"""
+        Applies the current states of the structural equations to the dataset X
 
-class DagmaNonlinear:
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input dataset with shape :math:`(n,d)`.
+
+        Returns
+        -------
+        torch.Tensor
+            Result of applying the structural equations to the input data.
+            Shape :math:`(n,d)`.
+        """
+        x = self.fc1(x)
+        return x
+
+    def h_func(self, s: float = 1.0) -> torch.Tensor:
+        r"""
+        Constrain 2-norm-squared of fc1 weights along m1 dim to be a DAG
+
+        Parameters
+        ----------
+        s : float, optional
+            Controls the domain of M-matrices, by default 1.0
+
+        Returns
+        -------
+        torch.Tensor
+            A scalar value of the log-det acyclicity function :math:`h(\Theta)`.
+        """
+        fc1_weight = self.fc1.weight
+        fc1_weight = fc1_weight.view(self.d, -1, self.d)
+        A = torch.sum(fc1_weight ** 2, dim=1).t()  # [i, j]
+        h = -torch.slogdet(s * self.I - A)[1] + self.d * np.log(s)
+        return h
+
+    def fc1_l1_reg(self) -> torch.Tensor:
+        r"""
+        Takes L1 norm of the weights in the first fully-connected layer
+
+        Returns
+        -------
+        torch.Tensor
+            A scalar value of the L1 norm of first FC layer. 
+        """
+        return torch.sum(torch.abs(self.fc1.weight))
+
+    @torch.no_grad()
+    def fc1_to_adj(self) -> np.ndarray:  # [j * m1, i] -> [i, j]
+        r"""
+        Computes the induced weighted adjacency matrix W from the first FC weights.
+        Intuitively each edge weight :math:`(i,j)` is the *L2 norm of the functional influence of variable i to variable j*.
+
+        Returns
+        -------
+        np.ndarray
+            :math:`(d,d)` weighted adjacency matrix 
+        """
+        W = self.fc1.weight
+        W = W.T.cpu().detach().numpy()
+        return W
+
+class DagmaTorch:
     """
     Class that implements the DAGMA algorithm
     """
     
-    def __init__(self, model: nn.Module, verbose: bool = False, dtype: torch.dtype = torch.double):
+    def __init__(self, model: nn.Module, verbose: bool = False, dtype: torch.dtype = torch.double, 
+                 device : str = 'cuda:7', dagma_type : str = None):
         """
         Parameters
         ----------
@@ -128,13 +218,15 @@ class DagmaNonlinear:
             Neural net that models the structural equations.
         verbose : bool, optional
             If true, the loss/score and h values will print to stdout every ``checkpoint`` iterations,
-            as defined in :py:meth:`~dagma.nonlinear.DagmaNonlinear.fit`. Defaults to ``False``.
+            as defined in :py:meth:`~dagma.nonlinear.DagmaTorch.fit`. Defaults to ``False``.
         dtype : torch.dtype, optional
             float number precision, by default ``torch.double``.
         """
         self.vprint = print if verbose else lambda *a, **k: None
         self.model = model
         self.dtype = dtype
+        self.device = device
+        self.dagma_type = dagma_type
     
     def log_mse_loss(self, output: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         r"""
@@ -157,6 +249,40 @@ class DagmaNonlinear:
         n, d = target.shape
         loss = 0.5 * d * torch.log(1 / n * torch.sum((output - target) ** 2))
         return loss
+
+    def clean_diag(self):
+        """
+        w is of shape [d/2 + d/2, d/2 + d/2], that is, w is
+            [w11 | w12]
+            [----|----]
+            [w21 | w22]
+        where wij in d/2 * d/2 matrix
+        set diagonal of wij to 0
+        """
+        with torch.no_grad():
+            w = self.model.fc1.weight
+            d = w.shape[0]
+            w[np.eye(d).astype(bool)] = 0.
+            w[np.eye(d, k = d // 2).astype(bool)] = 0.
+            w[np.eye(d, k = - d // 2).astype(bool)] = 0.
+            self.model.fc1.weight = w
+
+    def check_diag(self):
+        """
+        w is of shape [d/2 + d/2, d/2 + d/2], that is, w is
+            [w11 | w12]
+            [----|----]
+            [w21 | w22]
+        where wij in d/2 * d/2 matrix
+        ckech whether diagonal of wij to 0
+        """
+        w = self.model.fc1.weight
+        d = w.shape[0]
+        if (w[np.eye(d).astype(bool)] != 0.).any() or \
+            (w[np.eye(d, k = d // 2).astype(bool)] != 0.).any() or \
+            (w[np.eye(d, k = - d // 2).astype(bool)] != 0.).any():
+                return False
+        return True
 
     def minimize(self, 
                  max_iter: float, 
@@ -221,6 +347,11 @@ class DagmaNonlinear:
             obj = mu * (score + l1_reg) + h_val
             obj.backward()
             optimizer.step()
+
+            if self.dagma_type == 'dagma_1':
+                self.clean_diag()
+                assert self.check_diag()
+
             if lr_decay and (i+1) % 1000 == 0: #every 1000 iters reduce lr
                 scheduler.step()
             if i % self.checkpoint == 0 or i == max_iter-1:
@@ -248,6 +379,7 @@ class DagmaNonlinear:
             lr: float = .0002, 
             w_threshold: float = 0.3, 
             checkpoint: int = 1000,
+            return_no_filter : bool = False
         ) -> np.ndarray:
         r"""
         Runs the DAGMA algorithm and fits the model to the dataset.
@@ -269,9 +401,9 @@ class DagmaNonlinear:
         s : float, optional
             Controls the domain of M-matrices, by default 1.0.
         warm_iter : int, optional
-            Number of iterations for :py:meth:`~dagma.nonlinear.DagmaNonlinear.minimize` for :math:`t < T`, by default 5e4.
+            Number of iterations for :py:meth:`~dagma.nonlinear.DagmaTorch.minimize` for :math:`t < T`, by default 5e4.
         max_iter : int, optional
-            Number of iterations for :py:meth:`~dagma.nonlinear.DagmaNonlinear.minimize` for :math:`t = T`, by default 8e4.
+            Number of iterations for :py:meth:`~dagma.nonlinear.DagmaTorch.minimize` for :math:`t = T`, by default 8e4.
         lr : float, optional
             Learning rate, by default .0002.
         w_threshold : float, optional
@@ -287,7 +419,7 @@ class DagmaNonlinear:
         
         .. important::
 
-            If the output of :py:meth:`~dagma.nonlinear.DagmaNonlinear.fit` is not a DAG, then the user should try larger values of ``T`` (e.g., 6, 7, or 8) 
+            If the output of :py:meth:`~dagma.nonlinear.DagmaTorch.fit` is not a DAG, then the user should try larger values of ``T`` (e.g., 6, 7, or 8) 
             before raising an issue in github.
         """
         torch.set_default_dtype(self.dtype)
@@ -297,6 +429,7 @@ class DagmaNonlinear:
             self.X = torch.from_numpy(X).type(self.dtype)
         else:
             ValueError("X should be numpy array or torch Tensor.")
+        self.X = self.X.to(self.device)
         
         self.checkpoint = checkpoint
         mu = mu_init
@@ -318,6 +451,9 @@ class DagmaNonlinear:
                 while success is False:
                     success = self.minimize(inner_iter, lr, lambda1, lambda2, mu, s_cur, 
                                         lr_decay, pbar=pbar)
+                    if self.dagma_type == 'dagma_1':
+                        self.clean_diag()
+                        assert self.check_diag()
                     if success is False:
                         self.model.load_state_dict(model_copy.state_dict().copy())
                         lr *= 0.5 
@@ -326,26 +462,37 @@ class DagmaNonlinear:
                             break # lr is too small
                         s_cur = 1
                 mu *= mu_factor
+        if self.dagma_type == 'dagma_1':
+            assert self.check_diag()
         W_est = self.model.fc1_to_adj()
+        W_est_no_filter = W_est.copy()
         W_est[np.abs(W_est) < w_threshold] = 0
+        if return_no_filter:
+            return W_est_no_filter, W_est
         return W_est
+        
 
 
 def test():
-    from timeit import default_timer as timer
-    from . import utils
+    import utils_dagma as utils
     
     utils.set_random_seed(1)
     torch.manual_seed(1)
     
-    n, d, s0, graph_type, sem_type = 1000, 20, 20, 'ER', 'mlp'
+    n, d, s0, graph_type, sem_type = 1000, 20, 50, 'ER', 'gauss'
+    device = 'cuda:7'
+    print("simulated dag")
     B_true = utils.simulate_dag(d, s0, graph_type)
-    X = utils.simulate_nonlinear_sem(B_true, n, sem_type)
+    # print("simulated nonlinear SEM")
+    # X = utils.simulate_nonlinear_sem(B_true, n, sem_type)
+    print("simulated linear dag")
+    X = utils.simulate_linear_sem(B_true, n, sem_type)
 
-    eq_model = DagmaMLP(dims=[d, 10, 1], bias=True)
-    model = DagmaNonlinear(eq_model)
+    eq_model = DagmaLinear(d=d, device=device).to(device)
+    model = DagmaTorch(eq_model, device=device, verbose=True, dagma_type='dagma_1')
+    print("fit dagma")
     W_est = model.fit(X, lambda1=0.02, lambda2=0.005)
-    acc = utils.count_accuracy(B_true, W_est != 0)
+    acc = utils.count_accuracy(B_true, W_est != 0, use_logger=False)
     print(acc)
     
     

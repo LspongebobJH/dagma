@@ -8,6 +8,7 @@ fdr : 0.2
 device : 7
 numeric: False # let values < numeric_precision be 0.
 numeric_precision : 1e-1
+device : cuda:7
 
 # True: t_list = concat([0], sort.unique.abs(Z))
 # False: t_list = sort.concat([0], unique(Z))

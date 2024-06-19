@@ -10,7 +10,6 @@ import yaml
 import logging
 from argparse import ArgumentParser
 
-from linear import DagmaLinear
 from knockoff_gan import KnockoffGAN
 from deep_knockoff.machine import KnockoffMachine
 from deep_knockoff.parameters import GetTrainingHyperParams, SetFullHyperParams
@@ -132,14 +131,27 @@ def knockoff(X : np.ndarray, configs):
     return X_tilde
 
 def fit(X, X_all, configs):
+    gen_type = configs['gen_type']
     dagma_type = configs['dagma_type']
+
+    assert gen_type in ['W', 'W_torch']
     assert dagma_type == 'dagma_1'
-    
+
     W_est_no_filter, Z_true, Z_knock = \
         None, None, None
-    model = DagmaLinear(loss_type='l2', verbose=True)
-    W_est_no_filter, _ = model.fit(dagma_type, X_all, lambda1=0.02, return_no_filter=True)
 
+    if configs['gen_type'] == 'W':
+        from linear import DagmaLinear
+        model = DagmaLinear(loss_type='l2', verbose=True)
+        W_est_no_filter, _ = model.fit(dagma_type, X_all, lambda1=0.02, return_no_filter=True)
+    else:
+        d = configs['d']
+        device = configs['device']
+        from dagma_torch import DagmaLinear, DagmaTorch
+        eq_model = DagmaLinear(d=d, device=device).to(device)
+        model = DagmaTorch(eq_model, device=device, verbose=True, dagma_type=dagma_type)
+        W_est_no_filter, _  = model.fit(X_all, lambda1=0.02, lambda2=0.005, return_no_filter=True)
+    
     return W_est_no_filter, Z_true, Z_knock
 
 def combine_configs(configs_yaml : dict, args : ArgumentParser):

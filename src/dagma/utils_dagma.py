@@ -244,7 +244,7 @@ def simulate_nonlinear_sem(B:np.ndarray,
     return X
 
 
-def count_accuracy(B_true: np.ndarray, B_est: np.ndarray, verify_dag = True) -> dict:
+def count_accuracy(B_true: np.ndarray, B_est: np.ndarray, verify_dag = True, use_logger = True) -> dict:
     r"""
     Compute various accuracy metrics for B_est.
 
@@ -279,7 +279,10 @@ def count_accuracy(B_true: np.ndarray, B_est: np.ndarray, verify_dag = True) -> 
                 raise ValueError('B_est should take value in {0,1}')
             if not is_dag(B_est):
                 # raise ValueError('B_est should be a DAG')
-                logger.debug('B_est should be a DAG')
+                if use_logger:
+                    logger.debug('B_est should be a DAG')
+                else:
+                    print('B_est should be a DAG')
     d = B_true.shape[0]
     # linear index of nonzeros
     pred_und = np.flatnonzero(B_est == -1)

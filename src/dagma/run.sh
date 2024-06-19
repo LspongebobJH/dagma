@@ -1,7 +1,7 @@
-version=8
-s0=200
-d=50
-n=1000
+version=7
+s0=1000
+d=60
+n=2000
 
 # python gen_copies.py --gen_type X --n $n --s0 $s0 --d $d --version $version
 # for i in {1..10}; do
@@ -10,8 +10,20 @@ n=1000
 
 # wait
 
-for i in {1..10}; do
-    python gen_copies.py --gen_type W --n $n --s0 $s0 --d $d  --seed_knockoff $i --version $version
+for i in {1..5}; do
+    python gen_copies.py \
+    --gen_type W_torch \
+    --n $n --s0 $s0 --d $d \
+    --seed_knockoff $i --version $version \
+    --device cuda:6 &
+done
+
+for i in {6..10}; do
+    python gen_copies.py \
+    --gen_type W_torch \
+    --n $n --s0 $s0 --d $d \
+    --seed_knockoff $i --version $version \
+    --device cuda:7 &
 done
 
 wait

@@ -334,7 +334,6 @@ class DagmaLinear:
         ## INITALIZING VARIABLES 
         self.X, self.lambda1, self.checkpoint = X, lambda1, checkpoint
         self.n, self.d = X.shape
-        self.dagma_type = dagma_type
         self.Id = np.eye(self.d).astype(self.dtype)
         
         if self.loss_type == 'l2':
@@ -394,7 +393,8 @@ class DagmaLinear:
         self.score_final, _ = self._score(self.W_est)
         W_est_no_filter = self.W_est.copy()
         self.W_est[np.abs(self.W_est) < w_threshold] = 0
-        assert self.check_diag(self.W_est)
+        if dagma_type == 'dagma_1':
+            assert self.check_diag(self.W_est)
         if return_no_filter:
             return W_est_no_filter, self.W_est
         return self.W_est

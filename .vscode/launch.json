@@ -5,6 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "dagma_torch.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "dagma_torch.py",
+            "console": "integratedTerminal",
+            "cwd": "/home/jiahang/dagma/src/dagma"
+        },
+        {
             "name": "linear.py",
             "type": "debugpy",
             "request": "launch",

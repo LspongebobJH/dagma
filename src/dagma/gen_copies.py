@@ -22,11 +22,11 @@ parser = ArgumentParser()
 parser.add_argument('--n', type=int, default=None)
 parser.add_argument('--d', type=int, default=None)
 parser.add_argument('--s0', type=int, default=None)
+parser.add_argument('--device', type=str, default=None)
 
 parser.add_argument('--knock_type', type=str, default='knockoff_gan', 
                     choices=['permutation', 'knockoff_gan', 'deep_knockoff'])
-parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W'], 
-                    help="X: generate X copies. knockoff: generate knockoff copies for each X.")
+parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W', 'W_torch'])
 # Note that type_3_global has the same knockoff statistics as type_3, only the FDR estimate different
 parser.add_argument('--dagma_type', type=str, default='dagma_1', 
                     choices = ['dagma_1'])
@@ -79,7 +79,7 @@ if __name__ == '__main__':
             
             utils.process_simulated_data(X_tilde, configs, behavior='save')
 
-        else: # W
+        else: # [W, W_torch]
 
             assert configs['seed_knockoff'] is not None and configs['seed_model'] is not None
 
