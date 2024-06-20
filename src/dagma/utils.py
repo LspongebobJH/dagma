@@ -131,26 +131,32 @@ def knockoff(X : np.ndarray, configs):
     return X_tilde
 
 def fit(X, X_all, configs):
-    dagma_type = configs['dagma_type']
     gen_W = configs['gen_W']
+    dagma_type = configs['dagma_type']
 
+    assert gen_W in [None, 'torch']
     assert dagma_type == 'dagma_1'
-    assert gen_W in ['torch', None]
 
     W_est_no_filter, Z_true, Z_knock = \
         None, None, None
 
-    if configs['gen_W'] is None:
+    if gen_W is None:
         from linear import DagmaLinear
         model = DagmaLinear(loss_type='l2', verbose=True)
         W_est_no_filter, _ = model.fit(dagma_type, X_all, lambda1=0.02, return_no_filter=True)
-    else: # gen_W == 'torch'
+    else: # gen_W == torch
         d = configs['d']
         device = configs['device']
+        if device == 'mps':
+            dtype = torch.float32
+        else:
+            dtype = torch.double
         from dagma_torch import DagmaLinear, DagmaTorch
-        eq_model = DagmaLinear(d=d, device=device).to(device)
-        model = DagmaTorch(eq_model, device=device, verbose=True, dagma_type=dagma_type)
-        W_est_no_filter, _  = model.fit(X_all, lambda1=0.02, lambda2=0.005, return_no_filter=True)
+        eq_model = DagmaLinear(d=d, device=device, dtype=dtype).to(device)
+        model = DagmaTorch(eq_model, device=device, verbose=True, 
+                           dagma_type=dagma_type, dtype=dtype)
+        W_est_no_filter, _  = model.fit(X_all, lambda1=0.02, lambda2=0.005, 
+                                        return_no_filter=True)
     
     return W_est_no_filter, Z_true, Z_knock
 

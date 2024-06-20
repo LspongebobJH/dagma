@@ -42,3 +42,12 @@ expected fdr 0.2, ALL DAG
 ** _6(deprecated -> _8): dag_6, first fdr control, then include Q from max to min, until not dag.
 *** same as _5
 ** _9: dag_7, first remove W from min to max, until dag, then fdr control
+
+* log_1000: 2000 samples, 20 nodes, 120 edges, type_4, W_torch
+** dag_1: fdr 0.0778±0.0280 | power 0.6083±0.0811
+** dag_3: fdr 0.2469±0.0148 | power 0.8175±0.0058
+** dag_5: fdr 0.7820±0.2429 | power 0.0675±0.0807
+** dag_7: fdr 0.2146±0.0615 | power 0.8158±0.0079
+
+* log_1001: 2000 samples, 20 nodes, 120 edges, type_4_global, W_torch
+** dag_1: 

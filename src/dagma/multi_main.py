@@ -29,7 +29,9 @@ with open('./configs_dagma.yaml', 'r') as f:
     configs = yaml.safe_load(f)
 
 parser = ArgumentParser()
+parser.add_argument('--n', type=int, default=None)
 parser.add_argument('--d', type=int, default=None)
+parser.add_argument('--s0', type=int, default=None)
 
 parser.add_argument('--control_type', type=str, default='type_3', 
                     choices=['type_3', 'type_3_global', 'type_4', 'type_4_global'])
