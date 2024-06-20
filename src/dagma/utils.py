@@ -131,20 +131,20 @@ def knockoff(X : np.ndarray, configs):
     return X_tilde
 
 def fit(X, X_all, configs):
-    gen_type = configs['gen_type']
     dagma_type = configs['dagma_type']
+    gen_W = configs['gen_W']
 
-    assert gen_type in ['W', 'W_torch']
     assert dagma_type == 'dagma_1'
+    assert gen_W in ['torch', None]
 
     W_est_no_filter, Z_true, Z_knock = \
         None, None, None
 
-    if configs['gen_type'] == 'W':
+    if configs['gen_W'] is None:
         from linear import DagmaLinear
         model = DagmaLinear(loss_type='l2', verbose=True)
         W_est_no_filter, _ = model.fit(dagma_type, X_all, lambda1=0.02, return_no_filter=True)
-    else:
+    else: # gen_W == 'torch'
         d = configs['d']
         device = configs['device']
         from dagma_torch import DagmaLinear, DagmaTorch
