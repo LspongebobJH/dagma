@@ -27,7 +27,7 @@ expected fdr 0.2, ALL DAG
 *** same as _5
 ** _9: dag_7, first remove W from min to max, until dag, then fdr control
 
-* log_16: 2000 samples, 20 nodes, 80 edges, type_3_global (when using dag control, then become type_4_global),
+* log_16 (deprecated): 2000 samples, 20 nodes, 80 edges, type_3_global (when using dag control, then become type_4_global),
 expected fdr 0.2, ALL DAG
 ** _1: dag_1, first remove Z from min to max, until dag, then fdr control.
 *** fdr 0.3880±0.0149 | power 0.9625±0.0000
@@ -43,11 +43,33 @@ expected fdr 0.2, ALL DAG
 *** same as _5
 ** _9: dag_7, first remove W from min to max, until dag, then fdr control
 
-* log_1000: 2000 samples, 20 nodes, 120 edges, type_4, W_torch
-** dag_1: fdr 0.0778±0.0280 | power 0.6083±0.0811
-** dag_3: fdr 0.2469±0.0148 | power 0.8175±0.0058
-** dag_5: fdr 0.7820±0.2429 | power 0.0675±0.0807
-** dag_7: fdr 0.2146±0.0615 | power 0.8158±0.0079
+* log_17: 2000 samples, 20 nodes, 80 edges, type_4_global
+* log_18: 2000 samples, 20 nodes, 120 edges, type_4_global
+* log_19: 2000 samples, 20 nodes, 80 edges, type_4
+* log_20: 2000 samples, 20 nodes, 120 edges, type_4
+* log_21: 2000 samples, 20 nodes, 180 edges, type_4
+* log_22: 2000 samples, 20 nodes, 180 edges, type_4_global
+* log_23: 2000 samples, 20 nodes, 180 edges, type_3
+* log_24: 2000 samples, 20 nodes, 180 edges, type_3_global
+* log_25: 2000 samples, 60 nodes, 1000 edges, type_4
+* log_26: 2000 samples, 60 nodes, 1000 edges, type_4_global
+* log_27: 2000 samples, 60 nodes, 1000 edges, type_3
+* log_28: 2000 samples, 60 nodes, 1000 edges, type_3_global
+* log_29 (data version v11): 
+sweep, 2000 samples, [10, 40, 60, 80, 100, 200, 400] nodes, [n * 4] edges, W_torch, type_3
+name is the n_nodes.
+* log_30 (data version v11): 
+sweep, 2000 samples, [10, 40, 60, 80, 100, 200, 400] nodes, [n * 4] edges, W_torch, type_3_global
+name is the n_nodes.
 
-* log_1001: 2000 samples, 20 nodes, 120 edges, type_4_global, W_torch
-** dag_1: 
+
+
+* log_1000 (local): 2000 samples, 20 nodes, 120 edges, type_4, W_torch
+* log_1001 (local): 2000 samples, 20 nodes, 120 edges, type_4_global, W_torch
+* log_1002 (local): 2000 samples, 20 nodes, 80 edges, type_4, W_torch
+* log_1003 (local): 2000 samples, 20 nodes, 80 edges, type_4_global, W_torch
+* log_1004 (local): 2000 samples, 20 nodes, 80 edges, type_4, W_torch, no dag control (same as type_3)
+* log_1005 (local): 2000 samples, 20 nodes, 80 edges, type_4_global, W_torch, no dag control (same as type_3_global)
+* log_1006 (local): 2000 samples, 20 nodes, 120 edges, type_4, W_torch, no dag control (same as type_3)
+* log_1007 (local): 2000 samples, 20 nodes, 120 edges, type_4_global, W_torch, no dag control (same as type_3_global)
+

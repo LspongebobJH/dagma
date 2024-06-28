@@ -68,7 +68,7 @@ def process_simulated_data(data, configs, behavior):
 
 def get_data_path(configs : dict):
     gen_type = configs['gen_type']
-    root_path = 'simulated_data'
+    root_path = configs['root_path']
     version = configs['version']
     data_dir = os.path.join(root_path, f'v{version}', f'{gen_type}')
 
