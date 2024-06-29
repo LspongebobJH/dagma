@@ -11,6 +11,10 @@
 
 # python gen_copies.py --gen_type X --n $n --s0 $s0 --d $d --version $version
 
+########################################
+# Generating X, sweep over n_nodes
+########################################
+
 # n=2000
 # nodes=(10 40 60 80 100 200 400)
 # for d in "${nodes[@]}"; do
@@ -31,6 +35,10 @@
 # done
 
 # wait
+
+#########################################
+# Generating Knockoff, sweep over n_nodes
+#########################################
 
 # n=2000
 # nodes=(10 40 60 80 100 200 400)
@@ -67,6 +75,10 @@
 
 # wait
 
+############################################
+# Generating W (W_torch), sweep over n_nodes
+############################################
+
 # n=2000
 # nodes=(10 40 60 80 100 200 400)
 # for d in "${nodes[@]}"; do
@@ -96,7 +108,7 @@
 
 
 ############################################
-# FDR control model fitting with dag control
+# FDR control selection with dag control
 ############################################
 
 # log_file_column=25
@@ -124,6 +136,10 @@
 #     --log_file=log_${log_file_global}_${i} &
 
 # done
+
+################################################################
+# FDR control selection with dag control, sweep over n_nodes
+################################################################
 
 log_file_column=31
 log_file_global=$((log_file_column + 1))
@@ -156,7 +172,7 @@ for d in "${nodes[@]}"; do
 done
 
 ################################################
-# FDR control model fitting without dag control
+# FDR control selection without dag control
 ################################################
 
 # log_file_column=27
@@ -177,6 +193,10 @@ done
 # --seed_model_list=0 \
 # --version=$version \
 # --log_file=log_${log_file_global} &
+
+####################################################################
+# FDR control selection without dag control, sweep over n_nodes
+####################################################################
 
 # log_file_column=29
 # log_file_global=$((log_file_column + 1))

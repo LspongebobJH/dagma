@@ -56,10 +56,16 @@ expected fdr 0.2, ALL DAG
 * log_27: 2000 samples, 60 nodes, 1000 edges, type_3
 * log_28: 2000 samples, 60 nodes, 1000 edges, type_3_global
 * log_29 (data version v11): 
-sweep, 2000 samples, [10, 40, 60, 80, 100, 200, 400] nodes, [n * 4] edges, W_torch, type_3
+sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_3
 name is the n_nodes.
 * log_30 (data version v11): 
-sweep, 2000 samples, [10, 40, 60, 80, 100, 200, 400] nodes, [n * 4] edges, W_torch, type_3_global
+sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_3_global
+name is the n_nodes.
+* log_31 (data version v11): 
+sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_4, dag_1
+name is the n_nodes.
+* log_32 (data version v11): 
+sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_4_global, dag_1
 name is the n_nodes.
 
 
