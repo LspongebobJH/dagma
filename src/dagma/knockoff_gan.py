@@ -30,6 +30,7 @@ logger = logging.getLogger()
 
 def KnockoffGAN (x_train, x_name, lamda = 0.01, mu = 1, mb_size=128, niter=2000):    
 
+    # tf_debug = False
     tf_debug = False
 
     if tf_debug:
@@ -222,16 +223,16 @@ def KnockoffGAN (x_train, x_name, lamda = 0.01, mu = 1, mb_size=128, niter=2000)
     
     #%% Loss function
     # 1. WGAN Loss
-    WD_loss = tf.reduce_mean(WD_fake) - tf.reduce_mean(WD_real) + grad_pen
+    WD_loss = tf.reduce_mean(WD_fake) - tf.reduce_mean(WD_real) + grad_pen # L_f loss
     
     # 2. Discriminator loss
-    D_loss = -tf.reduce_mean(S * (1-H) * tf.log(D_out + 1e-8) + (1-S) * (1-H) * tf.log(1 - D_out + 1e-8))   
+    D_loss = -tf.reduce_mean(S * (1-H) * tf.log(D_out + 1e-8) + (1-S) * (1-H) * tf.log(1 - D_out + 1e-8)) # L_D loss
     
     # 3. MINE Loss
-    M_loss = tf.reduce_sum( tf.reduce_mean(M_out, axis = 0) - tf.log(tf.reduce_mean(Exp_M_out, axis = 0)) )
+    M_loss = tf.reduce_sum( tf.reduce_mean(M_out, axis = 0) - tf.log(tf.reduce_mean(Exp_M_out, axis = 0)) ) # L_P loss
     
     # 4. Generator loss
-    G_loss =  - D_loss + mu * -tf.reduce_mean(WD_fake) + lamda * M_loss
+    G_loss =  - D_loss + mu * -tf.reduce_mean(WD_fake) + lamda * M_loss # full loss
     
     # Solver
     WD_solver = (tf.train.AdamOptimizer(learning_rate = lr, beta1 = 0.5).minimize(WD_loss, var_list = theta_WD))
@@ -271,13 +272,15 @@ def KnockoffGAN (x_train, x_name, lamda = 0.01, mu = 1, mb_size=128, niter=2000)
             # 1. WGAN Training
             _, WD_loss_curr = sess.run([WD_solver, WD_loss], feed_dict = {X: X_mb, Z: Z_mb, X_hat: X_perm_mb, S: S_mb, H: H_mb}, options=run_opts)
             
+            
             # 2. Discriminator Training
             # print('discriminator training')
             _, D_loss_curr = sess.run([D_solver, D_loss], feed_dict = {X: X_mb, Z: Z_mb, X_hat: X_perm_mb, S: S_mb, H: H_mb}, options=run_opts)
             
+            
             # 3. MINE Training
             # print('mine training')
-            _, M_loss_curr = sess.run([M_solver, M_loss], feed_dict = {X: X_mb, Z: Z_mb, X_hat: X_perm_mb, S: S_mb, H: H_mb}, options=run_opts)            
+            _, M_loss_curr = sess.run([M_solver, M_loss], feed_dict = {X: X_mb, Z: Z_mb, X_hat: X_perm_mb, S: S_mb, H: H_mb}, options=run_opts)          
                         
         #%% Generator Training
         
@@ -298,6 +301,12 @@ def KnockoffGAN (x_train, x_name, lamda = 0.01, mu = 1, mb_size=128, niter=2000)
         # Generator training
         # print('gen training')
         _, G_loss_curr, G_sample_curr = sess.run([G_solver, G_loss, G_sample], feed_dict = {X: X_mb, Z: Z_mb, X_hat: X_perm_mb, S: S_mb, H: H_mb}, options=run_opts)
+
+        if it % 100 == 0:
+            print(f'WGAN loss: {WD_loss_curr:.4f}') # smaller is better
+            print(f'Discriminator loss: {D_loss_curr:.4f}') # smaller is better
+            print(f'MINE loss: {M_loss_curr:.4f}') # larger is better
+            print(f'Generator loss: {G_loss_curr:.4f}') # smaller is better
       
     #%% Output
     #print('last session run')
@@ -329,33 +338,50 @@ def init_arg():
 
 
 if __name__ == "__main__":
+    #####################
+    # test
+    #####################
 
-    args = init_arg()
-    df = pd.read_csv(args.i)
-    niter = args.it
-    use_scale = args.scale
-    x_name = args.xname
-    lbl = args.target
-    features = list(df.columns)
-    features.remove(lbl)
+    path_data = '/home/jiahang/dagma/src/dagma/simulated_data/v11/v60/X/X_1.pkl'
+    path_config = '/home/jiahang/dagma/src/dagma/simulated_data/v11/v60/X/X_1_configs.yaml'
 
-    # scale/normalize dataset
-    range_scaler = (0, 1)
-    scaler = MinMaxScaler(feature_range=range_scaler)
+    import pickle
+    with open(path_data, 'rb') as f:
+        data = pickle.load(f)
+    X = data['X']
 
-    x = df[features]
+    KnockoffGAN(x_train = X, x_name = 'Normal', niter = 5000)
 
-    if use_scale:
-        scaler.fit(x)
-        x = scaler.transform(x)
-    else:
-        x = x.values
+    #####################
+    # original
+    #####################
 
-    x_k = KnockoffGAN(
-        x,
-        x_name,
-        mb_size=args.bs,
-        niter=niter)
-    df_k = pd.DataFrame(x_k, columns=features)
-    df_k[lbl] = df[lbl]
-    df_k.to_csv(args.o, index=False)
+    # args = init_arg()
+    # df = pd.read_csv(args.i)
+    # niter = args.it
+    # use_scale = args.scale
+    # x_name = args.xname
+    # lbl = args.target
+    # features = list(df.columns)
+    # features.remove(lbl)
+
+    # # scale/normalize dataset
+    # range_scaler = (0, 1)
+    # scaler = MinMaxScaler(feature_range=range_scaler)
+
+    # x = df[features]
+
+    # if use_scale:
+    #     scaler.fit(x)
+    #     x = scaler.transform(x)
+    # else:
+    #     x = x.values
+
+    # x_k = KnockoffGAN(
+    #     x,
+    #     x_name,
+    #     mb_size=args.bs,
+    #     niter=niter)
+    # df_k = pd.DataFrame(x_k, columns=features)
+    # df_k[lbl] = df[lbl]
+    # df_k.to_csv(args.o, index=False)

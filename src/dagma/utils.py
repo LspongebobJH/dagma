@@ -100,7 +100,11 @@ def knockoff(X : np.ndarray, configs):
 
     elif knock_type == 'knockoff_gan':
         # TODO: tensorflow fail running on GPU, but not slow now.
-        X_tilde = KnockoffGAN(x_train = X, x_name = 'Normal')
+        if 'niter' in configs.keys() and configs['niter'] is not None:
+            niter = configs['niter']
+        else:
+            niter = 2000 # default to original knockoffGAN
+        X_tilde = KnockoffGAN(x_train = X, x_name = 'Normal', niter = niter)
 
     elif knock_type == 'deep_knockoff':
         SigmaHat = np.cov(X, rowvar=False)

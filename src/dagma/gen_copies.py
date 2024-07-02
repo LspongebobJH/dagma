@@ -36,6 +36,9 @@ parser.add_argument('--seed_knockoff', type=int, default=1)
 parser.add_argument('--seed_model', type=int, default=0)
 parser.add_argument('--version', type=int, default=1)
 
+# parameters of knockoffGAN in knockoff generation
+parser.add_argument('--niter', type=int, default=None)
+
 args = parser.parse_args()
 
 args.gen_W = None
