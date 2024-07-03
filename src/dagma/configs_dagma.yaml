@@ -9,6 +9,7 @@ device : 7
 numeric: False # let values < numeric_precision be 0.
 numeric_precision : 1e-1
 device : cuda:7
+root_path: simulated_data
 
 # True: t_list = concat([0], sort.unique.abs(Z))
 # False: t_list = sort.concat([0], unique(Z))
@@ -36,3 +37,27 @@ abs_selection : False
 
 # dag_7L first remove W from min to max, until dag, then fdr control filter
 dag_control : None
+
+# control_type
+## type_3_control: column-wise model-x 
+## type_3_control_global: global model-x
+## type_4_control: column-wise model-x + dag_control
+## type_4_control: global model-x + dag_control
+### if dag_control == None, type_4_control(_global) == type_3_control(_global)
+
+##############################
+# knockoffGAN parameters
+##############################
+
+niter: 2000
+norm: False
+
+##################################
+# network deconvolution parameters 
+# used before fdr control
+# used on learned W 
+# (after dagma fitting)
+##################################
+
+deconv: False
+beta: 0.9 # valid only when deconv is True

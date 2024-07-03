@@ -23,6 +23,7 @@ parser.add_argument('--n', type=int, default=None)
 parser.add_argument('--d', type=int, default=None)
 parser.add_argument('--s0', type=int, default=None)
 parser.add_argument('--device', type=str, default=None)
+parser.add_argument('--root_path', type=str, default=None)
 
 parser.add_argument('--knock_type', type=str, default='knockoff_gan', 
                     choices=['permutation', 'knockoff_gan', 'deep_knockoff'])
@@ -34,6 +35,10 @@ parser.add_argument('--seed_X', type=int, default=1)
 parser.add_argument('--seed_knockoff', type=int, default=1)
 parser.add_argument('--seed_model', type=int, default=0)
 parser.add_argument('--version', type=int, default=1)
+
+# parameters of knockoffGAN in knockoff generation
+parser.add_argument('--niter', type=int, default=None)
+parser.add_argument('--norm', action='store_true', default=None)
 
 args = parser.parse_args()
 
