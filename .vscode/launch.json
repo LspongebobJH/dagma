@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "gen_copies.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "gen_copies.py",
+            "console": "integratedTerminal",
+            "cwd": "/home/jiahang/dagma/src/dagma",
+
+            "args": ["--gen_type=knockoff", "--norm"]
+        },
+        {
             "name": "dagma_torch.py",
             "type": "debugpy",
             "request": "launch",

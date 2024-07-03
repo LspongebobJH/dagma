@@ -41,14 +41,15 @@
 #########################################
 
 n=2000
-nodes=(40 60 80)
+nodes=(80 100)
+data_version=13
 for d in "${nodes[@]}"; do
     for i in {1..10}; do
         s0=$(( d * 4 ))
         python gen_copies.py --gen_type knockoff \
         --n $n --d $d --s0 $s0 --seed_knockoff $i \
-        --root_path simulated_data/v12 \
-        --niter 5000 \
+        --root_path simulated_data/v${data_version} \
+        --norm \
         --version $d &
         if [ $i -eq 10 ]; then
             pid=$!

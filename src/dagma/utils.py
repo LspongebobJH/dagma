@@ -9,6 +9,7 @@ import torch
 import yaml
 import logging
 from argparse import ArgumentParser
+from numpy.linalg import eigh, inv
 
 from knockoff_gan import KnockoffGAN
 from deep_knockoff.machine import KnockoffMachine
@@ -84,6 +85,13 @@ def get_data_path(configs : dict):
 
         
 def knockoff(X : np.ndarray, configs):
+
+    def norm(X):
+        max_abs_col = np.abs(X).max(axis=0).reshape(1, -1)
+        X = X / (max_abs_col + 1e-8)
+        assert (np.abs(X).max(axis=0) <= 1.).all()
+        return X
+    
     n = configs['n']
     d = configs['d']
     knock_type = configs['knock_type']
@@ -100,10 +108,9 @@ def knockoff(X : np.ndarray, configs):
 
     elif knock_type == 'knockoff_gan':
         # TODO: tensorflow fail running on GPU, but not slow now.
-        if 'niter' in configs.keys() and configs['niter'] is not None:
-            niter = configs['niter']
-        else:
-            niter = 2000 # default to original knockoffGAN
+        niter = configs['niter']
+        norm_tag = configs['norm']
+        X = norm(X) if norm_tag else X
         X_tilde = KnockoffGAN(x_train = X, x_name = 'Normal', niter = niter)
 
     elif knock_type == 'deep_knockoff':
@@ -180,3 +187,29 @@ def combine_configs(configs_yaml : dict, args : ArgumentParser):
             val = [int(s.strip()) for s in val.split(",")]
         configs[key] = val
     return configs
+
+def net_deconv(W_est: np.ndarray, configs: dict):
+    """
+    network deconvolution
+    """
+    beta = configs['beta']
+    d = W_est.shape[0]
+    W_est = (W_est + W_est.T) / 2
+    eigval, eigvec = eigh(W_est)
+    eigval_p_max, eigval_n_min = eigval[eigval >= 0.].max(), eigval[eigval < 0.].min()
+
+    beta = 0.9
+    m1, m2 = beta / ((1 - beta) * eigval_p_max), -beta / ((1 + beta) * eigval_n_min)
+    alpha = min(m1, m2)
+    eigval_dir = eigval / (1 / alpha + eigval)
+
+    W_dir = eigvec @ np.diag(eigval_dir) @ eigvec.T
+
+    """
+    remove diagonal elements
+    """
+    W_dir[np.eye(d).astype(bool)] = 0.
+    W_dir[np.eye(d, k = d // 2).astype(bool)] = 0.
+    W_dir[np.eye(d, k = - d // 2).astype(bool)] = 0.
+
+    return W_dir

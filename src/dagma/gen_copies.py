@@ -38,6 +38,7 @@ parser.add_argument('--version', type=int, default=1)
 
 # parameters of knockoffGAN in knockoff generation
 parser.add_argument('--niter', type=int, default=None)
+parser.add_argument('--norm', action='store_true', default=None)
 
 args = parser.parse_args()
 

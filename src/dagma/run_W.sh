@@ -27,7 +27,8 @@
 ############################################
 
 n=2000
-nodes=(40 60 80)
+nodes=(80 100)
+data_version=13
 for d in "${nodes[@]}"; do
     for i in {1..5}; do
         s0=$(( d * 4 ))
@@ -35,7 +36,7 @@ for d in "${nodes[@]}"; do
         --gen_type W_torch \
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \
-        --root_path simulated_data/v12 \
+        --root_path simulated_data/v${data_version} \
         --version $d \
         --device cuda:6 &
     done
@@ -46,7 +47,7 @@ for d in "${nodes[@]}"; do
         --gen_type W_torch \
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \
-        --root_path simulated_data/v12 \
+        --root_path simulated_data/v${data_version} \
         --version $d \
         --device cuda:7 &
     done

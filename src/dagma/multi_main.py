@@ -45,6 +45,10 @@ parser.add_argument('--seed_model_list', type=str, required=True)
 parser.add_argument('--version', type=int, default=1)
 parser.add_argument('--log_file', type=str, default='temp')
 
+# network deconvolution
+parser.add_argument('--deconv', action='store_true', default=None)
+parser.add_argument('--beta', type=float, default=None)
+
 args = parser.parse_args()
 
 configs = utils.combine_configs(configs, args)
@@ -105,6 +109,11 @@ if __name__ == '__main__':
             data_W, W_configs = utils.process_simulated_data(None, _configs, behavior='load')
 
             W_est = data_W['W_est']
+
+            if configs['deconv']:
+                W_est = utils.net_deconv(W_est, configs)
+                # W_est[:configs['d'], :configs['d']] = utils.net_deconv(W_est[:configs['d'], :configs['d']], configs)
+
             if configs['dagma_type'] == 'dagma_1':
                 W_est = W_est[:, :configs['d']]
 
