@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 import os
 import utils
+import deconv
 from fdr_control import (
     type_1_control, 
     type_3_control, 
@@ -46,7 +47,7 @@ parser.add_argument('--version', type=int, default=1)
 parser.add_argument('--log_file', type=str, default='temp')
 
 # network deconvolution
-parser.add_argument('--deconv', action='store_true', default=None)
+parser.add_argument('--deconv_type', type=str, default=None, choices=[None, 'deconv_1', 'deconv_2'])
 parser.add_argument('--beta', type=float, default=None)
 
 args = parser.parse_args()
@@ -110,9 +111,11 @@ if __name__ == '__main__':
 
             W_est = data_W['W_est']
 
-            if configs['deconv']:
+            if configs['deconv_type'] == 'deconv_1':
                 W_est = utils.net_deconv(W_est, configs)
                 # W_est[:configs['d'], :configs['d']] = utils.net_deconv(W_est[:configs['d'], :configs['d']], configs)
+            elif configs['deconv_type'] == 'deconv_2':
+                W_est = deconv.net_deconv(W_est, configs)
 
             if configs['dagma_type'] == 'dagma_1':
                 W_est = W_est[:, :configs['d']]

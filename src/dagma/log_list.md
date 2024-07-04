@@ -74,6 +74,14 @@ compared with log_29, knockoffGAN niter 2000 -> 5000
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
 compared with log_30, knockoffGAN niter 2000 -> 5000
 
+* log_39 (data version v12)(vs log_29):
+sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
+compared with log_29, network deconvolution. 
+* log_40 (data version v12)(vs log_30):
+sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
+compared with log_29, network deconvolution.
+
+
 
 
 * log_1000 (local): 2000 samples, 20 nodes, 120 edges, type_4, W_torch
