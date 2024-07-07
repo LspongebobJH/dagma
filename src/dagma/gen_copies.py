@@ -35,10 +35,14 @@ parser.add_argument('--seed_X', type=int, default=1)
 parser.add_argument('--seed_knockoff', type=int, default=1)
 parser.add_argument('--seed_model', type=int, default=0)
 parser.add_argument('--version', type=int, default=1)
+parser.add_argument('--debug', action='store_true', default=False)
 
 # parameters of knockoffGAN in knockoff generation
 parser.add_argument('--niter', type=int, default=None)
-parser.add_argument('--norm', action='store_true', default=None)
+parser.add_argument('--norm_knockoffGAN', action='store_true', default=None)
+
+# parameters of damga
+parser.add_argument('--norm_DAGMA', action='store_true', default=None)
 
 args = parser.parse_args()
 
@@ -59,7 +63,7 @@ print()
 if __name__ == '__main__':
 
     _, _, path_config, path_data = utils.get_data_path(configs)
-    if os.path.exists(path_config) or os.path.exists(path_data):
+    if (os.path.exists(path_config) or os.path.exists(path_data)) and not configs['debug']:
         print(f"{path_config} or {path_data} already exists, jump.")
     
     else:
@@ -104,6 +108,9 @@ if __name__ == '__main__':
 
             utils.set_random_seed(configs['seed_model'])
             X_all = np.concatenate([X, X_tilde], axis=-1)
+
+            if configs['norm_DAGMA']:
+                X_all =utils.norm(X_all)
 
             W_est_no_filter, Z_true, Z_knock = utils.fit(X, X_all, configs)
             data_W = {

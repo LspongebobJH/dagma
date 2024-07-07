@@ -55,49 +55,75 @@ expected fdr 0.2, ALL DAG
 * log_26: 2000 samples, 60 nodes, 1000 edges, type_4_global
 * log_27: 2000 samples, 60 nodes, 1000 edges, type_3
 * log_28: 2000 samples, 60 nodes, 1000 edges, type_3_global
+
 * log_29 (data version v11): 
 sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_3
 name is the n_nodes.
+
 * log_30 (data version v11): 
 sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_3_global
 name is the n_nodes.
+
 * log_31 (data version v11): 
 sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_4, dag_1
 name is the n_nodes.
+
 * log_32 (data version v11): 
 sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_4_global, dag_1
 name is the n_nodes.
+
 * log_33 (data version v12)(vs log_29):
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
-compared with log_29, knockoffGAN niter 2000 -> 5000
+knockoffGAN niter 2000 -> 5000
+
 * log_34 (data version v12)(vs log_30):
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
-compared with log_30, knockoffGAN niter 2000 -> 5000
+knockoffGAN niter 2000 -> 5000
 
 * log_35 (data version v13)(vs log_29):
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
-compared with log_29, knockoffGAN with max_col_abs normalization
+knockoffGAN with max_col_abs normalization
 check the param:norm in knockoff configs since this param is not set up in other configs.
 
 * log_36 (data version v13)(vs log_30):
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
-compared with log_30, knockoffGAN with max_col_abs normalization
+knockoffGAN with max_col_abs normalization
 check the param:norm in knockoff configs since this param is not set up in other configs.
 
 * log_37 (data version v11)(vs log_29):
 sweep, 2000 samples, [40] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
-compared with log_29, network deconv
+network deconv (deconv_1)
 
 * log_38 (data version v11)(vs log_30):
 sweep, 2000 samples, [40] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
-compared with log_30, network deconv
+network deconv (deconv_1)
 
-* log_39 (data version v12)(vs log_29):
+* log_39 (data version v11)(vs log_29):
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
-compared with log_29, network deconvolution. 
-* log_40 (data version v12)(vs log_30):
+network deconvolution (deconv_2)
+
+* log_40 (data version v11)(vs log_30):
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
-compared with log_29, network deconvolution.
+network deconvolution (deconv_2)
+
+* log_41 (data version v11)(vs log_29):
+sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
+network deconvolution (deconv_2) + diag removal
+
+* log_42 (data version v11)(vs log_30):
+sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
+network deconvolution (deconv_2) + diag removal
+
+* log_43 (data version v14)(vs log_35):
+sweep, 2000 samples, [40, 60] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
+knockoffGAN with max_col_abs normalization + max_col_bas norm for X_all before DAGMA fitting
+same X and knockoff from v13 (soft link), but different W
+
+* log_44 (data version v14)(vs log_36):
+sweep, 2000 samples, [40, 60] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
+knockoffGAN with max_col_abs normalization + max_col_bas norm for X_all before DAGMA fitting.
+same X and knockoff from v13 (soft link), but different W
+
 
 
 

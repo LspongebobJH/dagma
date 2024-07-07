@@ -50,7 +50,7 @@ dag_control : None
 ##############################
 
 niter: 2000
-norm: False
+norm_knockoffGAN: False
 
 ##################################
 # network deconvolution parameters 
@@ -60,4 +60,17 @@ norm: False
 ##################################
 
 deconv_type: None
-beta: 0.9 # valid only when deconv is True
+beta: 0.9 # valid only when deconv_1
+
+# valid only when deconv_2: 
+clean_diag: False
+order: 5
+epochs: 30000
+lr: 0.01
+l2_w: 0.
+
+##############################
+# DAGMA parameters
+##############################
+
+norm_DAGMA: False

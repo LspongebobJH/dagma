@@ -85,12 +85,6 @@ def get_data_path(configs : dict):
 
         
 def knockoff(X : np.ndarray, configs):
-
-    def norm(X):
-        max_abs_col = np.abs(X).max(axis=0).reshape(1, -1)
-        X = X / (max_abs_col + 1e-8)
-        assert (np.abs(X).max(axis=0) <= 1.).all()
-        return X
     
     n = configs['n']
     d = configs['d']
@@ -213,3 +207,9 @@ def net_deconv(W_est: np.ndarray, configs: dict):
     W_dir[np.eye(d, k = - d // 2).astype(bool)] = 0.
 
     return W_dir
+
+def norm(X):
+    max_abs_col = np.abs(X).max(axis=0).reshape(1, -1)
+    X = X / (max_abs_col + 1e-8)
+    assert (np.abs(X).max(axis=0) <= 1.).all()
+    return X

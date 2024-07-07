@@ -16,14 +16,14 @@ class Deconv(nn.Module):
         """
         TEST
         """
-        # self.device = configs['device']
-        self.device = 'cpu'
-        # self.order = configs['order']
-        self.order = 5
-        # self.d = configs['d'] * 2
-        self.d = 120
-        # self.clean_diag_tag = configs['clean_diag']
-        self.clean_diag_tag = True
+        self.device = configs['device']
+        # self.device = 'cpu'
+        self.order = configs['order']
+        # self.order = 5
+        self.d = configs['d'] * 2
+        # self.d = 120
+        self.clean_diag_tag = configs['clean_diag']
+        # self.clean_diag_tag = True
 
         self.W = Parameter(
             torch.empty((self.d, self.d), device=self.device)
@@ -76,14 +76,14 @@ def net_deconv(W_est: np.ndarray, configs: dict):
     """
     TEST
     """
-    # device = configs['device']
-    device = 'cpu'
-    # epochs = configs['epochs']
-    epochs = int(3e4)
-    # lr = configs['lr']
-    lr = 1e-2
-    # l2_w = configs['l2_w']
-    l2_w = 0.
+    device = configs['device']
+    # device = 'cpu'
+    epochs = configs['epochs']
+    # epochs = int(3e4)
+    lr = configs['lr']
+    # lr = 1e-2
+    l2_w = configs['l2_w']
+    # l2_w = 0.
 
     W_est = torch.tensor(W_est, device=device, dtype=torch.float)
     model = Deconv(configs)

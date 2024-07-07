@@ -12,7 +12,13 @@
             "console": "integratedTerminal",
             "cwd": "/home/jiahang/dagma/src/dagma",
 
-            "args": ["--gen_type=knockoff", "--norm"]
+            "args": [
+                "--gen_type=W_torch", "--debug", "--version=40", 
+                "--root_path=simulated_data/v14",
+                "--seed_knockoff=1",
+                "--norm_DAGMA",
+                "--n=2000", "--d=40", "--s0=160"
+            ]
         },
         {
             "name": "dagma_torch.py",
