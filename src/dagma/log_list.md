@@ -124,6 +124,13 @@ sweep, 2000 samples, [40, 60] nodes, [n * 4] edges, W_torch, type_3_global, name
 knockoffGAN with max_col_abs normalization + max_col_bas norm for X_all before DAGMA fitting.
 same X and knockoff from v13 (soft link), but different W
 
+log_45 (data version v11)(vs log_39)
+sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
+network deconvolution (deconv_2), DAG control on W before deconv
+
+log_46 (data version v11)(vs log_40)
+sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
+network deconvolution (deconv_2), DAG control on W before deconv
 
 
 

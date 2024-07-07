@@ -15,6 +15,7 @@ from knockoff_gan import KnockoffGAN
 from deep_knockoff.machine import KnockoffMachine
 from deep_knockoff.parameters import GetTrainingHyperParams, SetFullHyperParams
 from deep_knockoff.gaussian import GaussianKnockoffs
+import utils_dagma
 
 logger = logging.getLogger(__name__)
 
@@ -213,3 +214,68 @@ def norm(X):
     X = X / (max_abs_col + 1e-8)
     assert (np.abs(X).max(axis=0) <= 1.).all()
     return X
+
+def extract_dag_mask(A : np.ndarray, extract_type : int, pre_mask : np.ndarray = None):
+    """
+    Assuming that the original graph is NOT dag. This func will not help to test whether
+    the original graph is a dag.
+    Here A can be knockoff statistic matrix Z, or q-value matrix Q
+    extract_type:
+    0: the removal is from the smallest to the largest until DAG is satisified
+    1: the inclusion is from the largest to the smallest until DAG is not satisfied
+    2: the removal is from the largest to the smallest until DAG is satisfied
+    3: the inclusion is from the smallest to the largest until DAG is not satisfied
+
+    hypothesis: if A == Z, extract_type == 0 / 1 (or 2 / 3) are the same results. but
+    if A == Q, 0 / 1 (or 2 / 3) are different since q-value is not completely monotonic with number of edges
+    """
+    assert extract_type in [0, 1, 2, 3]
+    a_list = np.sort(np.unique(A.flatten()))
+    if pre_mask is None:
+        pre_mask = np.full(A.shape, fill_value = True)
+
+    if extract_type == 0:
+        for a in a_list:
+            _A = A.copy()
+            mask = (_A >= a)
+            _A[mask * pre_mask], _A[~(mask * pre_mask)] = 1, 0
+
+            if utils_dagma.is_dag(_A):
+                break
+
+    elif extract_type == 1:
+        a_list = np.flip(a_list)
+        mask_last = np.full(A.shape, fill_value = True)
+        for a in a_list:
+            _A = A.copy()
+            mask = (_A >= a)
+            _A[mask * pre_mask], _A[~(mask * pre_mask)] = 1, 0
+
+            if not utils_dagma.is_dag(_A):
+                break
+            mask_last = mask
+        mask = mask_last
+
+    elif extract_type == 2:
+        a_list = np.flip(a_list)
+        for a in a_list:
+            _A = A.copy()
+            mask = (_A <= a)
+            _A[mask * pre_mask], _A[~(mask * pre_mask)] = 1, 0
+
+            if utils_dagma.is_dag(_A):
+                break
+
+    elif extract_type == 3:
+        mask_last = np.full(A.shape, fill_value = True)
+        for a in a_list:
+            _A = A.copy()
+            mask = (_A <= a)
+            _A[mask * pre_mask], _A[~(mask * pre_mask)] = 1, 0
+
+            if not utils_dagma.is_dag(_A):
+                break
+            mask_last = mask
+        mask = mask_last
+
+    return mask

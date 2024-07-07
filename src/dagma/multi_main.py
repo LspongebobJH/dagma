@@ -49,6 +49,7 @@ parser.add_argument('--log_file', type=str, default='temp')
 # network deconvolution
 parser.add_argument('--deconv_type', type=str, default=None, choices=[None, 'deconv_1', 'deconv_2'])
 parser.add_argument('--beta', type=float, default=None)
+parser.add_argument('--dag_control_deconv', type=str, default=None, choices=[None, 'dag_1'])
 
 args = parser.parse_args()
 
@@ -57,11 +58,15 @@ configs = utils.combine_configs(configs, args)
 """
 logging
 """
+file_path = os.path.join('./logs', configs['log_file'])
+parent_dir = os.path.dirname(file_path)
+if not os.path.exists(parent_dir):
+    os.makedirs(parent_dir, exist_ok=True)
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename = os.path.join('./logs', configs['log_file']),
+                    filename = file_path,
                     filemode='w')
 # stdout and stderr
 console = logging.StreamHandler()

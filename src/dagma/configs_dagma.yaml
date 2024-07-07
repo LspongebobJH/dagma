@@ -68,6 +68,7 @@ order: 5
 epochs: 30000
 lr: 0.01
 l2_w: 0.
+dag_control_deconv: None
 
 ##############################
 # DAGMA parameters

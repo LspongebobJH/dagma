@@ -91,7 +91,7 @@
 # FDR control selection without dag control, sweep over n_nodes
 ####################################################################
 
-log_file_column=39
+log_file_column=45
 log_file_global=$((log_file_column + 1))
 
 n=2000
@@ -107,7 +107,7 @@ for d in "${nodes[@]}"; do
     --seed_knockoff_list=1,2,3,4,5,6,7,8,9,10 \
     --seed_model_list=0 \
     --version=$d \
-    --deconv_type=deconv_2 \
+    --deconv_type=deconv_2 --dag_control_deconv=dag_1 \
     --root_path simulated_data/v${data_version} \
     --log_file=log_${log_file_column}/log_${d} &
 
@@ -117,7 +117,7 @@ for d in "${nodes[@]}"; do
     --seed_knockoff_list=1,2,3,4,5,6,7,8,9,10 \
     --seed_model_list=0 \
     --version=$d \
-    --deconv_type=deconv_2 \
+    --deconv_type=deconv_2 --dag_control_deconv=dag_1 \
     --root_path simulated_data/v${data_version} \
     --log_file=log_${log_file_global}/log_${d} &
     wait

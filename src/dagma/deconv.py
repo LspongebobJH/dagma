@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import utils
 
 import torch
 from torch import nn
@@ -84,6 +85,12 @@ def net_deconv(W_est: np.ndarray, configs: dict):
     # lr = 1e-2
     l2_w = configs['l2_w']
     # l2_w = 0.
+    dag_control = configs['dag_control_deconv']
+
+    if dag_control == 'dag_1':
+        W = np.abs(W_est.copy())
+        mask = utils.extract_dag_mask(W, 0)
+        W_est[~mask] = 0.
 
     W_est = torch.tensor(W_est, device=device, dtype=torch.float)
     model = Deconv(configs)
