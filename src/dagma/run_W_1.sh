@@ -28,7 +28,7 @@
 
 n=2000
 nodes=(40 60)
-data_version=15
+data_version=16
 for d in "${nodes[@]}"; do
     for i in {1..5}; do
         s0=$(( d * 4 ))
@@ -37,9 +37,9 @@ for d in "${nodes[@]}"; do
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \
         --root_path simulated_data/v${data_version} \
-        --deconv_type_dagma deconv_1 \
+        --deconv_type_dagma deconv_1 --ord_dagma 3 \
         --version $d \
-        --device cuda:6 &
+        --device cuda:5 &
     done
 
     for i in {6..10}; do
@@ -49,9 +49,9 @@ for d in "${nodes[@]}"; do
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \
         --root_path simulated_data/v${data_version} \
-        --deconv_type_dagma deconv_1 \
+        --deconv_type_dagma deconv_1 --ord_dagma 3 \
         --version $d \
-        --device cuda:7 &
+        --device cuda:5 &
     done
     wait
 done

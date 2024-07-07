@@ -98,7 +98,7 @@ n=2000
 data_version=11
 # nodes=(10 40 60 80 100 200 400)
 # nodes=(40 60 80 100)
-nodes=(40)
+nodes=(60)
 for d in "${nodes[@]}"; do
     s0=$(( d * 4 ))
     python multi_main.py \

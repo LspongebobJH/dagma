@@ -153,14 +153,20 @@ def fit(X, X_all, configs):
     else: # gen_W == torch
         d = configs['d']
         device = configs['device']
+        deconv_type_dagma = configs['deconv_type_dagma']
+        ord_dagma = configs['ord_dagma']
+
         if device == 'mps':
             dtype = torch.float32
         else:
             dtype = torch.double
+
         from dagma_torch import DagmaLinear, DagmaTorch
-        eq_model = DagmaLinear(d=d, device=device, dtype=dtype).to(device)
+        eq_model = DagmaLinear(d=d, device=device, dtype=dtype, 
+                               deconv_type_dagma=deconv_type_dagma, ord_dagma=ord_dagma).to(device)
         model = DagmaTorch(eq_model, device=device, verbose=True, 
                            dagma_type=dagma_type, dtype=dtype)
+        
         W_est_no_filter, _  = model.fit(X_all, lambda1=0.02, lambda2=0.005, 
                                         return_no_filter=True)
     

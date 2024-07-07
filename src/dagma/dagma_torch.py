@@ -6,9 +6,22 @@ from  torch import optim
 import copy
 from tqdm.auto import tqdm
 import typing
+import math
+
+import torch
+from torch import nn
+import torch.nn.functional as F
+import torch.nn.init as init
+from torch.nn.parameter import Parameter
+from torch.optim import Adam, lr_scheduler
 
 __all__ = ["DagmaMLP", "DagmaTorch"]
 
+# TODO: rescaling W_est to make W_pred converge
+# TODO: rescaling W_pred to make itself converge
+# TODO: add dag constraints to push the W_pred to be a DAG
+# TODO: l2 regularizer
+# TODO: l1 regularizer
 
 class DagmaMLP(nn.Module): 
     """
@@ -121,6 +134,8 @@ class DagmaLinear(nn.Module):
     """
     
     def __init__(self, d : int, dtype: torch.dtype = torch.double, 
+                 deconv_type_dagma: str = "deconv_1",
+                 ord_dagma: int = 5,
                  device : str = 'cuda:7'):
         r"""
         Parameters
@@ -135,10 +150,18 @@ class DagmaLinear(nn.Module):
         torch.set_default_dtype(dtype)
         self.d = 2 * d
         self.device = device
+        self.deconv = deconv_type_dagma
+        self.order = ord_dagma
         super(DagmaLinear, self).__init__()
         self.I = torch.eye(self.d).to(self.device)
-        self.fc1 = nn.Linear(self.d, self.d, bias=False)
-        nn.init.zeros_(self.fc1.weight)
+        if self.deconv in ['deconv_1', 'deconv_2']:
+            self.W = Parameter(
+                torch.empty((self.d, self.d), device=self.device)
+            )
+            init.kaiming_uniform_(self.W, a=math.sqrt(5))
+        else:
+            self.fc1 = nn.Linear(self.d, self.d, bias=False)
+            nn.init.zeros_(self.fc1.weight)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:  # [n, d] -> [n, d]
         r"""
@@ -155,7 +178,18 @@ class DagmaLinear(nn.Module):
             Result of applying the structural equations to the input data.
             Shape :math:`(n,d)`.
         """
-        x = self.fc1(x)
+        if self.deconv == 'deconv_1':
+            W_cum = []
+            W_cum.append(self.W)
+            for i in range(1, self.order):
+                W_cum.append(W_cum[i-1] @ self.W)
+            W_cum = torch.stack(W_cum)
+            W = W_cum.sum(dim=0)
+            x = x @ W
+        elif self.deconv == 'deconv_2':
+            pass
+        else:
+            x = self.fc1(x)
         return x
 
     def h_func(self, s: float = 1.0) -> torch.Tensor:
@@ -172,9 +206,8 @@ class DagmaLinear(nn.Module):
         torch.Tensor
             A scalar value of the log-det acyclicity function :math:`h(\Theta)`.
         """
-        fc1_weight = self.fc1.weight
-        fc1_weight = fc1_weight.view(self.d, -1, self.d)
-        A = torch.sum(fc1_weight ** 2, dim=1).t()  # [i, j]
+        fc1_weight = self.get_W()
+        A = fc1_weight ** 2  # [i, j]
         h = -torch.slogdet(s * self.I - A)[1] + self.d * np.log(s)
         return h
 
@@ -187,7 +220,8 @@ class DagmaLinear(nn.Module):
         torch.Tensor
             A scalar value of the L1 norm of first FC layer. 
         """
-        return torch.sum(torch.abs(self.fc1.weight))
+        w = self.get_W()
+        return torch.sum(torch.abs(w))
 
     @torch.no_grad()
     def fc1_to_adj(self) -> np.ndarray:  # [j * m1, i] -> [i, j]
@@ -200,9 +234,13 @@ class DagmaLinear(nn.Module):
         np.ndarray
             :math:`(d,d)` weighted adjacency matrix 
         """
-        W = self.fc1.weight
-        W = W.T.cpu().detach().numpy()
-        return W
+        return self.get_W().cpu().detach().numpy()
+
+    def get_W(self):
+        if self.deconv == 'deconv_1':
+            return self.W
+        else:
+            return self.fc1.weight.T
 
 class DagmaTorch:
     """
@@ -210,6 +248,7 @@ class DagmaTorch:
     """
     
     def __init__(self, model: nn.Module, verbose: bool = False, dtype: torch.dtype = torch.double, 
+                 deconv_type_dagma: str = "deconv_1",
                  device : str = 'cuda:7', dagma_type : str = None):
         """
         Parameters
@@ -227,6 +266,7 @@ class DagmaTorch:
         self.dtype = dtype
         self.device = device
         self.dagma_type = dagma_type
+        self.deconv_type_dagma = deconv_type_dagma
     
     def log_mse_loss(self, output: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         r"""
@@ -260,12 +300,11 @@ class DagmaTorch:
         set diagonal of wij to 0
         """
         with torch.no_grad():
-            w = self.model.fc1.weight
+            w = self.model.get_W()
             d = w.shape[0]
             w[np.eye(d).astype(bool)] = 0.
             w[np.eye(d, k = d // 2).astype(bool)] = 0.
             w[np.eye(d, k = - d // 2).astype(bool)] = 0.
-            self.model.fc1.weight = w
 
     def check_diag(self):
         """
@@ -276,7 +315,7 @@ class DagmaTorch:
         where wij in d/2 * d/2 matrix
         ckech whether diagonal of wij to 0
         """
-        w = self.model.fc1.weight
+        w = self.model.get_W()
         d = w.shape[0]
         if (w[np.eye(d).astype(bool)] != 0.).any() or \
             (w[np.eye(d, k = d // 2).astype(bool)] != 0.).any() or \

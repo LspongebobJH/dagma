@@ -45,6 +45,11 @@ dag_control : None
 ## type_4_control: global model-x + dag_control
 ### if dag_control == None, type_4_control(_global) == type_3_control(_global)
 
+deconv_type_dagma: None
+# deconv_1: directly learn W + W^2 + ... W^ord
+# deconv_2: normalize W to make it converge under power series (I + W + W^2 + ... W^inf) - I
+ord_dagma: 5 # only valid when deconv_type_dagma == deconv_1
+
 ##############################
 # knockoffGAN parameters
 ##############################
@@ -60,6 +65,9 @@ norm_knockoffGAN: False
 ##################################
 
 deconv_type: None
+# deconv_type
+## deconv_1: symmetric + original ND
+## deconv_2: learn the matrix
 beta: 0.9 # valid only when deconv_1
 
 # valid only when deconv_2: 
