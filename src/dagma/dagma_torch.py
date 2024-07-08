@@ -17,11 +17,7 @@ from torch.optim import Adam, lr_scheduler
 
 __all__ = ["DagmaMLP", "DagmaTorch"]
 
-# TODO: rescaling W_est to make W_pred converge
-# TODO: rescaling W_pred to make itself converge
-# TODO: add dag constraints to push the W_pred to be a DAG
-# TODO: l2 regularizer
-# TODO: l1 regularizer
+# TODO: rescaling W_pred to make itself converge [ deconv_1 X , deconv_2 Y ]
 
 class DagmaMLP(nn.Module): 
     """
@@ -187,7 +183,11 @@ class DagmaLinear(nn.Module):
             W = W_cum.sum(dim=0)
             x = x @ W
         elif self.deconv == 'deconv_2':
-            pass
+            # note that eigen norm here is necessary to ensure that (I-W)^-1 is well defined.
+            eigval = torch.linalg.eigvals(self.W).abs().max() # this eigval is for norm
+            W = self.W / (eigval + 1e-8)
+            W = torch.inverse(self.I - W) - self.I
+            x = x @ W
         else:
             x = self.fc1(x)
         return x
@@ -225,19 +225,15 @@ class DagmaLinear(nn.Module):
 
     @torch.no_grad()
     def fc1_to_adj(self) -> np.ndarray:  # [j * m1, i] -> [i, j]
-        r"""
-        Computes the induced weighted adjacency matrix W from the first FC weights.
-        Intuitively each edge weight :math:`(i,j)` is the *L2 norm of the functional influence of variable i to variable j*.
-
-        Returns
-        -------
-        np.ndarray
-            :math:`(d,d)` weighted adjacency matrix 
-        """
         return self.get_W().cpu().detach().numpy()
 
     def get_W(self):
-        if self.deconv == 'deconv_1':
+        """
+        return W, where each column i represents weights from all src features to 
+        the feature i
+        """
+
+        if self.deconv in ['deconv_1', 'deconv_2']:
             return self.W
         else:
             return self.fc1.weight.T

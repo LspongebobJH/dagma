@@ -15,3 +15,4 @@ v13: sweep, 2000 samples, [40, 60, 80, 100] nodes, [n * 4] edges, 10 knockoff se
 v14: sweep, 2000 samples, [40, 60, 80, 100] nodes, [n * 4] edges, 10 knockoff seeds with max_abs_col norm, max_abs_col norm for X_all before DAGMA fitting, W_torch, version index is the n_nodes. Note that version uses X of v11 (soft links), and knockoff of v13 (softlinks)
 v15: sweep, [40, 60] nodes, ..., deconv within dagma, deconv_1, order 5, X and knockoff both from v11
     v16: sweep, [40, 60] nodes, ..., deconv within dagma, deconv_1, order 3, X and knockoff both from v11
+    v17: sweep, [40, 60] nodes, ..., deconv within dagma, deconv_2, no order def, X and knockoff both from v11

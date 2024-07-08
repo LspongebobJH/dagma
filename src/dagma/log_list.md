@@ -132,6 +132,22 @@ log_46 (data version v11)(vs log_40)
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
 network deconvolution (deconv_2), DAG control on W before deconv
 
+log_47 (data version v15)
+sweep, 2000 samples, [40, 60] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
+deconv in dagma (deconv_1), order 5
+
+log_48 (data version v15)
+sweep, 2000 samples, [40, 60] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
+deconv in dagma (deconv_1), order 5
+
+log_49 (data version v16)(vs log_47)
+sweep, 2000 samples, [40, 60] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
+deconv in dagma (deconv_1), order 3
+
+log_50 (data version v16)(vs log_48)
+sweep, 2000 samples, [40, 60] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
+deconv in dagma (deconv_1), order 3
+
 
 
 
