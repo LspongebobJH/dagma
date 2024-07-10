@@ -25,6 +25,7 @@ class Deconv(nn.Module):
         # self.d = 120
         self.clean_diag_tag = configs['clean_diag']
         # self.clean_diag_tag = True
+        self.alpha = configs['alpha']
 
         self.W = Parameter(
             torch.empty((self.d, self.d), device=self.device)
@@ -53,9 +54,15 @@ class Deconv(nn.Module):
         ## consider 1) initialization, 2) (layer) normalization
         W_cum = []
         self.W = self.clean_diag(self.W)
-        W_cum.append(self.W)
+        # eigen normalization
+        eigval = torch.linalg.eigvals(self.W).abs().max() # this eigval is for norm
+        W = self.W / (eigval + 1e-8)
+        W_cum.append(W)
+
         for i in range(1, self.order):
-            W_cum.append(W_cum[i-1] @ self.W)
+            W_cum.append(
+                (self.alpha ** i) * (W_cum[i-1] @ self.W)
+            )
             W_cum[-1] = self.clean_diag(W_cum[-1])
         W_cum = torch.stack(W_cum)
         W = W_cum.sum(dim=0)
@@ -86,6 +93,7 @@ def net_deconv(W_est: np.ndarray, configs: dict):
     l2_w = configs['l2_w']
     # l2_w = 0.
     dag_control = configs['dag_control_deconv']
+    abs_gt = configs['abs_gt']
 
     if dag_control == 'dag_1':
         W = np.abs(W_est.copy())
@@ -101,7 +109,10 @@ def net_deconv(W_est: np.ndarray, configs: dict):
     for e in range(epochs):
         W_pred = model()
         optimizer.zero_grad()
-        loss = loss_fn(W_pred, W_est)
+        if abs_gt:
+            loss = loss_fn(W_pred, torch.abs(W_est))
+        else:
+            loss = loss_fn(W_pred, W_est)
         loss.backward()
         optimizer.step()
 

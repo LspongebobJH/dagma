@@ -48,8 +48,14 @@ parser.add_argument('--log_file', type=str, default='temp')
 
 # network deconvolution
 parser.add_argument('--deconv_type', type=str, default=None, choices=[None, 'deconv_1', 'deconv_2'])
+## valid only when deconv_1
 parser.add_argument('--beta', type=float, default=None)
+## valid only when deconv_2
 parser.add_argument('--dag_control_deconv', type=str, default=None, choices=[None, 'dag_1'])
+parser.add_argument('--alpha', type=float, default=None)
+parser.add_argument('--abs_gt', action='store_true', default=None)
+parser.add_argument('--order', type=int, default=None)
+
 
 args = parser.parse_args()
 

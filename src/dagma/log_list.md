@@ -100,19 +100,19 @@ network deconv (deconv_1)
 
 * log_39 (data version v11)(vs log_29):
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
-network deconvolution (deconv_2)
+network deconv (deconv_2)
 
 * log_40 (data version v11)(vs log_30):
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
-network deconvolution (deconv_2)
+network deconv (deconv_2)
 
 * log_41 (data version v11)(vs log_29):
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
-network deconvolution (deconv_2) + diag removal
+network deconv (deconv_2) + diag removal
 
 * log_42 (data version v11)(vs log_30):
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
-network deconvolution (deconv_2) + diag removal
+network deconv (deconv_2) + diag removal
 
 * log_43 (data version v14)(vs log_35):
 sweep, 2000 samples, [40, 60] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
@@ -126,11 +126,11 @@ same X and knockoff from v13 (soft link), but different W
 
 log_45 (data version v11)(vs log_39)
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
-network deconvolution (deconv_2), DAG control on W before deconv
+network deconv (deconv_2), DAG control on W before deconv
 
 log_46 (data version v11)(vs log_40)
 sweep, 2000 samples, [40, 60, 80] nodes, [n * 4] edges, W_torch, type_3_global, name is the n_nodes.
-network deconvolution (deconv_2), DAG control on W before deconv
+network deconv (deconv_2), DAG control on W before deconv
 
 log_47 (data version v15)
 sweep, 2000 samples, [40, 60] nodes, [n * 4] edges, W_torch, type_3, name is the n_nodes.
