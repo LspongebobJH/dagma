@@ -9,6 +9,7 @@ import torch.nn.init as init
 from torch.nn.parameter import Parameter
 from torch.optim import Adam, lr_scheduler
 
+from time import time
 
 class Deconv(nn.Module):
     def __init__(self, configs: dict) -> None:
@@ -26,6 +27,8 @@ class Deconv(nn.Module):
         self.clean_diag_tag = configs['clean_diag']
         # self.clean_diag_tag = True
         self.alpha = configs['alpha']
+        self.abs_dir = configs['abs_dir']
+        self.get_abs_dir = configs['get_abs_dir']
 
         self.W = Parameter(
             torch.empty((self.d, self.d), device=self.device)
@@ -49,14 +52,25 @@ class Deconv(nn.Module):
                 W[np.eye(self.d, k = - self.d // 2).astype(bool)] = 0.
         return W
 
+    def process_abs_dir(self, W):
+        if self.abs_dir == 'square':
+            W = W ** 2
+        elif self.abs_dir == 'proj':
+            with torch.no_grad():
+                mask = (W < 0.)
+                W[mask] = 0.
+        return W
+
     def forward(self):
         # TODO: accumulated operations could have numeric problems
         ## consider 1) initialization, 2) (layer) normalization
         W_cum = []
-        self.W = self.clean_diag(self.W)
+        W = self.clean_diag(self.W)
+        W = self.process_abs_dir(W)
+
         # eigen normalization
-        eigval = torch.linalg.eigvals(self.W).abs().max() # this eigval is for norm
-        W = self.W / (eigval + 1e-8)
+        eigval = torch.linalg.eigvals(W).abs().max() # this eigval is for norm
+        W = W / (eigval + 1e-8)
         W_cum.append(W)
 
         for i in range(1, self.order):
@@ -71,6 +85,8 @@ class Deconv(nn.Module):
     
     def get_W_dir(self):
         W = self.clean_diag(self.W)
+        if self.get_abs_dir:
+            W = self.process_abs_dir(W)
         return W
     
 def net_deconv(W_est: np.ndarray, configs: dict):
@@ -127,8 +143,19 @@ def net_deconv(W_est: np.ndarray, configs: dict):
 if __name__ == '__main__':
     import pickle
 
-    with open('/Users/jiahang/Documents/dagma/src/dagma/simulated_data/v11/v60/W/W_6_0.pkl', 'rb') as f:
+    with open('/Users/jiahang/Documents/dagma/src/dagma/simulated_data/v11/v40/W/W_1_0.pkl', 'rb') as f:
         W = pickle.load(f)
     W_est = W['W_est']
-    W_dir = net_deconv(W_est, {})
+    W_dir = net_deconv(W_est, {
+        "device": "cpu",
+        "epochs": 10,
+        "lr": 0.01,
+        "l2_w": 0,
+        "dag_control_deconv": None,
+        "abs_gt": False,
+        "alpha": 1.,
+        "order": 2,
+        "clean_diag": False,
+        "d": 40
+    })
     pass

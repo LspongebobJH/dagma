@@ -83,7 +83,11 @@ l2_w: 0.
 dag_control_deconv: None
 alpha: 1. # high order decay
 abs_gt: False # to regress |W_obs|
-
+abs_dir: None 
+# abs_dir
+## "square": W_dir = W * W to make W_dir positive. 
+## "proj": each iter let W[W < 0.] = 0., projective gradient descend
+get_abs_dir: False # if true, take W = abs_dir(W)
 
 ##############################
 # DAGMA parameters
