@@ -15,114 +15,9 @@ import torch.nn.init as init
 from torch.nn.parameter import Parameter
 from torch.optim import Adam, lr_scheduler
 
-__all__ = ["DagmaMLP", "DagmaTorch"]
+__all__ = ["DagmaTorch"]
 
 # TODO: rescaling W_pred to make itself converge [ deconv_1 X , deconv_2 Y ]
-
-class DagmaMLP(nn.Module): 
-    """
-    Class that models the structural equations for the causal graph using MLPs.
-    """
-    
-    def __init__(self, dims: typing.List[int], bias: bool = True, dtype: torch.dtype = torch.double, 
-                 device : str = 'cuda:7'):
-        r"""
-        Parameters
-        ----------
-        dims : typing.List[int]
-            Number of neurons in hidden layers of each MLP representing each structural equation.
-        bias : bool, optional
-            Flag whether to consider bias or not, by default ``True``
-        dtype : torch.dtype, optional
-            Float precision, by default ``torch.double``
-        """
-        torch.set_default_dtype(dtype)
-        self.device = device
-        super(DagmaMLP, self).__init__()
-        assert len(dims) >= 2
-        assert dims[-1] == 1
-        self.dims, self.d = dims, dims[0]
-        self.I = torch.eye(self.d).to(self.device)
-        self.fc1 = nn.Linear(self.d, self.d * dims[1], bias=bias)
-        nn.init.zeros_(self.fc1.weight)
-        nn.init.zeros_(self.fc1.bias)
-        # fc2: local linear layers
-        layers = []
-        for l in range(len(dims) - 2):
-            layers.append(LocallyConnected(self.d, dims[l + 1], dims[l + 2], bias=bias))
-        self.fc2 = nn.ModuleList(layers)
-        
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  # [n, d] -> [n, d]
-        r"""
-        Applies the current states of the structural equations to the dataset X
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input dataset with shape :math:`(n,d)`.
-
-        Returns
-        -------
-        torch.Tensor
-            Result of applying the structural equations to the input data.
-            Shape :math:`(n,d)`.
-        """
-        x = self.fc1(x)
-        x = x.view(-1, self.dims[0], self.dims[1])
-        for fc in self.fc2:
-            x = torch.sigmoid(x)
-            x = fc(x)
-        x = x.squeeze(dim=2)
-        return x
-
-    def h_func(self, s: float = 1.0) -> torch.Tensor:
-        r"""
-        Constrain 2-norm-squared of fc1 weights along m1 dim to be a DAG
-
-        Parameters
-        ----------
-        s : float, optional
-            Controls the domain of M-matrices, by default 1.0
-
-        Returns
-        -------
-        torch.Tensor
-            A scalar value of the log-det acyclicity function :math:`h(\Theta)`.
-        """
-        fc1_weight = self.fc1.weight
-        fc1_weight = fc1_weight.view(self.d, -1, self.d)
-        A = torch.sum(fc1_weight ** 2, dim=1).t()  # [i, j]
-        h = -torch.slogdet(s * self.I - A)[1] + self.d * np.log(s)
-        return h
-
-    def fc1_l1_reg(self) -> torch.Tensor:
-        r"""
-        Takes L1 norm of the weights in the first fully-connected layer
-
-        Returns
-        -------
-        torch.Tensor
-            A scalar value of the L1 norm of first FC layer. 
-        """
-        return torch.sum(torch.abs(self.fc1.weight))
-
-    @torch.no_grad()
-    def fc1_to_adj(self) -> np.ndarray:  # [j * m1, i] -> [i, j]
-        r"""
-        Computes the induced weighted adjacency matrix W from the first FC weights.
-        Intuitively each edge weight :math:`(i,j)` is the *L2 norm of the functional influence of variable i to variable j*.
-
-        Returns
-        -------
-        np.ndarray
-            :math:`(d,d)` weighted adjacency matrix 
-        """
-        fc1_weight = self.fc1.weight
-        fc1_weight = fc1_weight.view(self.d, -1, self.d)  
-        A = torch.sum(fc1_weight ** 2, dim=1).t() 
-        W = torch.sqrt(A)
-        W = W.cpu().detach().numpy()  # [i, j]
-        return W
 
 class DagmaLinear(nn.Module): 
     """
@@ -150,8 +45,18 @@ class DagmaLinear(nn.Module):
         self.order = ord_dagma
         super(DagmaLinear, self).__init__()
         self.I = torch.eye(self.d).to(self.device)
+        self.regressor = None
         if self.deconv in ['deconv_1', 'deconv_2']:
             self.W = Parameter(
+                torch.empty((self.d, self.d), device=self.device)
+            )
+            init.kaiming_uniform_(self.W, a=math.sqrt(5))
+        elif self.deconv in ['deconv_3', 'deconv_4']:
+            self.W1 = Parameter(
+                torch.empty((self.d, self.d), device=self.device)
+            )
+            init.kaiming_uniform_(self.W, a=math.sqrt(5))
+            self.W2 = Parameter(
                 torch.empty((self.d, self.d), device=self.device)
             )
             init.kaiming_uniform_(self.W, a=math.sqrt(5))
@@ -180,16 +85,30 @@ class DagmaLinear(nn.Module):
             for i in range(1, self.order):
                 W_cum.append(W_cum[i-1] @ self.W)
             W_cum = torch.stack(W_cum)
-            W = W_cum.sum(dim=0)
-            x = x @ W
+            self.regressor = W_cum.sum(dim=0)
+            x = x @ self.regressor
+        
         elif self.deconv == 'deconv_2':
             # note that eigen norm here is necessary to ensure that (I-W)^-1 is well defined.
             eigval = torch.linalg.eigvals(self.W).abs().max() # this eigval is for norm
             W = self.W / (eigval + 1e-8)
-            W = torch.inverse(self.I - W) - self.I
-            x = x @ W
+            self.regressor = torch.inverse(self.I - W) - self.I
+            x = x @ self.regressor
+
+        elif self.deconv == 'deconv_3':
+            self.regressor = self.W1 * self.W1 - self.W2 * self.W2
+            x = x @ self.regressor
+        
+        elif self.deconv == 'deconv_4':
+            self.W1[self.W1 < 0.] = 0.
+            self.W2[self.W2 < 0.] = 0.
+            self.regressor = self.W1 - self.W2
+            x = x @ self.regressor
+
         else:
             x = self.fc1(x)
+            self.regressor = self.fc1.weight.T
+
         return x
 
     def h_func(self, s: float = 1.0) -> torch.Tensor:
@@ -206,12 +125,12 @@ class DagmaLinear(nn.Module):
         torch.Tensor
             A scalar value of the log-det acyclicity function :math:`h(\Theta)`.
         """
-        fc1_weight = self.get_W()
+        fc1_weight = self.regressor
         A = fc1_weight ** 2  # [i, j]
         h = -torch.slogdet(s * self.I - A)[1] + self.d * np.log(s)
         return h
 
-    def fc1_l1_reg(self) -> torch.Tensor:
+    def l1_reg(self) -> torch.Tensor:
         r"""
         Takes L1 norm of the weights in the first fully-connected layer
 
@@ -220,23 +139,42 @@ class DagmaLinear(nn.Module):
         torch.Tensor
             A scalar value of the L1 norm of first FC layer. 
         """
-        w = self.get_W()
-        return torch.sum(torch.abs(w))
+        if self.deconv in ['deconv_1', 'deconv_2']:
+            return torch.sum(torch.abs(self.W))
+        elif self.deconv in ['deconv_3', 'deconv_4']:
+            return torch.sum(torch.abs(self.W1)) + torch.sum(torch.abs(self.W2))
+        return torch.sum(torch.abs(self.regressor))
 
-    @torch.no_grad()
-    def fc1_to_adj(self) -> np.ndarray:  # [j * m1, i] -> [i, j]
-        return self.get_W().cpu().detach().numpy()
-
-    def get_W(self):
-        """
-        return W, where each column i represents weights from all src features to 
-        the feature i
-        """
-
+    def get_adj(self) -> np.ndarray:  # [j * m1, i] -> [i, j]
         if self.deconv in ['deconv_1', 'deconv_2']:
             return self.W
         else:
-            return self.fc1.weight.T
+            return self.regressor
+        
+    def clean_diag(self):
+        """
+        w is of shape [d/2 + d/2, d/2 + d/2], that is, w is
+            [w11 | w12]
+            [----|----]
+            [w21 | w22]
+        where wij in d/2 * d/2 matrix
+        set diagonal of wij to 0
+        """
+        def _clean_diag(w):
+            with torch.no_grad():
+                d = w.shape[0]
+                w[np.eye(d).astype(bool)] = 0.
+                w[np.eye(d, k = d // 2).astype(bool)] = 0.
+                w[np.eye(d, k = - d // 2).astype(bool)] = 0.
+            return w
+        
+        if self.deconv in ['deconv_1', 'deconv_2']:
+            self.W = _clean_diag(self.W)
+        elif self.deconv in ['deconv_3', 'deconv_4']:
+            self.W1 = _clean_diag(self.W1)
+            self.W2 = _clean_diag(self.W2)
+        else:
+            self.regressor = _clean_diag(self.regressor)
 
 class DagmaTorch:
     """
@@ -262,7 +200,7 @@ class DagmaTorch:
         self.dtype = dtype
         self.device = device
         self.dagma_type = dagma_type
-        self.deconv_type_dagma = deconv_type_dagma
+        self.deconv = deconv_type_dagma
     
     def log_mse_loss(self, output: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         r"""
@@ -285,39 +223,6 @@ class DagmaTorch:
         n, d = target.shape
         loss = 0.5 * d * torch.log(1 / n * torch.sum((output - target) ** 2))
         return loss
-
-    def clean_diag(self):
-        """
-        w is of shape [d/2 + d/2, d/2 + d/2], that is, w is
-            [w11 | w12]
-            [----|----]
-            [w21 | w22]
-        where wij in d/2 * d/2 matrix
-        set diagonal of wij to 0
-        """
-        with torch.no_grad():
-            w = self.model.get_W()
-            d = w.shape[0]
-            w[np.eye(d).astype(bool)] = 0.
-            w[np.eye(d, k = d // 2).astype(bool)] = 0.
-            w[np.eye(d, k = - d // 2).astype(bool)] = 0.
-
-    def check_diag(self):
-        """
-        w is of shape [d/2 + d/2, d/2 + d/2], that is, w is
-            [w11 | w12]
-            [----|----]
-            [w21 | w22]
-        where wij in d/2 * d/2 matrix
-        ckech whether diagonal of wij to 0
-        """
-        w = self.model.get_W()
-        d = w.shape[0]
-        if (w[np.eye(d).astype(bool)] != 0.).any() or \
-            (w[np.eye(d, k = d // 2).astype(bool)] != 0.).any() or \
-            (w[np.eye(d, k = - d // 2).astype(bool)] != 0.).any():
-                return False
-        return True
 
     def minimize(self, 
                  max_iter: float, 
@@ -378,14 +283,13 @@ class DagmaTorch:
                 return False
             X_hat = self.model(self.X)
             score = self.log_mse_loss(X_hat, self.X)
-            l1_reg = lambda1 * self.model.fc1_l1_reg()
+            l1_reg = lambda1 * self.model.l1_reg()
             obj = mu * (score + l1_reg) + h_val
             obj.backward()
             optimizer.step()
 
             if self.dagma_type == 'dagma_1':
-                self.clean_diag()
-                assert self.check_diag()
+                self.model.clean_diag()
 
             if lr_decay and (i+1) % 1000 == 0: #every 1000 iters reduce lr
                 scheduler.step()
@@ -487,8 +391,7 @@ class DagmaTorch:
                     success = self.minimize(inner_iter, lr, lambda1, lambda2, mu, s_cur, 
                                         lr_decay, pbar=pbar)
                     if self.dagma_type == 'dagma_1':
-                        self.clean_diag()
-                        assert self.check_diag()
+                        self.model.clean_diag()
                     if success is False:
                         self.model.load_state_dict(model_copy.state_dict().copy())
                         lr *= 0.5 
@@ -497,9 +400,7 @@ class DagmaTorch:
                             break # lr is too small
                         s_cur = 1
                 mu *= mu_factor
-        if self.dagma_type == 'dagma_1':
-            assert self.check_diag()
-        W_est = self.model.fc1_to_adj()
+        W_est = self.model.get_adj()
         W_est_no_filter = W_est.copy()
         W_est[np.abs(W_est) < w_threshold] = 0
         if return_no_filter:

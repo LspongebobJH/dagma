@@ -52,6 +52,9 @@ dag_control : None
 deconv_type_dagma: None
 # deconv_1: directly learn W + W^2 + ... W^ord
 # deconv_2: normalize W to make it converge under power series (I + W + W^2 + ... W^inf) - I
+# deconv_3: indeed no deconv. learn min || X - X(W1 - W2) ||, s.t. h(W1 - W2) = 0, where W1 and W2 > 0
+## deconv_3 uses Wi = Wi' * Wi' to induce non-negativity
+# deconv_4: similar to deconv_3, but uses projective gradient descent
 ord_dagma: 5 # only valid when deconv_type_dagma == deconv_1
 
 ##############################

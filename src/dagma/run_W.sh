@@ -27,31 +27,44 @@
 ############################################
 
 n=2000
-nodes=(40 60)
-data_version=15
+nodes=(40)
+# data_version=18
 for d in "${nodes[@]}"; do
+
     for i in {1..5}; do
         s0=$(( d * 4 ))
-        python gen_copies.py \
+        echo gen_copies.py \
         --gen_type W_torch \
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \
-        --root_path simulated_data/v${data_version} \
-        --deconv_type_dagma deconv_1 \
+        --root_path simulated_data/v18 \
+        --deconv_type_dagma deconv_3 \
         --version $d \
-        --device cuda:6 &
+        --device cuda:6 > logs/log_temp/v18_40_${i}_deconv_3 2>&1 &
+    done
+    
+    for i in {1..5}; do
+        s0=$(( d * 4 ))
+        echo gen_copies.py \
+        --gen_type W_torch \
+        --n $n --s0 $s0 --d $d \
+        --seed_knockoff $i \
+        --root_path simulated_data/v19\
+        --deconv_type_dagma deconv_4 \
+        --version $d \
+        --device cuda:7 > logs/log_temp/v18_40_${i}_deconv_4 2>&1 &
     done
 
-    for i in {6..10}; do
-        s0=$(( d * 4 ))
-        python gen_copies.py \
-        --gen_type W_torch \
-        --n $n --s0 $s0 --d $d \
-        --seed_knockoff $i \
-        --root_path simulated_data/v${data_version} \
-        --deconv_type_dagma deconv_1 \
-        --version $d \
-        --device cuda:7 &
-    done
-    wait
+    # for i in {6..10}; do
+    #     s0=$(( d * 4 ))
+    #     echo gen_copies.py \
+    #     --gen_type W_torch \
+    #     --n $n --s0 $s0 --d $d \
+    #     --seed_knockoff $i \
+    #     --root_path simulated_data/v${data_version} \
+    #     --deconv_type_dagma $deconv_type_dagma \
+    #     --version $d \
+    #     --device cuda:7 &
+    # done
+    # wait
 done
