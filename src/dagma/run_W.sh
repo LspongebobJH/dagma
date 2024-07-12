@@ -33,7 +33,7 @@ for d in "${nodes[@]}"; do
 
     for i in {1..5}; do
         s0=$(( d * 4 ))
-        echo gen_copies.py \
+        python gen_copies.py \
         --gen_type W_torch \
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \
@@ -45,7 +45,7 @@ for d in "${nodes[@]}"; do
     
     for i in {1..5}; do
         s0=$(( d * 4 ))
-        echo gen_copies.py \
+        python gen_copies.py \
         --gen_type W_torch \
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \

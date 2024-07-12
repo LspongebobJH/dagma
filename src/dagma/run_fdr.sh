@@ -93,10 +93,10 @@
 
 # log_file_column=51
 # log_file_global=$((log_file_column + 1))
-log_file_global=57
+log_file_global=59
 
 n=2000
-data_version=11
+data_version=18
 # nodes=(10 40 60 80 100 200 400)
 # nodes=(40 60 80 100)
 nodes=(40)
@@ -105,21 +105,18 @@ for d in "${nodes[@]}"; do
     python multi_main.py \
     --n $n --s0 $s0 --d $d \
     --control_type=type_3_global \
-    --seed_knockoff_list=1,2,3,4,5,6,7,8,9,10 \
+    --seed_knockoff_list=1,2,3,4,5 \
     --seed_model_list=0 \
     --version=$d \
-    --deconv_type=deconv_2 \
-    --order=2 --alpha=0.7 --abs_gt \
-    --device=cpu \
     --root_path simulated_data/v${data_version} \
     --log_file=log_${log_file_global}/log_${d} &
     # wait
 done
 
-log_file_global=58
+log_file_global=60
 
 n=2000
-data_version=11
+data_version=19
 # nodes=(10 40 60 80 100 200 400)
 # nodes=(40 60 80 100)
 nodes=(40)
@@ -128,12 +125,9 @@ for d in "${nodes[@]}"; do
     python multi_main.py \
     --n $n --s0 $s0 --d $d \
     --control_type=type_3_global \
-    --seed_knockoff_list=1,2,3,4,5,6,7,8,9,10 \
+    --seed_knockoff_list=1,2,3,4,5 \
     --seed_model_list=0 \
     --version=$d \
-    --deconv_type=deconv_2 \
-    --order=2 --alpha=0.3 --abs_gt \
-    --device=cpu \
     --root_path simulated_data/v${data_version} \
     --log_file=log_${log_file_global}/log_${d} &
     # wait

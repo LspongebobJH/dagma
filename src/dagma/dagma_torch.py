@@ -45,7 +45,7 @@ class DagmaLinear(nn.Module):
         self.order = ord_dagma
         super(DagmaLinear, self).__init__()
         self.I = torch.eye(self.d).to(self.device)
-        self.regressor = None
+
         if self.deconv in ['deconv_1', 'deconv_2']:
             self.W = Parameter(
                 torch.empty((self.d, self.d), device=self.device)
@@ -55,11 +55,11 @@ class DagmaLinear(nn.Module):
             self.W1 = Parameter(
                 torch.empty((self.d, self.d), device=self.device)
             )
-            init.kaiming_uniform_(self.W, a=math.sqrt(5))
+            init.kaiming_uniform_(self.W1, a=math.sqrt(5))
             self.W2 = Parameter(
                 torch.empty((self.d, self.d), device=self.device)
             )
-            init.kaiming_uniform_(self.W, a=math.sqrt(5))
+            init.kaiming_uniform_(self.W2, a=math.sqrt(5))
         else:
             self.fc1 = nn.Linear(self.d, self.d, bias=False)
             nn.init.zeros_(self.fc1.weight)
@@ -85,33 +85,34 @@ class DagmaLinear(nn.Module):
             for i in range(1, self.order):
                 W_cum.append(W_cum[i-1] @ self.W)
             W_cum = torch.stack(W_cum)
-            self.regressor = W_cum.sum(dim=0)
-            x = x @ self.regressor
+            regressor = W_cum.sum(dim=0)
+            x = x @ regressor
         
         elif self.deconv == 'deconv_2':
             # note that eigen norm here is necessary to ensure that (I-W)^-1 is well defined.
             eigval = torch.linalg.eigvals(self.W).abs().max() # this eigval is for norm
             W = self.W / (eigval + 1e-8)
-            self.regressor = torch.inverse(self.I - W) - self.I
-            x = x @ self.regressor
+            regressor = torch.inverse(self.I - W) - self.I
+            x = x @ regressor
 
         elif self.deconv == 'deconv_3':
-            self.regressor = self.W1 * self.W1 - self.W2 * self.W2
-            x = x @ self.regressor
+            regressor = self.W1 * self.W1 - self.W2 * self.W2
+            x = x @ regressor
         
         elif self.deconv == 'deconv_4':
-            self.W1[self.W1 < 0.] = 0.
-            self.W2[self.W2 < 0.] = 0.
-            self.regressor = self.W1 - self.W2
-            x = x @ self.regressor
+            with torch.no_grad():
+                self.W1[self.W1 < 0.] = 0.
+                self.W2[self.W2 < 0.] = 0.
+            regressor = self.W1 - self.W2
+            x = x @ regressor
 
         else:
             x = self.fc1(x)
-            self.regressor = self.fc1.weight.T
+            regressor = self.fc1.weight.T
 
-        return x
+        return x, regressor
 
-    def h_func(self, s: float = 1.0) -> torch.Tensor:
+    def h_func(self, regressor: torch.Tensor, s: float = 1.0) -> torch.Tensor:
         r"""
         Constrain 2-norm-squared of fc1 weights along m1 dim to be a DAG
 
@@ -125,12 +126,11 @@ class DagmaLinear(nn.Module):
         torch.Tensor
             A scalar value of the log-det acyclicity function :math:`h(\Theta)`.
         """
-        fc1_weight = self.regressor
-        A = fc1_weight ** 2  # [i, j]
+        A = regressor ** 2  # [i, j]
         h = -torch.slogdet(s * self.I - A)[1] + self.d * np.log(s)
         return h
 
-    def l1_reg(self) -> torch.Tensor:
+    def l1_reg(self, regressor) -> torch.Tensor:
         r"""
         Takes L1 norm of the weights in the first fully-connected layer
 
@@ -143,13 +143,20 @@ class DagmaLinear(nn.Module):
             return torch.sum(torch.abs(self.W))
         elif self.deconv in ['deconv_3', 'deconv_4']:
             return torch.sum(torch.abs(self.W1)) + torch.sum(torch.abs(self.W2))
-        return torch.sum(torch.abs(self.regressor))
+        return torch.sum(torch.abs(regressor))
 
     def get_adj(self) -> np.ndarray:  # [j * m1, i] -> [i, j]
         if self.deconv in ['deconv_1', 'deconv_2']:
-            return self.W
+            return self.W.cpu().detach().numpy()
+        elif self.deconv == 'deconv_3':
+            return (self.W1 * self.W1 - self.W2 * self.W2).cpu().detach().numpy()
+        elif self.deconv == 'deconv_4':
+            with torch.no_grad():
+                self.W1[self.W1 < 0.] = 0.
+                self.W2[self.W2 < 0.] = 0.
+            return (self.W1 - self.W2).cpu().detach().numpy()
         else:
-            return self.regressor
+            return self.fc1.weight.T.cpu().detach().numpy()
         
     def clean_diag(self):
         """
@@ -174,7 +181,7 @@ class DagmaLinear(nn.Module):
             self.W1 = _clean_diag(self.W1)
             self.W2 = _clean_diag(self.W2)
         else:
-            self.regressor = _clean_diag(self.regressor)
+            self.fc1.weight.T = _clean_diag(self.fc1.weight.T)
 
 class DagmaTorch:
     """
@@ -277,13 +284,13 @@ class DagmaTorch:
         obj_prev = 1e16
         for i in range(max_iter):
             optimizer.zero_grad()
-            h_val = self.model.h_func(s)
+            X_hat, regressor = self.model(self.X)
+            h_val = self.model.h_func(regressor, s)
             if h_val.item() < 0:
                 self.vprint(f'Found h negative {h_val.item()} at iter {i}')
                 return False
-            X_hat = self.model(self.X)
             score = self.log_mse_loss(X_hat, self.X)
-            l1_reg = lambda1 * self.model.l1_reg()
+            l1_reg = lambda1 * self.model.l1_reg(regressor)
             obj = mu * (score + l1_reg) + h_val
             obj.backward()
             optimizer.step()

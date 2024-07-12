@@ -43,7 +43,8 @@ parser.add_argument('--norm_knockoffGAN', action='store_true', default=None)
 
 # parameters of damga
 parser.add_argument('--norm_DAGMA', action='store_true', default=None)
-parser.add_argument('--deconv_type_dagma', type=str, default=None, choices=[None, 'deconv_1', 'deconv_2'])
+parser.add_argument('--deconv_type_dagma', type=str, default=None, 
+                    choices=[None, 'deconv_1', 'deconv_2', 'deconv_3', 'deconv_4'])
 parser.add_argument('--ord_dagma', type=int, default=None)
 
 args = parser.parse_args()
