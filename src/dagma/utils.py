@@ -139,6 +139,7 @@ def knockoff(X : np.ndarray, configs):
 def fit(X, X_all, configs):
     gen_W = configs['gen_W']
     dagma_type = configs['dagma_type']
+    warm_iter = configs['warm_iter']
 
     assert gen_W in [None, 'torch']
     assert dagma_type == 'dagma_1'
@@ -168,7 +169,7 @@ def fit(X, X_all, configs):
         model = DagmaTorch(eq_model, device=device, verbose=True, 
                            dagma_type=dagma_type, dtype=dtype)
         
-        W_est_no_filter, _  = model.fit(X_all, lambda1=0.02, lambda2=0.005, 
+        W_est_no_filter, _  = model.fit(X_all, lambda1=0.02, lambda2=0.005, warm_iter=warm_iter, 
                                         return_no_filter=True)
     
     return W_est_no_filter, Z_true, Z_knock

@@ -57,6 +57,7 @@ norm_knockoffGAN: False
 ##############################
 
 norm_DAGMA: False
+warm_iter: 50000
 
 ##############################
 # both

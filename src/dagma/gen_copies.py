@@ -48,6 +48,7 @@ parser.add_argument('--deconv_type_dagma', type=str, default=None,
                              'deconv_4_1', 'deconv_4_2'])
 parser.add_argument('--order', type=int, default=None)
 parser.add_argument('--alpha', type=float, default=None)
+parser.add_argument('--warm_iter', type=int, default=None)
 
 args = parser.parse_args()
 

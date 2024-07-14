@@ -32,6 +32,7 @@ run() {
     data_version=$3
     deconv_type_dagma=$4
     cuda_idx=$5
+    warm_iter=$6
     src_data_version=11
     n=2000
     d=40
@@ -65,13 +66,11 @@ run() {
         --seed_knockoff $i \
         --root_path simulated_data/v${data_version}/v${data_version}_${alpha} \
         --deconv_type_dagma ${deconv_type_dagma} \
-        --order $order --alpha $alpha \
+        --order $order --alpha $alpha --warm_iter $warm_iter \
         --version $d \
-        --force_save \
         --device cuda:${cuda_idx} > logs/log_temp/v${data_version}/v${data_version}_${alpha}_${i}_${deconv_type_dagma} 2>&1 &
     done
 }
 
-run -1 1 23 deconv_4 0
-run 2 0.3 24 deconv_4_1 1
-run -1 0.3 25 deconv_4_2 2
+run 2 0.3 26 deconv_4_1 0 80000
+run -1 0.3 27 deconv_4_2 1 80000
