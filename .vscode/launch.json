@@ -11,13 +11,16 @@
             "program": "gen_copies.py",
             "console": "integratedTerminal",
             "cwd": "/home/jiahang/dagma/src/dagma",
-
+            "justMyCode": true,
             "args": [
-                "--gen_type=W_torch", "--debug", "--version=40", 
-                "--root_path=simulated_data/v14",
+                "--gen_type=W_torch", "--force_save",
+                "--n=2000", "--d=40", "--s0=160", 
                 "--seed_knockoff=1",
-                "--norm_DAGMA",
-                "--n=2000", "--d=40", "--s0=160"
+                "--root_path=simulated_data/v24/v24_0.3",
+                "--deconv_type_dagma=deconv_4_1",
+                "--alpha=0.3", "--order=2",
+                "--version=40",
+                "--device=cuda:0"
             ]
         },
         {

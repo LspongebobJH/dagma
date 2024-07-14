@@ -37,7 +37,7 @@ for d in "${nodes[@]}"; do
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \
         --root_path simulated_data/v${data_version} \
-        --deconv_type_dagma deconv_1 --ord_dagma 3 \
+        --deconv_type_dagma deconv_1 --order 3 \
         --version $d \
         --device cuda:5 &
     done
@@ -49,7 +49,7 @@ for d in "${nodes[@]}"; do
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \
         --root_path simulated_data/v${data_version} \
-        --deconv_type_dagma deconv_1 --ord_dagma 3 \
+        --deconv_type_dagma deconv_1 --order 3 \
         --version $d \
         --device cuda:5 &
     done

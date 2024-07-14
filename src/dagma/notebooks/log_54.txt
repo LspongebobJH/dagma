@@ -26,7 +26,7 @@
  'norm_knockoffGAN': False,
  'numeric': False,
  'numeric_precision': '1e-1',
- 'ord_dagma': 5,
+ 'order': 5,
  'order': 2,
  'root_path': 'simulated_data/v11',
  's0': 160,

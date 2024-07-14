@@ -7,7 +7,7 @@ import copy
 from tqdm.auto import tqdm
 import typing
 import math
-
+from time import time
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -24,10 +24,11 @@ class DagmaLinear(nn.Module):
     Class that models the structural equations for the linear causal graph.
     """
     
-    def __init__(self, d : int, dtype: torch.dtype = torch.double, 
-                 deconv_type_dagma: str = "deconv_1",
-                 ord_dagma: int = 5,
-                 device : str = 'cuda:7'):
+    def __init__(self, d : int, 
+                 dagma_type: str,
+                 deconv_type_dagma: str,
+                 order: int, alpha: float,
+                 device : str, dtype: torch.dtype = torch.double):
         r"""
         Parameters
         ----------
@@ -41,17 +42,20 @@ class DagmaLinear(nn.Module):
         torch.set_default_dtype(dtype)
         self.d = 2 * d
         self.device = device
+        self.dagma_type = dagma_type
         self.deconv = deconv_type_dagma
-        self.order = ord_dagma
+        self.order = order
+        self.alpha = alpha
         super(DagmaLinear, self).__init__()
         self.I = torch.eye(self.d).to(self.device)
 
-        if self.deconv in ['deconv_1', 'deconv_2']:
+        if self.deconv in ['deconv_1', 'deconv_2', None]:
             self.W = Parameter(
                 torch.empty((self.d, self.d), device=self.device)
             )
             init.kaiming_uniform_(self.W, a=math.sqrt(5))
-        elif self.deconv in ['deconv_3', 'deconv_4']:
+            self.zero_mat = torch.zeros_like(self.W, device=self.device)
+        elif self.deconv in ['deconv_3', 'deconv_4', 'deconv_4_1', 'deconv_4_2']:
             self.W1 = Parameter(
                 torch.empty((self.d, self.d), device=self.device)
             )
@@ -60,9 +64,7 @@ class DagmaLinear(nn.Module):
                 torch.empty((self.d, self.d), device=self.device)
             )
             init.kaiming_uniform_(self.W2, a=math.sqrt(5))
-        else:
-            self.fc1 = nn.Linear(self.d, self.d, bias=False)
-            nn.init.zeros_(self.fc1.weight)
+            self.zero_mat = torch.zeros_like(self.W1, device=self.device)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:  # [n, d] -> [n, d]
         r"""
@@ -79,38 +81,78 @@ class DagmaLinear(nn.Module):
             Result of applying the structural equations to the input data.
             Shape :math:`(n,d)`.
         """
+
+
+        """
+        remove diagonal
+        """
+        if self.deconv in ['deconv_1', 'deconv_2', None]:
+            if self.dagma_type == 'dagma_1':
+                W = self.clean_diag()
+            else:
+                W = self.W
+        else:
+            if self.dagma_type == 'dagma_1':
+                W1, W2 = self.clean_diag()
+            else:
+                W1, W2 = self.W1, self.W2
+
+        """
+        forward (and deconv)
+        """
         if self.deconv == 'deconv_1':
             W_cum = []
-            W_cum.append(self.W)
+            W_cum.append(W)
             for i in range(1, self.order):
-                W_cum.append(W_cum[i-1] @ self.W)
+                W_cum.append(W_cum[i-1] @ W)
             W_cum = torch.stack(W_cum)
             regressor = W_cum.sum(dim=0)
-            x = x @ regressor
         
         elif self.deconv == 'deconv_2':
             # note that eigen norm here is necessary to ensure that (I-W)^-1 is well defined.
-            eigval = torch.linalg.eigvals(self.W).abs().max() # this eigval is for norm
-            W = self.W / (eigval + 1e-8)
+            eigval = torch.linalg.eigvals(W.detach()).abs().max() # this eigval is for norm
+            W = W / (eigval + 1e-8)
             regressor = torch.inverse(self.I - W) - self.I
-            x = x @ regressor
 
         elif self.deconv == 'deconv_3':
-            regressor = self.W1 * self.W1 - self.W2 * self.W2
-            x = x @ regressor
-        
+            regressor = W1 * W1 - W2 * W2
+
         elif self.deconv == 'deconv_4':
-            with torch.no_grad():
-                self.W1[self.W1 < 0.] = 0.
-                self.W2[self.W2 < 0.] = 0.
-            regressor = self.W1 - self.W2
-            x = x @ regressor
+            W1, W2 = self.remove_negative(W1, W2)
+            regressor = W1 - W2
+
+        elif self.deconv == 'deconv_4_1':
+            W1, W2 = self.remove_negative(W1, W2)
+
+            eigval1, eigval2 = \
+                torch.linalg.eigvals(W1.detach()).abs().max(), \
+                torch.linalg.eigvals(W2.detach()).abs().max()
+            
+            W1, W2 = \
+                W1 / (eigval1 + 1e-8), \
+                W2 / (eigval2 + 1e-8)
+            regressor = 0.
+            W1_pow, W2_pow = W1, W2
+            for i in range(1, self.order + 1):
+                regressor += (self.alpha ** i) * (W1_pow - W2_pow)
+                W1_pow, W2_pow = W1_pow @ W1, W2_pow @ W2
+
+        elif self.deconv == 'deconv_4_2':
+            W1, W2 = self.remove_negative(W1, W2)
+
+            eigval1, eigval2 = \
+                torch.linalg.eigvals(W1.detach()).abs().max(), \
+                torch.linalg.eigvals(W2.detach()).abs().max()
+            W1, W2 = \
+                self.W1 / (eigval1 + 1e-8), \
+                self.W2 / (eigval2 + 1e-8)
+            regressor = torch.inverse(self.I - self.alpha * W1) - torch.inverse(self.I - self.alpha * W2)
 
         else:
-            x = self.fc1(x)
-            regressor = self.fc1.weight.T
+            regressor = self.W
 
-        return x, regressor
+        res = x @ regressor
+        return res, regressor
 
     def h_func(self, regressor: torch.Tensor, s: float = 1.0) -> torch.Tensor:
         r"""
@@ -141,22 +183,31 @@ class DagmaLinear(nn.Module):
         """
         if self.deconv in ['deconv_1', 'deconv_2']:
             return torch.sum(torch.abs(self.W))
-        elif self.deconv in ['deconv_3', 'deconv_4']:
+        elif self.deconv in ['deconv_3', 'deconv_4', 'deconv_4_1', 'deconv_4_2']:
             return torch.sum(torch.abs(self.W1)) + torch.sum(torch.abs(self.W2))
         return torch.sum(torch.abs(regressor))
 
     def get_adj(self) -> np.ndarray:  # [j * m1, i] -> [i, j]
-        if self.deconv in ['deconv_1', 'deconv_2']:
-            return self.W.cpu().detach().numpy()
-        elif self.deconv == 'deconv_3':
-            return (self.W1 * self.W1 - self.W2 * self.W2).cpu().detach().numpy()
-        elif self.deconv == 'deconv_4':
-            with torch.no_grad():
-                self.W1[self.W1 < 0.] = 0.
-                self.W2[self.W2 < 0.] = 0.
-            return (self.W1 - self.W2).cpu().detach().numpy()
+        if self.deconv in ['deconv_1', 'deconv_2', None]:
+            if self.dagma_type == 'dagma_1':
+                W = self.clean_diag()
+            else:
+                W = self.W
         else:
-            return self.fc1.weight.T.cpu().detach().numpy()
+            if self.dagma_type == 'dagma_1':
+                W1, W2 = self.clean_diag()
+            else:
+                W1, W2 = self.W1, self.W2
+
+        if self.deconv in ['deconv_1', 'deconv_2', None]:
+            return W.cpu().detach().numpy()
+        elif self.deconv == 'deconv_3':
+            return (W1 * W2 - W2 * W2).cpu().detach().numpy()
+        elif self.deconv in ['deconv_4', 'deconv_4_1', 'deconv_4_2']:
+            W1, W2 = W1.detach(), W2.detach()
+            W1[W1 < 0.] = 0.
+            W2[W2 < 0.] = 0.
+            return (W1 - W2).cpu().numpy()
         
     def clean_diag(self):
         """
@@ -168,29 +219,34 @@ class DagmaLinear(nn.Module):
         set diagonal of wij to 0
         """
         def _clean_diag(w):
-            with torch.no_grad():
-                d = w.shape[0]
-                w[np.eye(d).astype(bool)] = 0.
-                w[np.eye(d, k = d // 2).astype(bool)] = 0.
-                w[np.eye(d, k = - d // 2).astype(bool)] = 0.
-            return w
+            d = w.shape[0]
+            diag_mat = \
+                torch.diag(torch.diag(w, 0)) + \
+                torch.diag(torch.diag(w, d // 2), d // 2) + \
+                torch.diag(torch.diag(w, -d // 2), d // 2)
+            w_res = w - diag_mat
+            return w_res
         
-        if self.deconv in ['deconv_1', 'deconv_2']:
-            self.W = _clean_diag(self.W)
-        elif self.deconv in ['deconv_3', 'deconv_4']:
-            self.W1 = _clean_diag(self.W1)
-            self.W2 = _clean_diag(self.W2)
-        else:
-            self.fc1.weight.T = _clean_diag(self.fc1.weight.T)
+        if self.deconv in ['deconv_1', 'deconv_2', None]:
+            W = _clean_diag(self.W)
+            return W
+        elif self.deconv in ['deconv_3', 'deconv_4', 'deconv_4_1', 'deconv_4_2']:
+            W1 = _clean_diag(self.W1)
+            W2 = _clean_diag(self.W2)
+            return W1, W2
+
+    def remove_negative(self, W1, W2):
+        W1 = torch.max(W1, self.zero_mat)
+        W2 = torch.max(W2, self.zero_mat)
+        return W1, W2
 
 class DagmaTorch:
     """
     Class that implements the DAGMA algorithm
     """
     
-    def __init__(self, model: nn.Module, verbose: bool = False, dtype: torch.dtype = torch.double, 
-                 deconv_type_dagma: str = "deconv_1",
-                 device : str = 'cuda:7', dagma_type : str = None):
+    def __init__(self, model: nn.Module, verbose: bool,
+                dagma_type : str, device : str, dtype: torch.dtype = torch.double):
         """
         Parameters
         ----------
@@ -207,7 +263,6 @@ class DagmaTorch:
         self.dtype = dtype
         self.device = device
         self.dagma_type = dagma_type
-        self.deconv = deconv_type_dagma
     
     def log_mse_loss(self, output: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         r"""
@@ -240,7 +295,6 @@ class DagmaTorch:
                  s: float,
                  lr_decay: float = False, 
                  tol: float = 1e-6, 
-                 pbar: typing.Optional[tqdm] = None,
         ) -> bool:
         r"""
         Solves the optimization problem: 
@@ -268,8 +322,6 @@ class DagmaTorch:
             If ``True``, an exponential decay scheduling is used. By default ``False``.
         tol : float, optional
             Tolerance to admit convergence. Defaults to 1e-6.
-        pbar : tqdm, optional
-            Controls bar progress. Defaults to ``tqdm()``.
 
         Returns
         -------
@@ -281,35 +333,38 @@ class DagmaTorch:
         optimizer = optim.Adam(self.model.parameters(), lr=lr, betas=(.99,.999), weight_decay=mu*lambda2)
         if lr_decay is True:
             scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.8)
+        loss_fn = torch.nn.MSELoss()
         obj_prev = 1e16
         for i in range(max_iter):
-            optimizer.zero_grad()
             X_hat, regressor = self.model(self.X)
             h_val = self.model.h_func(regressor, s)
             if h_val.item() < 0:
                 self.vprint(f'Found h negative {h_val.item()} at iter {i}')
                 return False
             score = self.log_mse_loss(X_hat, self.X)
+            # score = loss_fn(X_hat, self.X)
             l1_reg = lambda1 * self.model.l1_reg(regressor)
             obj = mu * (score + l1_reg) + h_val
+            optimizer.zero_grad()
             obj.backward()
+            # print(f"score {score.item():.4f}")
+            # print(f"W1 grad {(self.model.W1.grad ** 2).mean().sqrt():.4f}")
+            # print(f"W2 grad {(self.model.W2.grad ** 2).mean().sqrt():.4f}")
             optimizer.step()
-
-            if self.dagma_type == 'dagma_1':
-                self.model.clean_diag()
 
             if lr_decay and (i+1) % 1000 == 0: #every 1000 iters reduce lr
                 scheduler.step()
             if i % self.checkpoint == 0 or i == max_iter-1:
                 obj_new = obj.item()
-                self.vprint(f"\nInner iteration {i}")
+                self.vprint(f"\nInner iteration {i}/{max_iter}")
                 self.vprint(f'\th(W(model)): {h_val.item()}')
                 self.vprint(f'\tscore(model): {obj_new}')
                 if np.abs((obj_prev - obj_new) / obj_prev) <= tol:
-                    pbar.update(max_iter-i)
+                    self.vprint(f'\t |(obj_prev({obj_prev:.4f}) - obj_new({obj_new:.4f}) / obj_new({obj_new:.4f})| '
+                                f'< tol({tol:.4f})')
+                    self.vprint("break")
                     break
                 obj_prev = obj_new
-            pbar.update(1)
         return True
 
     def fit(self, 
@@ -387,26 +442,26 @@ class DagmaTorch:
             s = T * [s]
         else:
             ValueError("s should be a list, int, or float.") 
-        with tqdm(total=(T-1)*warm_iter+max_iter) as pbar:
-            for i in range(int(T)):
-                self.vprint(f'\nDagma iter t={i+1} -- mu: {mu}', 30*'-')
-                success, s_cur = False, s[i]
-                inner_iter = int(max_iter) if i == T - 1 else int(warm_iter)
-                model_copy = copy.deepcopy(self.model)
-                lr_decay = False
-                while success is False:
-                    success = self.minimize(inner_iter, lr, lambda1, lambda2, mu, s_cur, 
-                                        lr_decay, pbar=pbar)
-                    if self.dagma_type == 'dagma_1':
-                        self.model.clean_diag()
-                    if success is False:
-                        self.model.load_state_dict(model_copy.state_dict().copy())
-                        lr *= 0.5 
-                        lr_decay = True
-                        if lr < 1e-10:
-                            break # lr is too small
-                        s_cur = 1
-                mu *= mu_factor
+        time0 = time()
+        for i in range(int(T)):
+            self.vprint(f'\nDagma iter t={i+1} -- mu: {mu}', 30*'-')
+            success, s_cur = False, s[i]
+            inner_iter = int(max_iter) if i == T - 1 else int(warm_iter)
+            model_copy = copy.deepcopy(self.model)
+            lr_decay = False
+            while success is False:
+                success = self.minimize(inner_iter, lr, lambda1, lambda2, mu, s_cur, 
+                                    lr_decay)
+                if success is False:
+                    self.model.load_state_dict(model_copy.state_dict().copy())
+                    lr *= 0.5 
+                    lr_decay = True
+                    if lr < 1e-10:
+                        break # lr is too small
+                    s_cur = 1
+            mu *= mu_factor
+            self.vprint(f'\nEnd Dagma iter t={i+1} -- mu: {mu}, time: {time() - time0:.2f}s', 30*'-')
+            time0 = time()
         W_est = self.model.get_adj()
         W_est_no_filter = W_est.copy()
         W_est[np.abs(W_est) < w_threshold] = 0

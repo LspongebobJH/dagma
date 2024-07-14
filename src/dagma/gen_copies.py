@@ -35,7 +35,7 @@ parser.add_argument('--seed_X', type=int, default=1)
 parser.add_argument('--seed_knockoff', type=int, default=1)
 parser.add_argument('--seed_model', type=int, default=0)
 parser.add_argument('--version', type=int, default=1)
-parser.add_argument('--debug', action='store_true', default=False)
+parser.add_argument('--force_save', action='store_true', default=False)
 
 # parameters of knockoffGAN in knockoff generation
 parser.add_argument('--niter', type=int, default=None)
@@ -44,8 +44,10 @@ parser.add_argument('--norm_knockoffGAN', action='store_true', default=None)
 # parameters of damga
 parser.add_argument('--norm_DAGMA', action='store_true', default=None)
 parser.add_argument('--deconv_type_dagma', type=str, default=None, 
-                    choices=[None, 'deconv_1', 'deconv_2', 'deconv_3', 'deconv_4'])
-parser.add_argument('--ord_dagma', type=int, default=None)
+                    choices=[None, 'deconv_1', 'deconv_2', 'deconv_4',
+                             'deconv_4_1', 'deconv_4_2'])
+parser.add_argument('--order', type=int, default=None)
+parser.add_argument('--alpha', type=float, default=None)
 
 args = parser.parse_args()
 
@@ -66,7 +68,7 @@ print()
 if __name__ == '__main__':
 
     _, _, path_config, path_data = utils.get_data_path(configs)
-    if (os.path.exists(path_config) or os.path.exists(path_data)) and not configs['debug']:
+    if (os.path.exists(path_config) or os.path.exists(path_data)) and not configs['force_save']:
         print(f"{path_config} or {path_data} already exists, jump.")
     
     else:

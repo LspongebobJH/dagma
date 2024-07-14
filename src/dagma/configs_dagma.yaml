@@ -46,35 +46,70 @@ dag_control : None
 ### if dag_control == None, type_4_control(_global) == type_3_control(_global)
 
 ##############################
-# deconv in dagma params
-##############################
-
-deconv_type_dagma: None
-# deconv_1: directly learn W + W^2 + ... W^ord
-# deconv_2: normalize W to make it converge under power series (I + W + W^2 + ... W^inf) - I
-# deconv_3: indeed no deconv. learn min || X - X(W1 - W2) ||, s.t. h(W1 - W2) = 0, where W1 and W2 > 0
-## deconv_3 uses Wi = Wi' * Wi' to induce non-negativity
-# deconv_4: similar to deconv_3, but uses projective gradient descent
-ord_dagma: 5 # only valid when deconv_type_dagma == deconv_1
-
-##############################
 # knockoffGAN parameters
 ##############################
 
 niter: 2000
 norm_knockoffGAN: False
 
+##############################
+# DAGMA parameters
+##############################
+
+norm_DAGMA: False
+
+##############################
+# both
+# deconv in dagma
+# and
+# deconv after dagma
+# params
+##############################
+
+order: 5 
+# order
+## when used in deconv in dagma 
+## only valid when deconv_type_dagma == deconv_1 or deconv_4_1
+## when used in deconv after dagma
+## only valid when deconv_type == deconv_2
+alpha: 1. # high order decay
+# alpha
+## when used in deconv in dagma
+## only valid when deconv_type_dagma == deconv_4_1 and deconv_4_2
+## note that deconv_1, deconv_2 can also use alpha, but not implemented yet
+## when used in deconv after dagma
+## only valud when deconv_type == deconv_2
+## note that deconv_1 can also use alpha, but not implemented yet
+
+
+##############################
+# deconv in dagma params
+##############################
+
+deconv_type_dagma: None
+# deconv_1: directly learn W + W^2 + ... W^ord
+# deconv_2: normalize W to make it converge under power series (I + W + W^2 + ... W^inf) - I
+# deconv_3 (deprecated): indeed no deconv. learn min || X - X(W1 - W2) ||, s.t. h(W1 - W2) = 0, where W1 and W2 > 0
+## deconv_3 uses Wi = Wi' * Wi' to induce non-negativity
+## deconv_3 has worse performance than deconv_4, hence deprecated.
+# deconv_4: similar to deconv_3, but uses projective gradient descent
+# deconv_4_1: based on deconv_4, use forward deconv to learn 
+## min || X - XW' ||, s.t. h(W') = 0, where W' = ( \sum a ^ {order} * (W1 ^ {order} - W2 ^ {order}) )
+# deconv_4_2: based on deconv_4, use inverse deconv to learn
+## min || X - XW' ||, s.t. h(W') = 0, where W' = （I - aW1)^{-1} - (I - aW2)^{-1}), note that -I are cancelled out.
+
+
+
 ##################################
-# network deconvolution parameters 
+# deconv after dagma params 
 # used before fdr control
 # used on learned W 
-# (after dagma fitting)
 ##################################
 
 deconv_type: None
 # deconv_type
-## deconv_1: symmetric + original ND
-## deconv_2: learn the matrix
+## deconv_1: symmetric the DAG then use original ND to get the inverse
+## deconv_2: use pytorch to learn the G_dir
 beta: 0.9 # valid only when deconv_1
 
 # valid only when deconv_2: 
@@ -84,16 +119,9 @@ epochs: 30000
 lr: 0.01
 l2_w: 0.
 dag_control_deconv: None
-alpha: 1. # high order decay
 abs_gt: False # to regress |W_obs|
 abs_dir: None 
 # abs_dir
 ## "square": W_dir = W * W to make W_dir positive. 
 ## "proj": each iter let W[W < 0.] = 0., projective gradient descend
 get_abs_dir: False # if true, take W = abs_dir(W)
-
-##############################
-# DAGMA parameters
-##############################
-
-norm_DAGMA: False

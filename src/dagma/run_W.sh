@@ -26,45 +26,52 @@
 # Generating W (W_torch), sweep over n_nodes
 ############################################
 
-n=2000
-nodes=(40)
-# data_version=18
-for d in "${nodes[@]}"; do
+run() {
+    order=$1 # order of deconv if needed
+    alpha=$2 # decay of deconv if needed
+    data_version=$3
+    deconv_type_dagma=$4
+    cuda_idx=$5
+    src_data_version=11
+    n=2000
+    d=40
+    nodes=$d
 
-    for i in {1..5}; do
-        s0=$(( d * 4 ))
-        python gen_copies.py \
-        --gen_type W_torch \
-        --n $n --s0 $s0 --d $d \
-        --seed_knockoff $i \
-        --root_path simulated_data/v18 \
-        --deconv_type_dagma deconv_3 \
-        --version $d \
-        --device cuda:6 > logs/log_temp/v18_40_${i}_deconv_3 2>&1 &
-    done
+    ####################
+    # initialize data dir
+    ####################
+    ./create_data_dir.sh $data_version $nodes $alpha $src_data_version X
+    ./create_data_dir.sh $data_version $nodes $alpha $src_data_version knockoff
+
+    ####################
+    # initialization log
+    # dir
+    ####################
+
+    direc=logs/log_temp/v${data_version}/
+    if [ ! -d "$direc" ]; then
+        mkdir $direc
+    fi
     
-    for i in {1..5}; do
+    ####################
+    # fitting W
+    ####################
+
+    for i in {1..1}; do
         s0=$(( d * 4 ))
         python gen_copies.py \
         --gen_type W_torch \
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \
-        --root_path simulated_data/v19\
-        --deconv_type_dagma deconv_4 \
+        --root_path simulated_data/v${data_version}/v${data_version}_${alpha} \
+        --deconv_type_dagma ${deconv_type_dagma} \
+        --order $order --alpha $alpha \
         --version $d \
-        --device cuda:7 > logs/log_temp/v18_40_${i}_deconv_4 2>&1 &
+        --force_save \
+        --device cuda:${cuda_idx} > logs/log_temp/v${data_version}/v${data_version}_${alpha}_${i}_${deconv_type_dagma} 2>&1 &
     done
+}
 
-    # for i in {6..10}; do
-    #     s0=$(( d * 4 ))
-    #     echo gen_copies.py \
-    #     --gen_type W_torch \
-    #     --n $n --s0 $s0 --d $d \
-    #     --seed_knockoff $i \
-    #     --root_path simulated_data/v${data_version} \
-    #     --deconv_type_dagma $deconv_type_dagma \
-    #     --version $d \
-    #     --device cuda:7 &
-    # done
-    # wait
-done
+run -1 1 23 deconv_4 0
+run 2 0.3 24 deconv_4_1 1
+run -1 0.3 25 deconv_4_2 2
