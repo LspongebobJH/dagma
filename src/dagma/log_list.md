@@ -214,6 +214,36 @@ deconv in dagma (deconv_4_1), alpha=0.3, order=2
 ..., type_3_global, name is log_{data_version}_{n_nodes}_{alpha}
 deconv in dagma (deconv_4_2), alpha=0.3, order is meaningless.
 
+* log_66 (data version v26)(vs log_64)
+..., type_3_global, name is log_{data_version}_{n_nodes}_{alpha}
+deconv in dagma (deconv_4_1), alpha=0.3, order=2, warm_iter=5e4 -> 8e4
+
+* log_67 (data version v27)(vs log_65)
+..., type_3_global, name is log_{data_version}_{n_nodes}_{alpha}
+deconv in dagma (deconv_4_2), alpha=0.3, order is meaningless. warm_iter=5e4 -> 8e4
+
+* log_68 (data version v28)(vs log 64)
+..., type_3_global, log_{data_version}_{n_nodes}_{alpha}
+deconv in dagma (deconv_4_1), alpha=0.3, order=2, add loss term ||X - XW_dir||
+
+* log_69 (data version v29)(vs log 65)
+..., type_3_global, log_{data_version}_{n_nodes}_{alpha}
+deconv in dagma (deconv_4_2), alpha=0.3, order=2, add loss term ||X - XW_dir||
+
+* log_70 (data version v30)(vs log 68)
+..., type_3_global, log_{data_version}_{n_nodes}_{alpha}
+deconv in dagma (deconv_4_1), alpha=0.1, order=2, add loss term ||X - XW_dir||
+
+* log_71 (data version v31)(vs log 69)
+..., type_3_global, log_{data_version}_{n_nodes}_{alpha}
+deconv in dagma (deconv_4_2), alpha=0.1, order=2, add loss term ||X - XW_dir||
+
+* log_72 (data version v32)(vs log_30)
+..., type_3_global, log_{data_version}_{n_nodes}_{alpha}
+increase the number of T to make DAG loss converge better and see if it can
+resolve our problems.
+
+
 
 
 

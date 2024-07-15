@@ -97,7 +97,7 @@ run() {
     log_file_global=$3
 
     n=2000
-    nodes=(40)
+    nodes=(40 60)
     for d in "${nodes[@]}"; do
         s0=$(( d * 4 ))
         python multi_main.py \
@@ -112,6 +112,4 @@ run() {
     done
 }
 
-run 23 1 63
-run 24 0.3 64
-run 25 0.3 65
+run 32 -1 72

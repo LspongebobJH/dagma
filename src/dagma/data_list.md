@@ -20,4 +20,11 @@ v18, v19, v20, v21, v22: deprecated, see logs
 v23: deconv in dagma, deconv_4, actually no deconv. This is not for any experimental purpose. It's just for testing whether the new formulation of deconv_4 can achieve the same performance as baseline of v11.
 v24: deconv in dagma, deconv_4_1, alpha 0.3, order 2
 v25: deconv in dagma, deconv_4_2, alpha 0.3
+v26: deconv in dagma, deconv_4_1, alpha 0.3, order 2, warm_iter 5e4 -> 8e4
+v27: deconv in dagma, deconv_4_2, alpha 0.3, warm_iter 5e4 -> 8e4
+v28: deconv in dagma, deconv_4_1, alpha=0.3, order=2, add loss term ||X - XW_dir||
+v29: deconv in dagma, deconv_4_2, alpha=0.3, order=2, add loss term ||X - XW_dir||
+v30: deconv in dagma, deconv_4_1, alpha=0.1, order=2, add loss term ||X - XW_dir||
+v31: deconv in dagma, deconv_4_2, alpha=0.1, order=2, add loss term ||X - XW_dir||
+v32: based on v11, increase the number of T to make DAG loss converge better and see if it can resolve our problems.
 

@@ -27,7 +27,7 @@ class DagmaLinear(nn.Module):
     def __init__(self, d : int, 
                  dagma_type: str,
                  deconv_type_dagma: str,
-                 order: int, alpha: float,
+                 order: int, alpha: float, use_g_dir_loss: bool,
                  device : str, dtype: torch.dtype = torch.double):
         r"""
         Parameters
@@ -46,6 +46,7 @@ class DagmaLinear(nn.Module):
         self.deconv = deconv_type_dagma
         self.order = order
         self.alpha = alpha
+        self.use_g_dir_loss = use_g_dir_loss
         super(DagmaLinear, self).__init__()
         self.I = torch.eye(self.d).to(self.device)
 
@@ -67,21 +68,6 @@ class DagmaLinear(nn.Module):
             self.zero_mat = torch.zeros_like(self.W1, device=self.device)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:  # [n, d] -> [n, d]
-        r"""
-        Applies the current states of the structural equations to the dataset X
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input dataset with shape :math:`(n,d)`.
-
-        Returns
-        -------
-        torch.Tensor
-            Result of applying the structural equations to the input data.
-            Shape :math:`(n,d)`.
-        """
-
 
         """
         remove diagonal
@@ -155,32 +141,11 @@ class DagmaLinear(nn.Module):
         return res, regressor
 
     def h_func(self, regressor: torch.Tensor, s: float = 1.0) -> torch.Tensor:
-        r"""
-        Constrain 2-norm-squared of fc1 weights along m1 dim to be a DAG
-
-        Parameters
-        ----------
-        s : float, optional
-            Controls the domain of M-matrices, by default 1.0
-
-        Returns
-        -------
-        torch.Tensor
-            A scalar value of the log-det acyclicity function :math:`h(\Theta)`.
-        """
         A = regressor ** 2  # [i, j]
         h = -torch.slogdet(s * self.I - A)[1] + self.d * np.log(s)
         return h
 
     def l1_reg(self, regressor) -> torch.Tensor:
-        r"""
-        Takes L1 norm of the weights in the first fully-connected layer
-
-        Returns
-        -------
-        torch.Tensor
-            A scalar value of the L1 norm of first FC layer. 
-        """
         if self.deconv in ['deconv_1', 'deconv_2']:
             return torch.sum(torch.abs(self.W))
         elif self.deconv in ['deconv_3', 'deconv_4', 'deconv_4_1', 'deconv_4_2']:
@@ -200,14 +165,12 @@ class DagmaLinear(nn.Module):
                 W1, W2 = self.W1, self.W2
 
         if self.deconv in ['deconv_1', 'deconv_2', None]:
-            return W.cpu().detach().numpy()
+            return W
         elif self.deconv == 'deconv_3':
-            return (W1 * W2 - W2 * W2).cpu().detach().numpy()
+            return (W1 * W2 - W2 * W2)
         elif self.deconv in ['deconv_4', 'deconv_4_1', 'deconv_4_2']:
-            W1, W2 = W1.detach(), W2.detach()
-            W1[W1 < 0.] = 0.
-            W2[W2 < 0.] = 0.
-            return (W1 - W2).cpu().numpy()
+            W1, W2 = self.remove_negative(W1, W2)
+            return W1 - W2
         
     def clean_diag(self):
         """
@@ -240,6 +203,17 @@ class DagmaLinear(nn.Module):
         W2 = torch.max(W2, self.zero_mat)
         return W1, W2
 
+    def log_mse_loss(self, output: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        n, d = target.shape
+        loss = 0.5 * d * torch.log(1 / n * torch.sum((output - target) ** 2))
+        return loss
+
+    def g_dir_loss(self, x):
+        if not self.use_g_dir_loss:
+            return 0.
+        W = self.get_adj()
+        return self.log_mse_loss(x @ W, x)
+
 class DagmaTorch:
     """
     Class that implements the DAGMA algorithm
@@ -259,32 +233,11 @@ class DagmaTorch:
             float number precision, by default ``torch.double``.
         """
         self.vprint = print if verbose else lambda *a, **k: None
-        self.model = model
+        self.model : DagmaLinear = model
         self.dtype = dtype
         self.device = device
         self.dagma_type = dagma_type
-    
-    def log_mse_loss(self, output: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        r"""
-        Computes the logarithm of the MSE loss:
-            .. math::
-                \frac{d}{2} \log\left( \frac{1}{n} \sum_{i=1}^n (\mathrm{output}_i - \mathrm{target}_i)^2 \right)
-        
-        Parameters
-        ----------
-        output : torch.Tensor
-            :math:`(n,d)` output of the model
-        target : torch.Tensor
-            :math:`(n,d)` input dataset
-
-        Returns
-        -------
-        torch.Tensor
-            A scalar value of the loss.
-        """
-        n, d = target.shape
-        loss = 0.5 * d * torch.log(1 / n * torch.sum((output - target) ** 2))
-        return loss
+   
 
     def minimize(self, 
                  max_iter: float, 
@@ -333,7 +286,6 @@ class DagmaTorch:
         optimizer = optim.Adam(self.model.parameters(), lr=lr, betas=(.99,.999), weight_decay=mu*lambda2)
         if lr_decay is True:
             scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.8)
-        loss_fn = torch.nn.MSELoss()
         obj_prev = 1e16
         for i in range(max_iter):
             X_hat, regressor = self.model(self.X)
@@ -341,10 +293,10 @@ class DagmaTorch:
             if h_val.item() < 0:
                 self.vprint(f'Found h negative {h_val.item()} at iter {i}')
                 return False
-            score = self.log_mse_loss(X_hat, self.X)
-            # score = loss_fn(X_hat, self.X)
+            score = self.model.log_mse_loss(X_hat, self.X)
+            g_dir_loss = self.model.g_dir_loss(self.X)
             l1_reg = lambda1 * self.model.l1_reg(regressor)
-            obj = mu * (score + l1_reg) + h_val
+            obj = mu * (score + l1_reg + g_dir_loss) + h_val
             optimizer.zero_grad()
             obj.backward()
             # print(f"score {score.item():.4f}")
@@ -462,7 +414,7 @@ class DagmaTorch:
             mu *= mu_factor
             self.vprint(f'\nEnd Dagma iter t={i+1} -- mu: {mu}, time: {time() - time0:.2f}s', 30*'-')
             time0 = time()
-        W_est = self.model.get_adj()
+        W_est = self.model.get_adj().cpu().detach().numpy()
         W_est_no_filter = W_est.copy()
         W_est[np.abs(W_est) < w_threshold] = 0
         if return_no_filter:

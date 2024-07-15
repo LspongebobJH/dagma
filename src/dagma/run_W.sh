@@ -32,10 +32,11 @@ run() {
     data_version=$3
     deconv_type_dagma=$4
     cuda_idx=$5
-    warm_iter=$6
+    T=$6
+    # warm_iter=$6
     src_data_version=11
     n=2000
-    d=40
+    d=$7
     nodes=$d
 
     ####################
@@ -58,19 +59,19 @@ run() {
     # fitting W
     ####################
 
-    for i in {1..1}; do
+    for i in {1..5}; do
         s0=$(( d * 4 ))
+        stdbuf -o0 -e0 \
         python gen_copies.py \
         --gen_type W_torch \
         --n $n --s0 $s0 --d $d \
         --seed_knockoff $i \
         --root_path simulated_data/v${data_version}/v${data_version}_${alpha} \
-        --deconv_type_dagma ${deconv_type_dagma} \
-        --order $order --alpha $alpha --warm_iter $warm_iter \
+        --T $T \
         --version $d \
-        --device cuda:${cuda_idx} > logs/log_temp/v${data_version}/v${data_version}_${alpha}_${i}_${deconv_type_dagma} 2>&1 &
+        --device cuda:${cuda_idx} > logs/log_temp/v${data_version}/v${data_version}_${nodes}_${alpha}_${i}_${deconv_type_dagma} 2>&1 &
     done
 }
 
-run 2 0.3 26 deconv_4_1 0 80000
-run -1 0.3 27 deconv_4_2 1 80000
+run -1 -1 32 -1 0 6 40
+run -1 -1 32 -1 1 6 60

@@ -49,6 +49,8 @@ parser.add_argument('--deconv_type_dagma', type=str, default=None,
 parser.add_argument('--order', type=int, default=None)
 parser.add_argument('--alpha', type=float, default=None)
 parser.add_argument('--warm_iter', type=int, default=None)
+parser.add_argument('--use_g_dir_loss', action='store_true', default=None)
+parser.add_argument('--T', type=int, default=None)
 
 args = parser.parse_args()
 

@@ -58,6 +58,8 @@ norm_knockoffGAN: False
 
 norm_DAGMA: False
 warm_iter: 50000
+use_g_dir_loss: False
+T: 4
 
 ##############################
 # both

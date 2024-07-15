@@ -157,6 +157,8 @@ def fit(X, X_all, configs):
         deconv_type_dagma = configs['deconv_type_dagma']
         order = configs['order']
         alpha = configs['alpha']
+        use_g_dir_loss = configs['use_g_dir_loss']
+        T = configs['T']
 
         if device == 'mps':
             dtype = torch.float32
@@ -164,12 +166,15 @@ def fit(X, X_all, configs):
             dtype = torch.double
 
         from dagma_torch import DagmaLinear, DagmaTorch
-        eq_model = DagmaLinear(d=d, device=device, dtype=dtype, dagma_type=dagma_type,
+        eq_model = DagmaLinear(d=d, device=device, dtype=dtype, 
+                               dagma_type=dagma_type, use_g_dir_loss=use_g_dir_loss,
                                deconv_type_dagma=deconv_type_dagma, order=order, alpha=alpha).to(device)
+        
         model = DagmaTorch(eq_model, device=device, verbose=True, 
                            dagma_type=dagma_type, dtype=dtype)
         
         W_est_no_filter, _  = model.fit(X_all, lambda1=0.02, lambda2=0.005, warm_iter=warm_iter, 
+                                        T=T,
                                         return_no_filter=True)
     
     return W_est_no_filter, Z_true, Z_knock
@@ -184,6 +189,10 @@ def combine_configs(configs_yaml : dict, args : ArgumentParser):
     for key, val in _args.items():
         if val in ["None", "none", -1]:
             _args[key] = None
+
+    for key, val in configs.items():
+        if val in ["None", "none", -1]:
+            configs[key] = None
 
     for key, val in _args.items():
         if key in configs.keys():
