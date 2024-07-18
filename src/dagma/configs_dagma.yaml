@@ -35,7 +35,7 @@ abs_selection : False
 ## in this case, no selected threshold.
 # dag_6: first compute fdr control z and q-value matrix Q, then include Q from min to max until not dag.
 
-# dag_7L first remove W from min to max, until dag, then fdr control filter
+# dag_7: first remove W from min to max, until dag, then fdr control filter
 dag_control : None
 
 # control_type
