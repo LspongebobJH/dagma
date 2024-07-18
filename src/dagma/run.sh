@@ -17,13 +17,24 @@
 ########################################
 
 # n=2000
-# nodes=(120 140 160 180 200)
+# nodes=(20 40 60 80)
 # for d in "${nodes[@]}"; do
-#     s0=$(( d * 4 ))
+#     s0=$(( d * 5 ))
 #     python gen_copies.py --gen_type X \
 #     --n $n --d $d --s0 $s0 \
-#     --root_path simulated_data/v11 \
-#     --version $d &
+#     --root_path simulated_data/v33 \
+#     --version ${d}_${s0} &
+# done
+
+# wait
+
+# nodes=(20 40 60 80)
+# for d in "${nodes[@]}"; do
+#     s0=$(( d * 6 ))
+#     python gen_copies.py --gen_type X \
+#     --n $n --d $d --s0 $s0 \
+#     --root_path simulated_data/v33 \
+#     --version ${d}_${s0} &
 # done
     
 
@@ -43,23 +54,31 @@
 #########################################
 
 n=2000
-nodes=(120 140 160 180 200)
-data_version=11
+nodes=(20 40 60 80)
+data_version=33
 for d in "${nodes[@]}"; do
     for i in {1..10}; do
-        s0=$(( d * 4 ))
+        s0=$(( d * 5 ))
         python gen_copies.py --gen_type knockoff \
         --n $n --d $d --s0 $s0 --seed_knockoff $i \
         --root_path simulated_data/v${data_version} \
-        --version $d &
+        --version ${d}_${s0} &
         if [ $i -eq 10 ]; then
             pid=$!
         fi
     done
 
-    wait -n $pid
-    if [ $? -ne 0 ]; then
-        break
-    fi
+    for i in {1..10}; do
+        s0=$(( d * 6 ))
+        python gen_copies.py --gen_type knockoff \
+        --n $n --d $d --s0 $s0 --seed_knockoff $i \
+        --root_path simulated_data/v${data_version} \
+        --version ${d}_${s0} &
+        if [ $i -eq 10 ]; then
+            pid=$!
+        fi
+    done
+
     wait
+
 done

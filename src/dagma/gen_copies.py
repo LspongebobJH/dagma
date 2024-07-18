@@ -35,7 +35,7 @@ parser.add_argument('--dagma_type', type=str, default='dagma_1',
 parser.add_argument('--seed_X', type=int, default=1)
 parser.add_argument('--seed_knockoff', type=int, default=1)
 parser.add_argument('--seed_model', type=int, default=0)
-parser.add_argument('--version', type=int, default=1)
+parser.add_argument('--version', type=str, default=None)
 parser.add_argument('--force_save', action='store_true', default=False)
 
 # parameters of knockoffGAN in knockoff generation
