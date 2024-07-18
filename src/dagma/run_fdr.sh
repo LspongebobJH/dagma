@@ -93,23 +93,23 @@
 
 run() {
     data_version=$1
-    alpha=$2
-    log_file_global=$3
+    log_file_global=$2
 
     n=2000
-    nodes=(40 60)
+    nodes=(10 40 60 80 100)
     for d in "${nodes[@]}"; do
         s0=$(( d * 4 ))
         python multi_main.py \
         --n $n --s0 $s0 --d $d \
-        --control_type=type_3_global \
-        --seed_knockoff_list=1 \
+        --control_type=type_4_global \
+        --dag_control=dag_7 \
+        --seed_knockoff_list=1,2,3,4,5,6,7,8,9,10 \
         --seed_model_list=0 \
         --version=$d \
-        --root_path simulated_data/v${data_version}/v${data_version}_${alpha} \
-        --log_file=log_${log_file_global}/log_${data_version}_${d}_${alpha} &
+        --root_path simulated_data/v${data_version} \
+        --log_file=log_${log_file_global}/log_${data_version}_${d} &
         # wait
     done
 }
 
-run 32 -1 72
+run 11 73
