@@ -28,6 +28,7 @@ parser.add_argument('--root_path', type=str, default=None)
 parser.add_argument('--knock_type', type=str, default='knockoff_gan', 
                     choices=['permutation', 'knockoff_gan', 'deep_knockoff'])
 parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W', 'W_torch'])
+
 # Note that type_3_global has the same knockoff statistics as type_3, only the FDR estimate different
 parser.add_argument('--dagma_type', type=str, default='dagma_1', 
                     choices = ['dagma_1'])

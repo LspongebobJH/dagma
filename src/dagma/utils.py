@@ -104,7 +104,7 @@ def knockoff(X : np.ndarray, configs):
     elif knock_type == 'knockoff_gan':
         # TODO: tensorflow fail running on GPU, but not slow now.
         niter = configs['niter']
-        norm_tag = configs['norm']
+        norm_tag = configs['norm_knockoffGAN']
         X = norm(X) if norm_tag else X
         X_tilde = KnockoffGAN(x_train = X, x_name = 'Normal', niter = niter)
 
