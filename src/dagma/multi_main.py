@@ -44,7 +44,7 @@ parser.add_argument('--dag_control', type=str, default=None)
 parser.add_argument('--seed_X', type=int, default=1)
 parser.add_argument('--seed_knockoff_list', type=str, required=True)
 parser.add_argument('--seed_model_list', type=str, required=True)
-parser.add_argument('--version', type=int, default=1)
+parser.add_argument('--version', type=str, default=None)
 parser.add_argument('--log_file', type=str, default='temp')
 
 # network deconvolution

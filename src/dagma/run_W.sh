@@ -59,10 +59,11 @@ run() {
 
     n=2000
 
-    nodes=(120 140 160)
+    nodes=(200)
     for d in "${nodes[@]}"; do
+
         cuda_idx=6
-        for i in {1..10}; do
+        for i in {1..5}; do
             s0=$(( d * 4 ))
             stdbuf -o0 -e0 \
             python gen_copies.py \
@@ -70,10 +71,25 @@ run() {
             --n $n --s0 $s0 --d $d \
             --seed_knockoff $i \
             --root_path simulated_data/v${data_version} \
-            --version $d \
+            --version ${d} \
             --device cuda:${cuda_idx} > logs/log_temp/v${data_version}/v${d}_${i} 2>&1 &
         done
-        wait
+
+        cuda_idx=7
+        for i in {6..10}; do
+            s0=$(( d * 4 ))
+            stdbuf -o0 -e0 \
+            python gen_copies.py \
+            --gen_type W_torch \
+            --n $n --s0 $s0 --d $d \
+            --seed_knockoff $i \
+            --root_path simulated_data/v${data_version} \
+            --version ${d} \
+            --device cuda:${cuda_idx} > logs/log_temp/v${data_version}/v${d}_${i} 2>&1 &
+        done
+
+        # wait
+        
     done
 
 }
