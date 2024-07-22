@@ -1,15 +1,16 @@
 #!/bin/bash
 
-data_version=$1
-n_nodes=$2
-alpha=$3
-src_data_version=$4
-src_data_option=$5
+data_option=$1
 
-# dst_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${data_version}/v${n_nodes}
-dst_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${data_version}/v${data_version}_${alpha}/v${n_nodes}
-dst_path=$dst_dir/$src_data_option
-src_path=/home/jiahang/dagma/src/dagma/simulated_data/v${src_data_version}/v${n_nodes}/${src_data_option}
+dst_data_version=$2
+dst_final_version=$3
+
+src_data_version=$4
+src_final_version=$5
+
+dst_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v${dst_final_version}
+dst_path=$dst_dir/$data_option
+src_path=/home/jiahang/dagma/src/dagma/simulated_data/v${src_data_version}/v${src_final_version}/${data_option}
 
 
 if [ ! -d "$dst_dir$" ]; then

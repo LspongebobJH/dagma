@@ -53,30 +53,30 @@
 # Generating Knockoff, sweep over n_nodes
 #########################################
 
+data_option=X
+dst_data_version=34
+# dst_final_version=20
+src_data_version=11
+# src_final_version=20
 n=2000
-nodes=(20 40 60 80)
-data_version=33
+nodes=(20 40 60)
 for d in "${nodes[@]}"; do
-    for i in {1..10}; do
-        s0=$(( d * 5 ))
-        python gen_copies.py --gen_type knockoff \
+    
+    s0=$(( d * 4 ))
+    ./create_data_dir.sh $data_option $dst_data_version ${d} $src_data_version ${d}
+
+    for i in {1..5}; do
+        python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn \
         --n $n --d $d --s0 $s0 --seed_knockoff $i \
-        --root_path simulated_data/v${data_version} \
-        --version ${d}_${s0} &
-        if [ $i -eq 10 ]; then
-            pid=$!
-        fi
+        --root_path simulated_data/v${dst_data_version} \
+        --version ${d} --device cuda:6 --force_save &
     done
 
-    for i in {1..10}; do
-        s0=$(( d * 6 ))
-        python gen_copies.py --gen_type knockoff \
+    for i in {6..10}; do
+        python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn \
         --n $n --d $d --s0 $s0 --seed_knockoff $i \
-        --root_path simulated_data/v${data_version} \
-        --version ${d}_${s0} &
-        if [ $i -eq 10 ]; then
-            pid=$!
-        fi
+        --root_path simulated_data/v${dst_data_version} \
+        --version ${d} --device cuda:7 --force_save &
     done
 
     wait
