@@ -237,6 +237,7 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
 
 def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int, W_full: np.ndarray = None):
     """
+    TODO: tiem profiling, especially extract_dag_mask, where topo sort is time-consuming. can try binary search.
     W_full: dag_7 is applied to the whole W11, W12, W21, W22, then W = [W11 || W21], rather than the input one.
     """
     num_feat = configs['d']

@@ -1,6 +1,7 @@
 import numpy as np
 import pickle
 import os
+import knockoff
 import utils
 import utils_dagma as utils_dagma
 
@@ -26,7 +27,8 @@ parser.add_argument('--device', type=str, default=None)
 parser.add_argument('--root_path', type=str, default=None)
 
 parser.add_argument('--knock_type', type=str, default='knockoff_gan', 
-                    choices=['permutation', 'knockoff_gan', 'deep_knockoff'])
+                    choices=['permutation', 'knockoff_gan', 'deep_knockoff', 
+                             'knockoff_diagn'])
 parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W', 'W_torch'])
 
 # Note that type_3_global has the same knockoff statistics as type_3, only the FDR estimate different
@@ -98,7 +100,7 @@ if __name__ == '__main__':
             X, W_true = data_X['X'], data_X['W_true']
             utils.set_random_seed(configs['seed_knockoff'])
 
-            X_tilde = utils.knockoff(X, configs)
+            X_tilde = knockoff.knockoff(X, configs)
             
             utils.process_simulated_data(X_tilde, configs, behavior='save')
 
@@ -121,7 +123,7 @@ if __name__ == '__main__':
             if configs['norm_DAGMA']:
                 X_all =utils.norm(X_all)
 
-            W_est_no_filter, Z_true, Z_knock = utils.fit(X, X_all, configs)
+            W_est_no_filter, Z_true, Z_knock = utils.fit(X_all, configs)
             data_W = {
                 'W_est': W_est_no_filter, 'Z_true': Z_true, 'Z_knock': Z_knock
             }

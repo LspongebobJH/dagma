@@ -28,7 +28,8 @@ class DagmaLinear(nn.Module):
                  dagma_type: str,
                  deconv_type_dagma: str,
                  order: int, alpha: float, use_g_dir_loss: bool,
-                 device : str, dtype: torch.dtype = torch.double):
+                 device : str, dtype: torch.dtype = torch.double, 
+                 original : bool = False):
         r"""
         Parameters
         ----------
@@ -40,13 +41,19 @@ class DagmaLinear(nn.Module):
             Float precision, by default ``torch.double``
         """
         torch.set_default_dtype(dtype)
-        self.d = 2 * d
+        self.original = original
+
+        if self.original:
+            self.d = d
+        else:
+            self.d = 2 * d
         self.device = device
         self.dagma_type = dagma_type
         self.deconv = deconv_type_dagma
         self.order = order
         self.alpha = alpha
         self.use_g_dir_loss = use_g_dir_loss
+        
         super(DagmaLinear, self).__init__()
         self.I = torch.eye(self.d).to(self.device)
 
@@ -183,10 +190,13 @@ class DagmaLinear(nn.Module):
         """
         def _clean_diag(w):
             d = w.shape[0]
-            diag_mat = \
-                torch.diag(torch.diag(w, 0)) + \
-                torch.diag(torch.diag(w, d // 2), d // 2) + \
-                torch.diag(torch.diag(w, -d // 2), d // 2)
+            if self.original:
+                diag_mat = torch.diag(torch.diag(w, 0))
+            else:
+                diag_mat = \
+                    torch.diag(torch.diag(w, 0)) + \
+                    torch.diag(torch.diag(w, d // 2), d // 2) + \
+                    torch.diag(torch.diag(w, -d // 2), d // 2)
             w_res = w - diag_mat
             return w_res
         
