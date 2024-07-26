@@ -18,6 +18,9 @@ name is the n_nodes.
 sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_3_global (no dag control), knockoffDiagnosis
 name is the n_nodes.
 
+* log_78 (data version v36)
+sweep, 2000 samples, [n * 4] edges, W_torch, type_3_global (no dag control) and type_4_global (dag_7), knockoffDiagnosis, no adjust_marg
+name is the n_nodes.
 
 
 ==================

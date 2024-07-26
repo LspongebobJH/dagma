@@ -51,7 +51,7 @@ run() {
     # for d in "${nodes[@]}"; do
     
 
-    for i in {1..10}; do
+    for i in {1..5}; do
         stdbuf -o0 -e0 \
         python gen_copies.py \
         --gen_type W_torch \
@@ -59,7 +59,18 @@ run() {
         --seed_knockoff $i \
         --root_path simulated_data/v${data_version} \
         --version ${version} \
-    --device cuda:${cuda_idx} > logs/log_temp/v${data_version}/v${version}_${i} 2>&1 &
+        --device cuda:${cuda_idx} > logs/log_temp/v${data_version}/v${version}_${i} 2>&1 &
+    done
+
+    for i in {6..10}; do
+        stdbuf -o0 -e0 \
+        python gen_copies.py \
+        --gen_type W_torch \
+        --n $n --s0 $s0 --d $d \
+        --seed_knockoff $i \
+        --root_path simulated_data/v${data_version} \
+        --version ${version} \
+        --device cuda:$(( cuda_idx + 1 )) > logs/log_temp/v${data_version}/v${version}_${i} 2>&1 &
     done
 
         # wait
@@ -68,7 +79,7 @@ run() {
 
 }
 
-data_version=34
+data_version=36
 
 
 ####################
@@ -87,13 +98,13 @@ if [ ! -d "$direc" ]; then
     mkdir $direc
 fi
 
-d=80
-cuda_idx=4
+d=20
+cuda_idx=6
 run $data_version $d $cuda_idx
 
-d=100
-cuda_idx=5
-run $data_version $d $cuda_idx
+# d=100
+# cuda_idx=5
+# run $data_version $d $cuda_idx
 
 # d=120
 # cuda_idx=7

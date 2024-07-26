@@ -35,5 +35,6 @@ v34: (ER4, knockoffDiagnosis)
     2000 samples, [20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, 10 knockoff seeds, W_torch, ...
 v35: (ER5/6, knockoffDiagnosis)
     2000 samples, [60, 80] nodes, [n * 5 / 6] edges, 5 knockoff seeds, W_torch, ...
-    
+v36: (ER4, knockoffDiagnosis)
+    2000 samples, [20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, 10 knockoff seeds, W_torch, ..., disable adjust_marg
 

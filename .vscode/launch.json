@@ -14,7 +14,7 @@
             "justMyCode": true,
             "args": [
                 "--gen_type=knockoff", "--knock_type=knockoff_diagn",
-                "--n=2000", "--d=20", "--s0=80", 
+                "--n=2000", "--d=20", "--s0=80", "--disable_adjust_marg",
                 "--seed_knockoff=100",
                 "--root_path=simulated_data/v11",
                 "--version=20",

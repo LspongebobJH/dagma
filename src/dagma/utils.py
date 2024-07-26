@@ -89,7 +89,7 @@ def fit(X_all, configs, original=False):
     warm_iter = configs['warm_iter']
 
     # assert gen_W in [None, 'torch']
-    assert gen_W is 'torch'
+    assert gen_W == 'torch'
     assert dagma_type == 'dagma_1'
 
     W_est_no_filter, Z_true, Z_knock = \
