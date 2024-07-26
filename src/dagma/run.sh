@@ -59,7 +59,7 @@ dst_data_version=34
 src_data_version=11
 # src_final_version=20
 n=2000
-nodes=(20 40 60)
+nodes=(80 100 120 140 160 180 200)
 for d in "${nodes[@]}"; do
     
     s0=$(( d * 4 ))
@@ -69,14 +69,14 @@ for d in "${nodes[@]}"; do
         python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn \
         --n $n --d $d --s0 $s0 --seed_knockoff $i \
         --root_path simulated_data/v${dst_data_version} \
-        --version ${d} --device cuda:6 --force_save &
+        --version ${d} --device cuda:6 &
     done
 
     for i in {6..10}; do
         python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn \
         --n $n --d $d --s0 $s0 --seed_knockoff $i \
         --root_path simulated_data/v${dst_data_version} \
-        --version ${d} --device cuda:7 --force_save &
+        --version ${d} --device cuda:7 &
     done
 
     wait

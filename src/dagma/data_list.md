@@ -29,10 +29,10 @@ v32: based on v11, increase the number of T to make DAG loss converge better and
 === common used datasets below ===
 v11: (baseline, ER4, knockoffGAN) 
     2000 samples, [10, 20, 40, 60, 80, 100] nodes, [n * 4] edges, 10 knockoff seeds, W_torch, version index is the n_nodes.
-v33: (denser, ER5/6, knockoffGAN) 
+v33: (denser, ER5/6, knockoffGAN)
     2000 samples, [10, 20, 40, 60, 80, 100] nodes, [n * 5 / 6] edges, 5 knockoff seeds, W_torch, version index is the n_nodes.
 v34: (ER4, knockoffDiagnosis)
-    2000 samples, [20, 40, 60] nodes, [n * 4] edges, 10 knockoff seeds, W_torch, ...
+    2000 samples, [20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, 10 knockoff seeds, W_torch, ...
 v35: (ER5/6, knockoffDiagnosis)
     2000 samples, [60, 80] nodes, [n * 5 / 6] edges, 5 knockoff seeds, W_torch, ...
     

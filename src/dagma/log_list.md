@@ -1,3 +1,28 @@
+* log_73 (data version v11)(vs log_32): 
+sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_4_global, dag_7, knockoffGAN
+name is the n_nodes.
+
+* log_74 (data version v33): 
+sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 5 / 6] edges, W_torch, type_4_global, dag_7, knockoffGAN
+name is the n_nodes.
+
+* log_75 (data version v34)(baseline, normal): 
+sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_4_global, dag_7, knockoffDiagnosis
+name is the n_nodes.
+
+* log_76 (data version v35)(denser): 
+sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 5 / 6] edges, W_torch, type_4_global, dag_7, knockoffDiagnosis
+name is the n_nodes.
+
+* log_77 (data version v34)(baseline, normal): 
+sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_3_global (no dag control), knockoffDiagnosis
+name is the n_nodes.
+
+
+
+==================
+=== deprecated ===
+==================
 * log_1 (deprecated): 2000 samples, 20 nodes, 50 edges, type_3_global, expected fdr 0.2, real fdr 0.0928±0.0362, ALL DAG
 * log_2 (deprecated): ..., type_3 (column-wise), ..., real fdr 0.1509±0.0948, 1 NOT DAG
 * log_3: 2000 samples, 20 nodes, 50 edges, type_3_global, expected fdr 0.2, real fdr 0.0928±0.0362, power 0.9640±0.0215, ALL DAG
@@ -57,19 +82,19 @@ expected fdr 0.2, ALL DAG
 * log_28: 2000 samples, 60 nodes, 1000 edges, type_3_global
 
 * log_29 (data version v11): 
-sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_3
+sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_3, knockoffGAN
 name is the n_nodes.
 
 * log_30 (data version v11): 
-sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_3_global
+sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_3_global, knockoffGAN
 name is the n_nodes.
 
 * log_31 (data version v11): 
-sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_4, dag_1
+sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_4, dag_1, knockoffGAN
 name is the n_nodes.
 
 * log_32 (data version v11): 
-sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_4_global, dag_1
+sweep, 2000 samples, [10, 40, 60, 80, 100] nodes, [n * 4] edges, W_torch, type_4_global, dag_1, knockoffGAN
 name is the n_nodes.
 
 * log_33 (data version v12)(vs log_29):
@@ -243,10 +268,6 @@ deconv in dagma (deconv_4_2), alpha=0.1, order=2, add loss term ||X - XW_dir||
 increase the number of T to make DAG loss converge better and see if it can
 resolve our problems.
 
-
-
-
-
 * log_1000 (local): 2000 samples, 20 nodes, 120 edges, type_4, W_torch
 * log_1001 (local): 2000 samples, 20 nodes, 120 edges, type_4_global, W_torch
 * log_1002 (local): 2000 samples, 20 nodes, 80 edges, type_4, W_torch
@@ -256,3 +277,6 @@ resolve our problems.
 * log_1006 (local): 2000 samples, 20 nodes, 120 edges, type_4, W_torch, no dag control (same as type_3)
 * log_1007 (local): 2000 samples, 20 nodes, 120 edges, type_4_global, W_torch, no dag control (same as type_3_global)
 
+==================
+=== deprecated ===
+==================

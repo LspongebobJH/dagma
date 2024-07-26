@@ -40,8 +40,8 @@ run() {
     cuda_idx=$3
 
     n=2000
-    s0=$(( d * 6 ))
-    version=${d}_${s0}
+    s0=$(( d * 4 ))
+    version=${d}
     
     ####################
     # fitting W
@@ -51,7 +51,7 @@ run() {
     # for d in "${nodes[@]}"; do
     
 
-    for i in {1..5}; do
+    for i in {1..10}; do
         stdbuf -o0 -e0 \
         python gen_copies.py \
         --gen_type W_torch \
@@ -59,7 +59,7 @@ run() {
         --seed_knockoff $i \
         --root_path simulated_data/v${data_version} \
         --version ${version} \
-        --device cuda:${cuda_idx} > logs/log_temp/v${data_version}/v${version} 2>&1 &
+    --device cuda:${cuda_idx} > logs/log_temp/v${data_version}/v${version}_${i} 2>&1 &
     done
 
         # wait
@@ -68,7 +68,7 @@ run() {
 
 }
 
-data_version=35
+data_version=34
 
 
 ####################
@@ -87,10 +87,18 @@ if [ ! -d "$direc" ]; then
     mkdir $direc
 fi
 
-d=60
-cuda_idx=6
+d=80
+cuda_idx=4
 run $data_version $d $cuda_idx
 
-d=80
-cuda_idx=7
+d=100
+cuda_idx=5
 run $data_version $d $cuda_idx
+
+# d=120
+# cuda_idx=7
+# run $data_version $d $cuda_idx
+
+# d=140
+# cuda_idx=8
+# run $data_version $d $cuda_idx
