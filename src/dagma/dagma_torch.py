@@ -26,10 +26,10 @@ class DagmaLinear(nn.Module):
     
     def __init__(self, d : int, 
                  dagma_type: str,
-                 deconv_type_dagma: str,
-                 order: int, alpha: float, use_g_dir_loss: bool,
-                 disable_block_diag_removal : bool,
-                 device : str, dtype: torch.dtype = torch.double, 
+                 deconv_type_dagma: str = None,
+                 order: int = None, alpha: float = None, use_g_dir_loss: bool = None,
+                 disable_block_diag_removal : bool = None,
+                 device : str = 'cuda:7', dtype: torch.dtype = torch.double, 
                  original : bool = False):
         r"""
         Parameters
@@ -234,8 +234,7 @@ class DagmaTorch:
     Class that implements the DAGMA algorithm
     """
     
-    def __init__(self, model: nn.Module, verbose: bool,
-                dagma_type : str, device : str, dtype: torch.dtype = torch.double):
+    def __init__(self, model: nn.Module, verbose: bool, device : str, dtype: torch.dtype = torch.double):
         """
         Parameters
         ----------
@@ -251,7 +250,6 @@ class DagmaTorch:
         self.model : DagmaLinear = model
         self.dtype = dtype
         self.device = device
-        self.dagma_type = dagma_type
    
 
     def minimize(self, 
@@ -453,8 +451,8 @@ def test():
     print("simulated linear dag")
     X = utils.simulate_linear_sem(B_true, n, sem_type)
 
-    eq_model = DagmaLinear(d=d, device=device).to(device)
-    model = DagmaTorch(eq_model, device=device, verbose=True, dagma_type='dagma_1')
+    eq_model = DagmaLinear(d=d, dagma_type=None, device=device, original=True).to(device)
+    model = DagmaTorch(eq_model, device=device, verbose=True)
     print("fit dagma")
     W_est = model.fit(X, lambda1=0.02, lambda2=0.005)
     acc = utils.count_accuracy(B_true, W_est != 0, use_logger=False)
