@@ -1,22 +1,20 @@
-* log_73 (data version v11)(vs log_32): 
-sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_4_global, dag_7, knockoffGAN
-name is the n_nodes.
 
-* log_74 (data version v33): 
-sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 5 / 6] edges, W_torch, type_4_global, dag_7, knockoffGAN
-name is the n_nodes.
-
-* log_75 (data version v34)(baseline, normal): 
-sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_4_global, dag_7, knockoffDiagnosis
-name is the n_nodes.
-
-* log_76 (data version v35)(denser): 
-sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 5 / 6] edges, W_torch, type_4_global, dag_7, knockoffDiagnosis
-name is the n_nodes.
 
 * log_77 (data version v34)(baseline, normal): 
 sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_3_global (no dag control), knockoffDiagnosis
 name is the n_nodes.
+
+* log_79 ~ log_87: trick experiments
+W_torch, type_#_global, (no dag control), knockoffDiagnosis, with adjust marg
+* * 79: trick_1
+* * 80: trick_2
+* * 81: trick_3 (works)
+* * 82: trick_4
+* * 83: trick_5
+* * 84: trick_6
+* * 85: trick_3_1 (works, same as trick_3 by simplify the formula)
+* * 86: trick_7 (works but quite low power, a part of trick_3)
+* * 87: trick_8
 
 
 
@@ -276,6 +274,26 @@ resolve our problems.
 * log_1005 (local): 2000 samples, 20 nodes, 80 edges, type_4_global, W_torch, no dag control (same as type_3_global)
 * log_1006 (local): 2000 samples, 20 nodes, 120 edges, type_4, W_torch, no dag control (same as type_3)
 * log_1007 (local): 2000 samples, 20 nodes, 120 edges, type_4_global, W_torch, no dag control (same as type_3_global)
+
+* log_73 (data version v11)(vs log_32): 
+sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_4_global, dag_7, knockoffGAN
+name is the n_nodes.
+
+* log_74 (data version v33): 
+sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 5 / 6] edges, W_torch, type_4_global, dag_7, knockoffGAN
+name is the n_nodes.
+
+* log_75 (data version v34)(baseline, normal): 
+sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_4_global, dag_7, knockoffDiagnosis
+name is the n_nodes.
+
+* log_76 (data version v35)(denser): 
+sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 5 / 6] edges, W_torch, type_4_global, dag_7, knockoffDiagnosis
+name is the n_nodes.
+
+* log_78 (data version v36)
+sweep, 2000 samples, [n * 4] edges, W_torch, type_3_global (no dag control) and type_4_global (dag_7), knockoffDiagnosis, no adjust_marg
+name is the n_nodes.
 
 ==================
 === deprecated ===

@@ -89,7 +89,7 @@ def fit(X_all, configs, original=False):
     warm_iter = configs['warm_iter']
 
     # assert gen_W in [None, 'torch']
-    assert gen_W is 'torch'
+    assert gen_W == 'torch'
     assert dagma_type == 'dagma_1'
 
     W_est_no_filter, Z_true, Z_knock = \
@@ -106,6 +106,7 @@ def fit(X_all, configs, original=False):
         order = configs['order']
         alpha = configs['alpha']
         use_g_dir_loss = configs['use_g_dir_loss']
+        disable_block_diag_removal = configs['disable_block_diag_removal']
         T = configs['T']
 
         if device == 'mps':
@@ -117,6 +118,7 @@ def fit(X_all, configs, original=False):
         eq_model = DagmaLinear(d=d, device=device, dtype=dtype, 
                                dagma_type=dagma_type, use_g_dir_loss=use_g_dir_loss,
                                deconv_type_dagma=deconv_type_dagma, order=order, alpha=alpha, 
+                               disable_block_diag_removal=disable_block_diag_removal,
                                original=original).to(device)
         
         model = DagmaTorch(eq_model, device=device, verbose=True, 

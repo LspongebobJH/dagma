@@ -46,11 +46,52 @@ dag_control : None
 ### if dag_control == None, type_4_control(_global) == type_3_control(_global)
 
 ##############################
+# testing tricks for 
+# FDR control
+##############################
+
+trick: None ## trick only for type_3_global now
+# Lets Z(i, j) be |W_i| - |W_j|
+# the resulted Z(11, 21) (or denoted by Z) is calibrated by
+# trick_1: Z <- Z - Z(12, 22)
+# trick_2: Z <- Z - Z(21, 22)
+# trick_3 (work): Z <- Z - Z(12, 22) + Z(11, 22)
+# trick_3_1 (work): simplify trick_3, Z - Z(12, 22) + Z(11, 22) = Z(11, 12) + Z(11, 21) = 2|W_11| - |W_21| - |W_12|
+
+########### trick_4, 5, 6 ############
+# since trick_3_1 is very much like
+# the fdr control formula of deeprock
+# hence test some similar formula
+######################################
+# trick_4: Z <- Z(11, 22), like T - DD
+# trick_5: (a modification of trick_6) Z <- |W12| + |W21| - |W22|, like D - DD
+# trick_6: |W12| + |W21| - 2|W22|, like D - 2 * DD
+
+
+########### trick_7 ##################
+# trick_7 is a part of trick_3
+# since Z(11, 21) cannot control
+# and trick_3 can control, I try
+# whether Z(11, 21) can control.
+######################################
+# trick_7 (work but low power): Z <- Z(11, 12) = |W11| - |W12|
+
+# trick_8: Z <- Z(11, 21) - Z(21, 22) = |W11| + |W22| - 2|W21|
+
+
+
+##############################
 # knockoffGAN parameters
 ##############################
 
 niter: 2000
 norm_knockoffGAN: False
+
+##############################
+# knockoffDiagn parameters
+##############################
+
+disable_adjust_marg: False
 
 ##############################
 # DAGMA parameters
@@ -60,6 +101,7 @@ norm_DAGMA: False
 warm_iter: 50000
 use_g_dir_loss: False
 T: 4
+disable_block_diag_removal: False
 
 ##############################
 # both

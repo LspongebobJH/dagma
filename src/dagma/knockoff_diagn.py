@@ -34,11 +34,12 @@ def get_knockoffs_stats(X, configs, n_jobs=1,
     else: # knockoff diagnostic
         # preds = np.array(Parallel(n_jobs=n_jobs)(delayed(
         #     _get_single_clf_ko)(X, j, method_ko_gen) for j in tqdm(range(p))))
+        adjust_marg=not configs['disable_adjust_marg']
         _configs = configs.copy()
         _configs['gen_W'] = 'torch'
         W_est_no_filter, _, _ = utils.fit(X, _configs, original=True)
         preds = X @ W_est_no_filter
-        X_tildes = conditional_sequential_gen_ko(X, preds, n_jobs=n_jobs, discrete=False, adjust_marg=True)
+        X_tildes = conditional_sequential_gen_ko(X, preds, n_jobs=n_jobs, discrete=False, adjust_marg=adjust_marg)
 
     return X_tildes
 
