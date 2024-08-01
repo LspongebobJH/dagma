@@ -28,6 +28,7 @@ class DagmaLinear(nn.Module):
                  dagma_type: str,
                  deconv_type_dagma: str,
                  order: int, alpha: float, use_g_dir_loss: bool,
+                 disable_block_diag_removal : bool,
                  device : str, dtype: torch.dtype = torch.double, 
                  original : bool = False):
         r"""
@@ -42,6 +43,7 @@ class DagmaLinear(nn.Module):
         """
         torch.set_default_dtype(dtype)
         self.original = original
+        self.disable_block_diag_removal = disable_block_diag_removal
 
         if self.original:
             self.d = d
@@ -193,10 +195,13 @@ class DagmaLinear(nn.Module):
             if self.original:
                 diag_mat = torch.diag(torch.diag(w, 0))
             else:
-                diag_mat = \
-                    torch.diag(torch.diag(w, 0)) + \
-                    torch.diag(torch.diag(w, d // 2), d // 2) + \
-                    torch.diag(torch.diag(w, -d // 2), d // 2)
+                if self.disable_block_diag_removal:
+                    diag_mat = torch.diag(torch.diag(w, 0))
+                else:
+                    diag_mat = \
+                        torch.diag(torch.diag(w, 0)) + \
+                        torch.diag(torch.diag(w, d // 2), d // 2) + \
+                        torch.diag(torch.diag(w, -d // 2), d // 2)
             w_res = w - diag_mat
             return w_res
         

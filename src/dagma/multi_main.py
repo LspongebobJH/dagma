@@ -47,6 +47,12 @@ parser.add_argument('--seed_model_list', type=str, required=True)
 parser.add_argument('--version', type=str, default=None)
 parser.add_argument('--log_file', type=str, default='temp')
 
+# testing trick for fdr control
+parser.add_argument('--trick', type=str, default=None, 
+                    choices=[None, 'trick_1', 'trick_2', 'trick_3', 'trick_3_1', 
+                             'trick_4', 'trick_5', 'trick_6', 'trick_7', 'trick_8',
+                             'trick_9', 'trick_10'])
+
 # network deconvolution
 parser.add_argument('--deconv_type', type=str, default=None, choices=[None, 'deconv_1', 'deconv_2'])
 ## valid only when deconv_1
@@ -138,7 +144,7 @@ if __name__ == '__main__':
             if configs['control_type'] == 'type_3':
                 fdp_true, power = type_3_control(configs, W_est, W_true, fdr)
             elif configs['control_type'] == 'type_3_global':
-                fdp_true, power = type_3_control_global(configs, W_est, W_true, fdr)
+                fdp_true, power = type_3_control_global(configs, W_est, W_true, fdr, W_full = data_W['W_est'])
             elif configs['control_type'] == 'type_4_global':
                 fdp_true, power = type_4_control_global(configs, W_est, W_true, fdr, W_full = data_W['W_est'])
             elif configs['control_type'] == 'type_4':

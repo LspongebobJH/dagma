@@ -54,31 +54,30 @@
 #########################################
 
 data_option=X
-dst_data_version=36
+dst_data_version=38
 # dst_final_version=20
-src_data_version=11
+src_data_version=33
 # src_final_version=20
 n=2000
-nodes=(20)
+nodes=(60 80)
 for d in "${nodes[@]}"; do
     
-    s0=$(( d * 4 ))
-    ./create_data_dir.sh $data_option $dst_data_version ${d} $src_data_version ${d}
+    s0=$(( d * 6 ))
+    version=${d}_${s0}
+    ./create_data_dir.sh $data_option $dst_data_version $version $src_data_version $version
 
     for i in {1..5}; do
         python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn \
         --n $n --d $d --s0 $s0 --seed_knockoff $i \
-        --disable_adjust_marg \
         --root_path simulated_data/v${dst_data_version} \
-        --version ${d} --device cuda:6 &
+        --version $version --device cuda:6 &
     done
 
     for i in {6..10}; do
         python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn \
         --n $n --d $d --s0 $s0 --seed_knockoff $i \
-        --disable_adjust_marg \
         --root_path simulated_data/v${dst_data_version} \
-        --version ${d} --device cuda:7 &
+        --version $version --device cuda:7 &
     done
 
     wait

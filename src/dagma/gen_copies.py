@@ -49,6 +49,7 @@ parser.add_argument('--disable_adjust_marg', action='store_true', default=None)
 
 # parameters of damga
 parser.add_argument('--norm_DAGMA', action='store_true', default=None)
+parser.add_argument('--disable_block_diag_removal', action='store_true', default=None)
 parser.add_argument('--deconv_type_dagma', type=str, default=None, 
                     choices=[None, 'deconv_1', 'deconv_2', 'deconv_4',
                              'deconv_4_1', 'deconv_4_2'])

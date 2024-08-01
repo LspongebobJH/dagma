@@ -168,18 +168,66 @@ def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
     logger.info(f"==============================")
     return fdr_true, power
 
-def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int):
+def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int, W_full: np.ndarray = None):
     num_feat = configs['d']
     est_type = configs['est_type']
     numeric = configs['numeric']
     numeric_precision = eval(configs['numeric_precision'])
     abs_t_list = configs['abs_t_list']
     abs_selection = configs['abs_selection']
+    trick = configs['trick']
 
     logger.info(f"==============================")
     logger.info(f"expected FDR {fdr}")
 
     Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])
+
+    if trick == 'trick_1':
+        Z1 = np.abs(W_full[:num_feat, num_feat:]) - np.abs(W_full[num_feat:, num_feat:])
+        Z = Z - Z1
+    elif trick == 'trick_2':
+        Z1 = np.abs(W_full[num_feat:, :num_feat]) - np.abs(W_full[num_feat:, num_feat:])
+        Z = Z - Z1
+    elif trick == 'trick_3':
+        Z1 = np.abs(W_full[:num_feat, num_feat:]) - np.abs(W_full[num_feat:, num_feat:])
+        Z2 = np.abs(W_full[:num_feat, :num_feat]) - np.abs(W_full[num_feat:, num_feat:])
+        Z = Z - Z1 + Z2
+    elif trick == 'trick_3_1':
+        Z = 2 * np.abs(W_full[:num_feat, :num_feat]) - \
+            np.abs(W_full[num_feat:, :num_feat]) - \
+            np.abs(W_full[:num_feat, num_feat:])
+    elif trick == 'trick_4':
+        Z = np.abs(W_full[:num_feat, :num_feat]) - np.abs(W_full[num_feat:, num_feat:])
+    elif trick == 'trick_5':
+        Z = (np.abs(W_full[:num_feat, num_feat:]) + np.abs(W_full[num_feat:, :num_feat])) - \
+            np.abs(W_full[num_feat:, num_feat:])
+    elif trick == 'trick_6':
+        Z = (np.abs(W_full[:num_feat, num_feat:]) + np.abs(W_full[num_feat:, :num_feat])) - \
+            2 * np.abs(W_full[num_feat:, num_feat:])
+    elif trick == 'trick_7':
+        Z = np.abs(W_full[:num_feat, :num_feat]) - np.abs(W_full[:num_feat, num_feat:])
+    elif trick == 'trick_8':
+        Z = np.abs(W_full[:num_feat, :num_feat]) + np.abs(W_full[num_feat:, num_feat:]) - \
+            2 * np.abs(W_full[num_feat:, :num_feat])
+
+    elif trick == 'trick_9':
+        k = 2
+        W11, W21 = W_full[:num_feat, :num_feat], W_full[num_feat:, :num_feat]
+        W_est_pow = 2e-1 * np.linalg.matrix_power(W_full, k)
+        W11_pow, W21_pow = W_est_pow[:num_feat, :num_feat], W_est_pow[num_feat:, :num_feat]
+        W11_1 = np.abs(W11) - np.abs(W11_pow)
+        W21_1 = np.abs(W21) - np.abs(W21_pow)
+        Z = W11_1 - W21_1
+
+    elif trick == 'trick_10':
+        k = 2
+        W11, W21 = W_full[:num_feat, :num_feat], W_full[num_feat:, :num_feat]
+        W_est_pow = 1e-1 * np.linalg.matrix_power(W_full, k)
+        W11_pow, W21_pow = W_est_pow[:num_feat, :num_feat], W_est_pow[num_feat:, :num_feat]
+        coef = 1 - (np.abs(W11) - np.abs(W11).min()) / (np.abs(W11).max() - np.abs(W11).min())
+        W11_1 = np.abs(W11) - coef * np.abs(W11_pow)
+        W21_1 = np.abs(W21) - np.abs(W21_pow)
+        Z = W11_1 - W21_1
 
     if numeric:
         Z[(Z <= numeric_precision) & (Z >= -numeric_precision)] = 0.
@@ -216,7 +264,7 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
             t_last = t
             fdr_est_last = fdr_est
 
-    if abs_selection:
+    if abs_selection: # NOTE: deprecated
         mask = (np.abs(Z >= t_last))
     else:
         mask = (Z >= t_last)
