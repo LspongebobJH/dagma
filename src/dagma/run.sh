@@ -53,33 +53,42 @@
 # Generating Knockoff, sweep over n_nodes
 #########################################
 
-data_option=X
-dst_data_version=38
-# dst_final_version=20
-src_data_version=33
-# src_final_version=20
-n=2000
-nodes=(60 80)
-for d in "${nodes[@]}"; do
+# data_option=X
+# dst_data_version=38
+# # dst_final_version=20
+# src_data_version=33
+# # src_final_version=20
+# n=2000
+# nodes=(60 80)
+# for d in "${nodes[@]}"; do
     
-    s0=$(( d * 6 ))
-    version=${d}_${s0}
-    ./create_data_dir.sh $data_option $dst_data_version $version $src_data_version $version
+#     s0=$(( d * 6 ))
+#     version=${d}_${s0}
+#     ./create_data_dir.sh $data_option $dst_data_version $version $src_data_version $version
 
-    for i in {1..5}; do
-        python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn \
-        --n $n --d $d --s0 $s0 --seed_knockoff $i \
-        --root_path simulated_data/v${dst_data_version} \
-        --version $version --device cuda:6 &
-    done
+#     for i in {1..5}; do
+#         python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn \
+#         --n $n --d $d --s0 $s0 --seed_knockoff $i \
+#         --root_path simulated_data/v${dst_data_version} \
+#         --version $version --device cuda:6 &
+#     done
 
-    for i in {6..10}; do
-        python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn \
-        --n $n --d $d --s0 $s0 --seed_knockoff $i \
-        --root_path simulated_data/v${dst_data_version} \
-        --version $version --device cuda:7 &
-    done
+#     for i in {6..10}; do
+#         python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn \
+#         --n $n --d $d --s0 $s0 --seed_knockoff $i \
+#         --root_path simulated_data/v${dst_data_version} \
+#         --version $version --device cuda:7 &
+#     done
 
-    wait
+#     wait
 
-done
+# done
+
+#########################################
+# Misc
+#########################################
+
+python dagma_torch.py --d 80 --seed 1 --device cuda:6 &
+python dagma_torch.py --d 80 --seed 2 --device cuda:7 &
+python dagma_torch.py --d 100 --seed 1 --device cuda:4 &
+python dagma_torch.py --d 100 --seed 2 --device cuda:5 &
