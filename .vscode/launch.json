@@ -5,6 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "test.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "test.py",
+            "console": "integratedTerminal",
+            "cwd": "/home/jiahang/dagma/src/dagma",
+            "justMyCode": true,
+            "args": [
+                "--exp_group_idx=v43",
+                // "--v42_i_idx=2",
+                // "--v42_ii_idx=1",
+                "--d=40"
+            ]
+        },
+        
+        {
             "name": "gen_copies.py",
             "type": "debugpy",
             "request": "launch",
@@ -13,12 +29,16 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--gen_type=knockoff", "--knock_type=knockoff_diagn",
-                "--n=2000", "--d=20", "--s0=80", "--disable_adjust_marg",
+                "--gen_type=knockoff",
+                "--knock_type=knockoff_diagn",
+                "--n=2000",
+                "--d=20",
+                "--s0=80",
                 "--seed_knockoff=100",
                 "--root_path=simulated_data/v11",
                 "--version=20",
-                "--device=cuda:7"
+                "--device=cuda:7",
+                "--method_diagn_gen=lasso"
             ]
         },
         {

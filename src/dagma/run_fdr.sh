@@ -92,22 +92,22 @@
 ####################################################################
 
 run() {
-    data_version=38
-    log_file_global=93
+    data_version=43
+    log_file_global=94
 
     n=2000
-    nodes=(60 80)
+    nodes=(40 80)
     for d in "${nodes[@]}"; do
-        s0=$(( d * 6 ))
+        s0=$(( d * 4 ))
         python multi_main.py \
         --n $n --s0 $s0 --d $d \
         --control_type=type_3_global \
-        --seed_knockoff_list=1,2,3,4,5 \
+        --seed_knockoff_list=1 \
         --seed_model_list=0 \
-        --version=${d}_${s0} \
+        --version=${d}_${s0}_1_lasso_disable_dag_control \
         --root_path simulated_data/v${data_version} \
-        --log_file=log_${log_file_global}/log_${data_version}_${d}_${s0} &
-        wait
+        --log_file=log_${log_file_global}/log_${data_version}_${d}_${s0}_1_lasso_disable_dag_control &
+        # wait
     done
 }
 

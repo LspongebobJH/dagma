@@ -449,7 +449,7 @@ if __name__ == '__main__':
     
     n, d = 2000, args.d
     s0 = 4 * d
-    version = f"v34/v{d}"
+    version = f"v11/v{d}"
     device = args.device
     data_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
     data_path = os.path.join(data_dir, version, 'X', 'X_1.pkl')

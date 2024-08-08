@@ -46,6 +46,7 @@ parser.add_argument('--norm_knockoffGAN', action='store_true', default=None)
 
 # parameters of knockoffDiagn in knockoff generation
 parser.add_argument('--disable_adjust_marg', action='store_true', default=None)
+parser.add_argument('--method_diagn_gen', type=str, default=None)
 
 # parameters of damga
 parser.add_argument('--norm_DAGMA', action='store_true', default=None)
