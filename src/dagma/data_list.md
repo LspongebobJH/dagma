@@ -46,6 +46,10 @@ v39: (ER4, original DAGMA, dagma_torch.py)
 v40: (ER4, transitive effect experiments, test.py when exp_group_idx == v40)
 v41: (ER4, in-degree experiments, exp 1, gen_copies.py when --method_diagn_gen=lasso)
     one problem: "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 2.269e+01, tolerance: 2.063e-01." Meaning that some features cannot be regressed well.
+
+    v41 others: name with alpha_skleanr: --method_diagn_gen=lasso + --lasso_alpha=sklearn
+    v41 others: name with xgb: --method_diagn_gen=xgb
+
 v42: (ER4, in-degree experiments, exp 2, test.py when exp_group_idx == v42)
 v43: (ER4, relation experiments, test.py when exp_group_idx == v43)
 

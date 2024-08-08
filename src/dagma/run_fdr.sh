@@ -92,22 +92,28 @@
 ####################################################################
 
 run() {
-    data_version=43
-    log_file_global=94
+    data_version=41
+    log_file_global=95
 
     n=2000
-    nodes=(40 80)
+    nodes=(80)
+    methods=(alpha_sklearn elastic xgb)
     for d in "${nodes[@]}"; do
-        s0=$(( d * 4 ))
-        python multi_main.py \
-        --n $n --s0 $s0 --d $d \
-        --control_type=type_3_global \
-        --seed_knockoff_list=1 \
-        --seed_model_list=0 \
-        --version=${d}_${s0}_1_lasso_disable_dag_control \
-        --root_path simulated_data/v${data_version} \
-        --log_file=log_${log_file_global}/log_${data_version}_${d}_${s0}_1_lasso_disable_dag_control &
-        # wait
+        for method in "${methods[@]}"; do
+            
+            version=${d}_${method}
+            s0=$(( d * 4 ))
+
+            python multi_main.py \
+            --n $n --s0 $s0 --d $d \
+            --control_type=type_3_global \
+            --seed_knockoff_list=1 \
+            --seed_model_list=0 \
+            --version=$version \
+            --root_path simulated_data/v${data_version} \
+            --log_file=log_${log_file_global}/log_${data_version}_$version &
+        done
+        wait
     done
 }
 

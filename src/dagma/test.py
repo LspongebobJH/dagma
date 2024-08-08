@@ -16,6 +16,8 @@ if __name__ == '__main__':
     parser.add_argument('--v42_i_idx', type=int, default=None, choices=[1, 2])
     parser.add_argument('--v42_ii_idx', type=int, default=None, choices=[1, 2, 3])
     parser.add_argument('--v42_W_seed', type=int, default=1, choices=[1, 2])
+    parser.add_argument('--v42_method_diagn_gen', type=str, default='lasso', choices=['lasso', 'xgb', 'elastic'])
+    parser.add_argument('--v42_lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn'])
     parser.add_argument('--v43_method', type=str, default='elastic', choices=['lasso', 'elastic'])
     parser.add_argument('--v43_disable_dag_control', action='store_true', default=False)
     parser.add_argument('--seed_X', type=int, default=1)
@@ -24,6 +26,7 @@ if __name__ == '__main__':
     parser.add_argument('--n', type=int, default=2000)
     parser.add_argument('--n_jobs', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda:7')
+    parser.add_argument('--notes', type=str, default=None)
 
     args = parser.parse_args()
     configs = vars(args)
@@ -101,7 +104,9 @@ if __name__ == '__main__':
                 preds = np.zeros_like(X_start)
             else:
                 preds = np.array(Parallel(n_jobs=n_jobs)(delayed(
-                    _get_single_clf_ko)(X_start, j, 'lasso') for j in tqdm(range(p))))
+                    _get_single_clf_ko)(
+                        X_start, j, configs['v42_method_diagn_gen'], configs['v42_lasso_alpha'], configs['device']
+                    ) for j in tqdm(range(p))))
                 preds = preds.T
             X_tildes_start = conditional_sequential_gen_ko(X_start, preds, n_jobs=n_jobs, discrete=False, adjust_marg=True)
             X_tilde[:, start_n] = X_tildes_start
@@ -144,7 +149,11 @@ if __name__ == '__main__':
             X_tilde_non_start = get_knockoffs_stats(X[:, non_start_n], _configs)
             X_tilde[:, non_start_n] = X_tilde_non_start
 
-        data_dir = os.path.join(data_dir, f'v42/v{configs["v42_i_idx"]}_{configs["v42_ii_idx"]}/v{configs["d"]}_{configs["s0"]}_{configs["v42_W_seed"]}/knockoff')
+        if configs['notes'] is None:
+            _middle_dir = f'v{configs["v42_i_idx"]}_{configs["v42_ii_idx"]}'
+        else:
+            _middle_dir = f'v{configs["v42_i_idx"]}_{configs["v42_ii_idx"]}_{configs["notes"]}'
+        data_dir = os.path.join(data_dir, f'v42/{_middle_dir}/v{configs["d"]}_{configs["s0"]}_{configs["v42_W_seed"]}/knockoff')
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 

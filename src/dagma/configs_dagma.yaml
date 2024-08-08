@@ -88,6 +88,9 @@ trick: None ## trick only for type_3_global now
 disable_adjust_marg: False
 method_diagn_gen: dagma # which method to generate X_pred, used in X' = X_pred + shuffle(X - X_pred).
 # can be ['dagma', 'lasso'], the latter one is original knockoffdiagn
+lasso_alpha: knockoff_diagn # available only when method_diagn_gen == lasso. this is the alpha of l1 norm. 
+# when knockoff_diagn, using the default values calculated by knockoffDiagn.
+# when sklearn, using the default values set by sklearn
 
 ##############################
 # DAGMA parameters
