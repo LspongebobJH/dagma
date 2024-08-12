@@ -113,16 +113,20 @@
 
 # python test.py --exp_group_idx=v43 --d=20 --v43_method='elastic' --v43_disable_dag_control --device=cuda:6 &
 # python test.py --exp_group_idx=v43 --d=100 --v43_method='elastic' --v43_disable_dag_control --device=cuda:7 &
-python test.py --exp_group_idx=v42 --v42_i_idx=1 --v42_ii_idx=1 \
-    --v42_method_diagn_gen=lasso --v42_lasso_alpha=sklearn --notes=alpha_sklearn \
-    --d=40 --device=cuda:0 &
-python test.py --exp_group_idx=v42 --v42_i_idx=2 --v42_ii_idx=1 \
-    --v42_method_diagn_gen=lasso --v42_lasso_alpha=sklearn --notes=alpha_sklearn \
-    --d=40 --device=cuda:1 &
+python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=4 --v44_W=W_true \
+    --d=40 --device=cuda:4 &
+python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=4 --v44_W=W_true \
+    --d=80 --device=cuda:4 &
+python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=5 --v44_W=W_true \
+    --d=40 --device=cuda:5 &
+python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=5 --v44_W=W_true \
+    --d=80 --device=cuda:5 &
+python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=4 --v44_W=W_est \
+    --d=40 --device=cuda:6 &
+python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=4 --v44_W=W_est \
+    --d=80 --device=cuda:6 &
+python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=5 --v44_W=W_est \
+    --d=40 --device=cuda:7 &
+python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=5 --v44_W=W_est \
+    --d=80 --device=cuda:7 &
 
-python test.py --exp_group_idx=v42 --v42_i_idx=1 --v42_ii_idx=1 \
-    --v42_method_diagn_gen=lasso --v42_lasso_alpha=sklearn --notes=alpha_sklearn \
-    --d=80 --device=cuda:2 &
-python test.py --exp_group_idx=v42 --v42_i_idx=2 --v42_ii_idx=1 \
-    --v42_method_diagn_gen=lasso --v42_lasso_alpha=sklearn --notes=alpha_sklearn \
-    --d=80 --device=cuda:3 &

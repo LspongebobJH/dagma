@@ -11,15 +11,18 @@ from sklearn.linear_model import Lasso, ElasticNet
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--exp_group_idx', type=str, default=None, choices=['v40', 'v42', 'v43'])
+    parser.add_argument('--exp_group_idx', type=str, default=None, choices=['v40', 'v42', 'v43', 'v44'])
     parser.add_argument('--v40_exp_idx', type=int, default=None, choices=[0])
     parser.add_argument('--v42_i_idx', type=int, default=None, choices=[1, 2])
     parser.add_argument('--v42_ii_idx', type=int, default=None, choices=[1, 2, 3])
     parser.add_argument('--v42_W_seed', type=int, default=1, choices=[1, 2])
-    parser.add_argument('--v42_method_diagn_gen', type=str, default='lasso', choices=['lasso', 'xgb', 'elastic'])
-    parser.add_argument('--v42_lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn'])
+    parser.add_argument('--v42_44_method_diagn_gen', type=str, default='lasso', choices=['lasso', 'xgb', 'elastic'])
+    parser.add_argument('--v42_44_lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
     parser.add_argument('--v43_method', type=str, default='elastic', choices=['lasso', 'elastic'])
-    parser.add_argument('--v43_disable_dag_control', action='store_true', default=False)
+    parser.add_argument('--v43_44_disable_dag_control', action='store_true', default=False, help="in v44, it's available only when v44_W=W_est")
+    parser.add_argument('--v44_option', type=int, default=None, choices=[1, 2, 3, 4, 5])
+    parser.add_argument('--v44_W', type=str, default=None, choices=["W_true", "W_est"])
+    parser.add_argument('--v44_option_3_radius', type=int, default=None, help="available only when v44_option=3")
     parser.add_argument('--seed_X', type=int, default=1)
     parser.add_argument('--d', type=int, required=True)
     parser.add_argument('--s0', type=int, default=None)
@@ -105,7 +108,7 @@ if __name__ == '__main__':
             else:
                 preds = np.array(Parallel(n_jobs=n_jobs)(delayed(
                     _get_single_clf_ko)(
-                        X_start, j, configs['v42_method_diagn_gen'], configs['v42_lasso_alpha'], configs['device']
+                        X_start, j, configs['v42_method_diagn_gen'], configs['v42_44_lasso_alpha'], configs['device']
                     ) for j in tqdm(range(p))))
                 preds = preds.T
             X_tildes_start = conditional_sequential_gen_ko(X_start, preds, n_jobs=n_jobs, discrete=False, adjust_marg=True)
@@ -181,7 +184,7 @@ if __name__ == '__main__':
             W_est = pickle.load(f)
 
         # preprocessing
-        if configs['v43_disable_dag_control']:
+        if configs['v43_44_disable_dag_control']:
             G = nx.DiGraph(W_est)
         else:
             mask = utils.extract_dag_mask(np.abs(W_est), 0)
@@ -218,10 +221,208 @@ if __name__ == '__main__':
                 clf.fit(W_est[j, desc].reshape(-1, 1), Y.T)
                 X_tilde[:, j] = clf.coef_.flatten()
 
-        if configs["v43_disable_dag_control"]:
+        if configs["v43_44_disable_dag_control"]:
             data_dir = os.path.join(data_dir, f'v43/v{configs["d"]}_{configs["s0"]}_{configs["v42_W_seed"]}_{configs["v43_method"]}_disable_dag_control/knockoff')    
         else:
             data_dir = os.path.join(data_dir, f'v43/v{configs["d"]}_{configs["s0"]}_{configs["v42_W_seed"]}_{configs["v43_method"]}/knockoff')
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+
+        data_path = os.path.join(data_dir, f"knockoff_1.pkl")
+        with open(data_path, 'wb') as f:
+            pickle.dump(X_tilde, f)
+
+        config_path = os.path.join(data_dir, f"knockoff_1_configs.yaml")
+        with open(config_path, 'w') as f:
+            yaml.dump(configs, f)
+
+    elif configs['exp_group_idx'] == 'v44':
+        # load X
+        version = f"v11/v{configs['d']}"
+        data_path = os.path.join(data_dir, version, 'X', 'X_1.pkl')
+        with open(data_path, 'rb') as f:
+            data = pickle.load(f)
+        X, W_true = data['X'], data['W_true']
+        B_true = (W_true != 0)
+
+        # load W
+        version = f"v39/W_{configs['d']}_{configs['s0']}_{configs['v42_W_seed']}.pkl"
+        data_path = os.path.join(data_dir, version)
+        with open(data_path, 'rb') as f:
+            W_est = pickle.load(f)
+
+        # preprocessing
+        if configs['v43_44_disable_dag_control']:
+            G_est = nx.DiGraph(W_est)
+        else:
+            mask = utils.extract_dag_mask(np.abs(W_est), 0)
+            W_est[~mask] = 0.
+            G_est = nx.DiGraph(W_est)
+            assert nx.is_directed_acyclic_graph(G_est)
+        G_true = nx.DiGraph(W_true)
+        if configs['v44_W'] == 'W_true':
+            G = G_true
+            W = W_true
+        elif configs['v44_W'] == 'W_est':
+            G = G_est
+            W = W_est
+
+        # utility function
+        def postprocess_res(res_list: list, self_n: int):
+            res_list = list(set(res_list))
+            if self_n in res_list:
+                res_list.remove(self_n)
+            return res_list
+
+        def parents_X(G: nx.DiGraph, i: int, X: np.ndarray, return_idx: bool = False):
+            parents = list(G.predecessors(i))
+            parents = postprocess_res(parents, i)
+            if len(parents) != 0:
+                if return_idx:
+                    return X[:, parents], parents
+                else:    
+                    return X[:, parents]
+            else:
+                print(f"No parents: {i}")
+                if return_idx:
+                    return None, None
+                else:
+                    return None
+
+        def children_X(G: nx.DiGraph, i: int, X: np.ndarray, return_idx: bool = False):
+            children = list(G.successors(i))
+            children = postprocess_res(children, i)
+            if len(children) != 0:
+                if return_idx:
+                    return X[:, children], children
+                else:
+                    return X[:, children]
+            else:
+                print(f"No children: {i}")
+                if return_idx:
+                    return None, None
+                else:
+                    return None
+        
+        def parents_of_children_X(G: nx.DiGraph, i: int, X: np.ndarray, return_idx: bool = False):
+            children = list(G.successors(i))
+            parents_of_children = []
+            for c in children:
+                parents_of_children.extend(list(G.predecessors(c)))
+            parents_of_children = postprocess_res(parents_of_children, i)
+
+            if len(parents_of_children) != 0:
+                if return_idx:
+                    return X[:, parents_of_children], parents_of_children
+                else:
+                    return X[:, parents_of_children]
+            else:
+                print(f"No parents of children: {i}")
+                if return_idx:
+                    return None, None
+                else:
+                    return None
+            
+        def ego_graph_X(G: nx.DiGraph, i: int, X: np.ndarray, radius: int, return_idx: bool = False):
+            ego_graph: nx.Graph = nx.ego_graph(G, i, radius, center=False)
+            nodes = list(ego_graph.nodes())
+            nodes = postprocess_res(nodes, i)
+            if len(nodes) != 0:
+                if return_idx:
+                    return X[:, nodes], nodes
+                else:
+                    return X[:, nodes]
+            else:
+                print(f"No ego-graph with radius={radius}: {i}")
+                if return_idx:
+                    return None, None
+                else:
+                    return None
+
+        # fit knockoff
+        X_tilde = np.zeros_like(X)
+        nodes = list(G.nodes())
+        for j in tqdm(nodes):
+            preds = 0.
+            if configs['v44_option'] == 1:
+                X_input = [
+                    func(G, j, X) for func in [parents_X, children_X, parents_of_children_X]
+                ]
+            elif configs['v44_option'] == 2:
+                X_input = [
+                    func(G, j, X) for func in [children_X, parents_of_children_X]
+                ]
+            elif configs['v44_option'] == 3:
+                X_input = ego_graph_X(G, j, X, configs['v44_option_3_radius'])
+
+            elif configs['v44_option'] == 4:
+                child_X, child = children_X(G, j, X, True)
+                par_of_child_X, par_of_child = parents_of_children_X(G, j, X, True)
+                if child is None and par_of_child is None:
+                    preds = None
+                elif child is None and par_of_child is not None:
+                    preds = None
+                elif par_of_child is None and child is not None:
+                    X_input = child_X
+                else:
+                    _W = W[par_of_child, :][:, child]
+                    X_input = child_X - par_of_child_X @ _W
+
+            elif configs['v44_option'] == 5:
+                par_X, par = parents_X(G, j, X, True)
+                child_X, child = children_X(G, j, X, True)
+                par_of_child_X, par_of_child = parents_of_children_X(G, j, X, True)
+
+                if child is None and par_of_child is None:
+                    X_input = None
+                elif child is None and par_of_child is not None:
+                    X_input = None
+                elif par_of_child is None and child is not None:
+                    X_input = child_X
+                else:
+                    _W = W[par_of_child, :][:, child]
+                    X_input = child_X - par_of_child_X @ _W
+                
+                if par is not None:
+                    if X_input is None:
+                        X_input = par_X
+                    else:
+                        X_input = np.concatenate([X_input, par_X], axis=1)
+                else:
+                    if X_input is None:
+                        preds = None
+                    else:
+                        pass # X_input kept
+
+            if preds is not None:
+                if isinstance(X_input, list):
+                    X_input = [val for val in X_input if val is not None]
+                    X_input = np.concatenate(X_input, axis=1)
+                preds = _get_single_clf(X_input, X[:, j], 
+                                        configs['v42_44_method_diagn_gen'], 
+                                        configs['v42_44_lasso_alpha'],
+                                        configs['device'])
+            else:
+                preds = 0.
+            residuals = X[:, j] - preds
+            indices_ = np.arange(residuals.shape[0])
+            np.random.shuffle(indices_)
+            sample = preds + residuals[indices_]
+            sample = _adjust_marginal(sample, X[:, j], discrete=False)
+            X_tilde[:, j] = sample
+
+        suffix = ""
+        if configs['v44_option'] == 3:
+            suffix += f'_radius_{configs["v44_option_3_radius"]}'
+        if configs['v43_44_disable_dag_control']:
+            suffix += f'_disable_dag_control'
+
+        data_dir = os.path.join(
+            data_dir,
+            configs["exp_group_idx"],
+            f'v{configs["d"]}_{configs["v44_W"]}_option_{configs["v44_option"]}_{configs["v42_44_method_diagn_gen"]}_{configs["v42_44_lasso_alpha"]}'+suffix,
+            "knockoff"
+        )
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 

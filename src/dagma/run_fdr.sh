@@ -92,12 +92,12 @@
 ####################################################################
 
 run() {
-    data_version=41
-    log_file_global=95
+    data_version=44
+    log_file_global=96
 
     n=2000
-    nodes=(80)
-    methods=(alpha_sklearn elastic xgb)
+    nodes=(40 80)
+    methods=(W_est_option_5_lasso_OLS W_true_option_5_lasso_OLS)
     for d in "${nodes[@]}"; do
         for method in "${methods[@]}"; do
             
@@ -113,7 +113,7 @@ run() {
             --root_path simulated_data/v${data_version} \
             --log_file=log_${log_file_global}/log_${data_version}_$version &
         done
-        wait
+        # wait
     done
 }
 

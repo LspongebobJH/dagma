@@ -43,7 +43,7 @@ run() {
 
     n=2000
     s0=$(( d * 4 ))
-    version_list=(1_1_alpha_sklearn/v${d}_${s0}_1 2_1_alpha_sklearn/v${d}_${s0}_1)
+    version_list=(${d}_W_true_option_4_lasso_OLS ${d}_W_est_option_4_lasso_OLS ${d}_W_true_option_5_lasso_OLS ${d}_W_est_option_5_lasso_OLS)
 
     for version in "${version_list[@]}"; do
 
@@ -71,7 +71,7 @@ run() {
     
 }
 
-data_version=42
+data_version=44
 # src_data_version=11
 # dst_data_version=${data_version}
 
@@ -93,9 +93,9 @@ data_version=42
 
 
 d=40
-cuda_idx=0
+cuda_idx=4
 run $data_version $d $cuda_idx
 
 d=80
-cuda_idx=2
+cuda_idx=4
 run $data_version $d $cuda_idx

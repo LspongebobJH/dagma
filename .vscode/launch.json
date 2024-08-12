@@ -13,9 +13,9 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--exp_group_idx=v43",
-                // "--v42_i_idx=2",
-                // "--v42_ii_idx=1",
+                "--exp_group_idx=v44",
+                "--v44_option=4",
+                "--v44_W=W_true",
                 "--d=40"
             ]
         },

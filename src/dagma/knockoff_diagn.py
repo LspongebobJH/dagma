@@ -56,6 +56,31 @@ def get_knockoffs_stats(X, configs, n_jobs=1,
 # Utilities 
 #########################
 
+def _get_fitting_model(X_input, X_target, method, alpha, device):
+    p = X_input.shape[1] + 1
+
+    if method == "lasso":
+        if alpha == 'knockoff_diagn':
+            lambda_max = np.max(np.abs(np.dot(X_input.T, X_target))) / (2 * (p - 1))
+            alpha = (lambda_max / 100)
+            clf = Lasso(alpha)
+        elif alpha == 'sklearn':
+            clf = Lasso()
+        elif alpha == 'OLS':
+            clf = Lasso(alpha=0)
+    
+    if method == "logreg_cv":
+        clf = LogisticRegressionCV(cv=5, max_iter=int(10e4), n_jobs=-1)
+
+    if method == "xgb":
+        # clf = xgb.XGBRegressor(n_jobs=-1)
+        clf = xgb.XGBRegressor(device=device)
+
+    if method == 'elastic':
+        clf = ElasticNet()
+
+    return clf
+
 def _get_single_clf_ko(X, j, method="lasso", alpha='knockoff_diagn', device='cpu'):
     """
     Fit a single classifier to predict the j-th variable from all others.
@@ -73,43 +98,13 @@ def _get_single_clf_ko(X, j, method="lasso", alpha='knockoff_diagn', device='cpu
     n, p = X.shape
     idc = np.array([i for i in np.arange(0, p) if i != j])
 
-    if method == "lasso":
-        if alpha == 'knockoff_diagn':
-            lambda_max = np.max(np.abs(np.dot(X[:, idc].T, X[:, j]))) / (2 * (p - 1))
-            alpha = (lambda_max / 100)
-            clf = Lasso(alpha)
-        elif alpha == 'sklearn':
-            clf = Lasso()
-    
-    if method == "logreg_cv":
-        clf = LogisticRegressionCV(cv=5, max_iter=int(10e4), n_jobs=-1)
-
-    if method == "xgb":
-        # clf = xgb.XGBRegressor(n_jobs=-1)
-        clf = xgb.XGBRegressor(device=device)
-
-    if method == 'elastic':
-        clf = ElasticNet()
-
+    clf = _get_fitting_model(X[:, idc], X[:, j], method, alpha, device)
     clf.fit(X[:, idc], X[:, j])
     pred = clf.predict(X[:, idc])
     return pred
 
-def _get_single_clf(X_input, X_target, method="lasso"):
-    n, p = X_input.shape
-    p += 1
-
-    if method == "lasso":
-        lambda_max = np.max(np.abs(np.dot(X_input.T, X_target))) / (2 * (p - 1))
-        alpha = (lambda_max / 100)
-        clf = Lasso(alpha)
-    
-    if method == "logreg_cv":
-        clf = LogisticRegressionCV(cv=5, max_iter=int(10e4), n_jobs=-1)
-
-    # if method == "xgb":
-    #     clf = xgb.XGBRegressor(n_jobs=-1)
-
+def _get_single_clf(X_input, X_target, method="lasso", alpha='knockoff_diagn', device='cpu'):
+    clf = _get_fitting_model(X_input, X_target, method, alpha, device)
     clf.fit(X_input, X_target)
     pred = clf.predict(X_input)
     return pred
