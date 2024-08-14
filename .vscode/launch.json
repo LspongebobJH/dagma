@@ -13,9 +13,9 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--exp_group_idx=v44",
-                "--v44_option=4",
-                "--v44_W=W_true",
+                "--exp_group_idx=v45",
+                "--method_diagn_gen=xgb",
+                "--v45_sigma=10",
                 "--d=40"
             ]
         },
@@ -65,13 +65,13 @@
             "console": "integratedTerminal",
             "cwd": "/home/jiahang/dagma/src/dagma",
             "args": [
-                "--control_type=type_4_global",
-                "--seed_knockoff_list=2",
+                "--control_type=type_3_global",
+                "--seed_knockoff_list=1",
                 "--seed_model_list=0",
-                "--version=2",
-                "--s0=80",
-                "--dag_control=dag_1"
-                // "--log_file=log_10"
+                "--version=40_lasso_OLS",
+                "--root_path=simulated_data/v34",
+                "--d=40",
+                "--s0=160",
             ]
         },
         {

@@ -53,50 +53,36 @@
 # Generating Knockoff, sweep over n_nodes
 #########################################
 
-# data_option=X
-# dst_data_version=41
-# src_data_version=11
-# n=2000
-# cuda_idx=0
-# nodes=(20 100)
-# method_list=(lasso elastic xgb)
+data_option=X
+dst_data_version=34
+src_data_version=11
+n=2000
+cuda_idx=0
+nodes=(20 60 100)
 
-# for d in "${nodes[@]}"; do
-#     for method in "${method_list[@]}"; do
+for d in "${nodes[@]}"; do
+    dst_version=${d}_lasso_OLS
+
+    s0=$(( d * 4 ))
+    src_version=${d}
     
-#         s0=$(( d * 4 ))
-#         src_version=${d}
-#         if [ $method = "lasso" ]; then
-#             dst_version=${d}_alpha_sklearn
-#         else
-#             dst_version=${d}_${method}
-#         fi
-        
-#         ./create_data_dir.sh $data_option $dst_data_version $dst_version $src_data_version $src_version
+    ./create_data_dir.sh $data_option $dst_data_version $dst_version $src_data_version $src_version
 
-#         target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff
-#         if [ ! -d "$target_dir$" ]; then
-#             mkdir -p ${target_dir}
-#         fi
+    target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff
+    if [ ! -d "$target_dir$" ]; then
+        mkdir -p ${target_dir}
+    fi
 
-#         for i in {1..1}; do
-#             if [ $method = "lasso" ]; then
-#                 python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn --n $n --d $d --s0 $s0 --seed_knockoff $i \
-#                 --method_diagn_gen=lasso --lasso_alpha=sklearn \
-#                 --root_path simulated_data/v${dst_data_version} \
-#                 --version $dst_version --device cuda:${cuda_idx} \
-#                 >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${i} 2>&1 &
-#             else
-#                 python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn --n $n --d $d --s0 $s0 --seed_knockoff $i \
-#                 --method_diagn_gen=$method \
-#                 --root_path simulated_data/v${dst_data_version} \
-#                 --version $dst_version --device cuda:${cuda_idx} \
-#                 >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${i} 2>&1 &
-#             fi
-#         done
-#         cuda_idx=$(( cuda_idx + 1 ))
-#     done
-# done
+    for i in {1..1}; do
+        python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn --n $n --d $d --s0 $s0 --seed_knockoff $i \
+        --method_diagn_gen=lasso --lasso_alpha=OLS \
+        --root_path simulated_data/v${dst_data_version} \
+        --version $dst_version --device cuda:${cuda_idx} \
+        >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${i} 2>&1 &
+    
+    done
+    cuda_idx=$(( cuda_idx + 1 ))
+done
 
 #########################################
 # Misc
@@ -113,20 +99,9 @@
 
 # python test.py --exp_group_idx=v43 --d=20 --v43_method='elastic' --v43_disable_dag_control --device=cuda:6 &
 # python test.py --exp_group_idx=v43 --d=100 --v43_method='elastic' --v43_disable_dag_control --device=cuda:7 &
-python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=4 --v44_W=W_true \
-    --d=40 --device=cuda:4 &
-python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=4 --v44_W=W_true \
-    --d=80 --device=cuda:4 &
-python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=5 --v44_W=W_true \
-    --d=40 --device=cuda:5 &
-python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=5 --v44_W=W_true \
-    --d=80 --device=cuda:5 &
-python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=4 --v44_W=W_est \
-    --d=40 --device=cuda:6 &
-python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=4 --v44_W=W_est \
-    --d=80 --device=cuda:6 &
-python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=5 --v44_W=W_est \
-    --d=40 --device=cuda:7 &
-python test.py --exp_group_idx=v44 --v42_44_method_diagn_gen=lasso --v42_44_lasso_alpha=OLS --v44_option=5 --v44_W=W_est \
-    --d=80 --device=cuda:7 &
+# python test.py --exp_group_idx=v44 --v44_option=1 --lasso_alpha=OLS --W_type=W_true \
+#     --d=20 --device=cuda:5 &
+
+
+
 

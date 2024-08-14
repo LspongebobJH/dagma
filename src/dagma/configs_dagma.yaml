@@ -11,7 +11,7 @@ numeric_precision : 1e-1
 device : cuda:7
 root_path: simulated_data
 dagma_type: dagma_1
-
+knock_type: knockoff_diagn
 
 # True: t_list = concat([0], sort.unique.abs(Z))
 # False: t_list = sort.concat([0], unique(Z))

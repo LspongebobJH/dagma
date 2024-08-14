@@ -26,13 +26,13 @@ parser.add_argument('--s0', type=int, default=None)
 parser.add_argument('--device', type=str, default=None)
 parser.add_argument('--root_path', type=str, default=None)
 
-parser.add_argument('--knock_type', type=str, default='knockoff_gan', 
+parser.add_argument('--knock_type', type=str, default=None, 
                     choices=['permutation', 'knockoff_gan', 'deep_knockoff', 
                              'knockoff_diagn'])
 parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W', 'W_torch'])
 
 # Note that type_3_global has the same knockoff statistics as type_3, only the FDR estimate different
-parser.add_argument('--dagma_type', type=str, default='dagma_1', 
+parser.add_argument('--dagma_type', type=str, default=None, 
                     choices = ['dagma_1'])
 parser.add_argument('--seed_X', type=int, default=1)
 parser.add_argument('--seed_knockoff', type=int, default=1)
@@ -47,7 +47,7 @@ parser.add_argument('--norm_knockoffGAN', action='store_true', default=None)
 # parameters of knockoffDiagn in knockoff generation
 parser.add_argument('--disable_adjust_marg', action='store_true', default=None)
 parser.add_argument('--method_diagn_gen', type=str, default=None, choices=['dagma', 'lasso', 'xgb', 'elastic'])
-parser.add_argument('--lasso_alpha', type=str, default=None, choices=['knockoff_diagn', 'sklearn'])
+parser.add_argument('--lasso_alpha', type=str, default=None, choices=['knockoff_diagn', 'sklearn', 'OLS'])
 
 # parameters of damga
 parser.add_argument('--norm_DAGMA', action='store_true', default=None)

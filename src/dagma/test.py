@@ -11,18 +11,20 @@ from sklearn.linear_model import Lasso, ElasticNet
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--exp_group_idx', type=str, default=None, choices=['v40', 'v42', 'v43', 'v44'])
+    parser.add_argument('--exp_group_idx', type=str, default=None, choices=['v40', 'v42', 'v43', 'v44', 'v45'])
     parser.add_argument('--v40_exp_idx', type=int, default=None, choices=[0])
     parser.add_argument('--v42_i_idx', type=int, default=None, choices=[1, 2])
     parser.add_argument('--v42_ii_idx', type=int, default=None, choices=[1, 2, 3])
-    parser.add_argument('--v42_W_seed', type=int, default=1, choices=[1, 2])
-    parser.add_argument('--v42_44_method_diagn_gen', type=str, default='lasso', choices=['lasso', 'xgb', 'elastic'])
-    parser.add_argument('--v42_44_lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
     parser.add_argument('--v43_method', type=str, default='elastic', choices=['lasso', 'elastic'])
-    parser.add_argument('--v43_44_disable_dag_control', action='store_true', default=False, help="in v44, it's available only when v44_W=W_est")
     parser.add_argument('--v44_option', type=int, default=None, choices=[1, 2, 3, 4, 5])
-    parser.add_argument('--v44_W', type=str, default=None, choices=["W_true", "W_est"])
     parser.add_argument('--v44_option_3_radius', type=int, default=None, help="available only when v44_option=3")
+    parser.add_argument('--v45_sigma', type=float, default=None)
+    parser.add_argument('--v45_disable_knockoff_fit', action='store_true', default=False)
+    parser.add_argument('--method_diagn_gen', type=str, default='lasso', choices=['lasso', 'xgb', 'elastic'])
+    parser.add_argument('--lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
+    parser.add_argument('--W_type', type=str, default=None, choices=["W_true", "W_est"])
+    parser.add_argument('--disable_dag_control', action='store_true', default=False, help="it's available only when W_type=W_est")
+    parser.add_argument('--seed_W', type=int, default=1, choices=[1, 2])
     parser.add_argument('--seed_X', type=int, default=1)
     parser.add_argument('--d', type=int, required=True)
     parser.add_argument('--s0', type=int, default=None)
@@ -80,7 +82,7 @@ if __name__ == '__main__':
         B_true = (W_true != 0)
 
         # load W
-        version = f"v39/W_{configs['d']}_{configs['s0']}_{configs['v42_W_seed']}.pkl"
+        version = f"v39/W_{configs['d']}_{configs['s0']}_{configs['seed_W']}.pkl"
         data_path = os.path.join(data_dir, version)
         with open(data_path, 'rb') as f:
             W_est = pickle.load(f)
@@ -108,7 +110,7 @@ if __name__ == '__main__':
             else:
                 preds = np.array(Parallel(n_jobs=n_jobs)(delayed(
                     _get_single_clf_ko)(
-                        X_start, j, configs['v42_method_diagn_gen'], configs['v42_44_lasso_alpha'], configs['device']
+                        X_start, j, configs['method_diagn_gen'], configs['lasso_alpha'], configs['device']
                     ) for j in tqdm(range(p))))
                 preds = preds.T
             X_tildes_start = conditional_sequential_gen_ko(X_start, preds, n_jobs=n_jobs, discrete=False, adjust_marg=True)
@@ -156,7 +158,7 @@ if __name__ == '__main__':
             _middle_dir = f'v{configs["v42_i_idx"]}_{configs["v42_ii_idx"]}'
         else:
             _middle_dir = f'v{configs["v42_i_idx"]}_{configs["v42_ii_idx"]}_{configs["notes"]}'
-        data_dir = os.path.join(data_dir, f'v42/{_middle_dir}/v{configs["d"]}_{configs["s0"]}_{configs["v42_W_seed"]}/knockoff')
+        data_dir = os.path.join(data_dir, f'v42/{_middle_dir}/v{configs["d"]}_{configs["s0"]}_{configs["seed_W"]}/knockoff')
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 
@@ -178,14 +180,14 @@ if __name__ == '__main__':
         B_true = (W_true != 0)
 
         # load W
-        version = f"v39/W_{configs['d']}_{configs['s0']}_{configs['v42_W_seed']}.pkl"
+        version = f"v39/W_{configs['d']}_{configs['s0']}_{configs['seed_W']}.pkl"
         data_path = os.path.join(data_dir, version)
         with open(data_path, 'rb') as f:
             W_est = pickle.load(f)
 
         # preprocessing
-        if configs['v43_44_disable_dag_control']:
-            G = nx.DiGraph(W_est)
+        if configs['disable_dag_control']:
+            G = nx.DiGraph(W_est) 
         else:
             mask = utils.extract_dag_mask(np.abs(W_est), 0)
             W_est[~mask] = 0.
@@ -221,10 +223,10 @@ if __name__ == '__main__':
                 clf.fit(W_est[j, desc].reshape(-1, 1), Y.T)
                 X_tilde[:, j] = clf.coef_.flatten()
 
-        if configs["v43_44_disable_dag_control"]:
-            data_dir = os.path.join(data_dir, f'v43/v{configs["d"]}_{configs["s0"]}_{configs["v42_W_seed"]}_{configs["v43_method"]}_disable_dag_control/knockoff')    
+        if configs["disable_dag_control"]:
+            data_dir = os.path.join(data_dir, f'v43/v{configs["d"]}_{configs["s0"]}_{configs["seed_W"]}_{configs["v43_method"]}_disable_dag_control/knockoff')    
         else:
-            data_dir = os.path.join(data_dir, f'v43/v{configs["d"]}_{configs["s0"]}_{configs["v42_W_seed"]}_{configs["v43_method"]}/knockoff')
+            data_dir = os.path.join(data_dir, f'v43/v{configs["d"]}_{configs["s0"]}_{configs["seed_W"]}_{configs["v43_method"]}/knockoff')
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 
@@ -246,13 +248,13 @@ if __name__ == '__main__':
         B_true = (W_true != 0)
 
         # load W
-        version = f"v39/W_{configs['d']}_{configs['s0']}_{configs['v42_W_seed']}.pkl"
+        version = f"v39/W_{configs['d']}_{configs['s0']}_{configs['seed_W']}.pkl"
         data_path = os.path.join(data_dir, version)
         with open(data_path, 'rb') as f:
             W_est = pickle.load(f)
 
         # preprocessing
-        if configs['v43_44_disable_dag_control']:
+        if configs['disable_dag_control']:
             G_est = nx.DiGraph(W_est)
         else:
             mask = utils.extract_dag_mask(np.abs(W_est), 0)
@@ -260,10 +262,10 @@ if __name__ == '__main__':
             G_est = nx.DiGraph(W_est)
             assert nx.is_directed_acyclic_graph(G_est)
         G_true = nx.DiGraph(W_true)
-        if configs['v44_W'] == 'W_true':
+        if configs['W_type'] == 'W_true':
             G = G_true
             W = W_true
-        elif configs['v44_W'] == 'W_est':
+        elif configs['W_type'] == 'W_est':
             G = G_est
             W = W_est
 
@@ -399,8 +401,8 @@ if __name__ == '__main__':
                     X_input = [val for val in X_input if val is not None]
                     X_input = np.concatenate(X_input, axis=1)
                 preds = _get_single_clf(X_input, X[:, j], 
-                                        configs['v42_44_method_diagn_gen'], 
-                                        configs['v42_44_lasso_alpha'],
+                                        configs['method_diagn_gen'], 
+                                        configs['lasso_alpha'],
                                         configs['device'])
             else:
                 preds = 0.
@@ -414,13 +416,13 @@ if __name__ == '__main__':
         suffix = ""
         if configs['v44_option'] == 3:
             suffix += f'_radius_{configs["v44_option_3_radius"]}'
-        if configs['v43_44_disable_dag_control']:
+        if configs['disable_dag_control']:
             suffix += f'_disable_dag_control'
 
         data_dir = os.path.join(
             data_dir,
             configs["exp_group_idx"],
-            f'v{configs["d"]}_{configs["v44_W"]}_option_{configs["v44_option"]}_{configs["v42_44_method_diagn_gen"]}_{configs["v42_44_lasso_alpha"]}'+suffix,
+            f'v{configs["d"]}_{configs["W_type"]}_option_{configs["v44_option"]}_{configs["method_diagn_gen"]}_{configs["lasso_alpha"]}'+suffix,
             "knockoff"
         )
         if not os.path.exists(data_dir):
@@ -433,6 +435,76 @@ if __name__ == '__main__':
         config_path = os.path.join(data_dir, f"knockoff_1_configs.yaml")
         with open(config_path, 'w') as f:
             yaml.dump(configs, f)
+
+    elif configs['exp_group_idx'] == 'v45':
+        # load X
+        version = f"v11/v{configs['d']}"
+        data_path = os.path.join(data_dir, version, 'X', 'X_1.pkl')
+        with open(data_path, 'rb') as f:
+            data = pickle.load(f)
+        X, W_true = data['X'], data['W_true']
+        B_true = (W_true != 0)
+
+        # load W
+        version = f"v39/W_{configs['d']}_{configs['s0']}_{configs['seed_W']}.pkl"
+        data_path = os.path.join(data_dir, version)
+        with open(data_path, 'rb') as f:
+            W_est = pickle.load(f)
+
+        # preprocessing
+        assert configs['W_type'] is None, "W is of no use"
+        # if configs['disable_dag_control']:
+        #     G_est = nx.DiGraph(W_est)
+        # else:
+        #     mask = utils.extract_dag_mask(np.abs(W_est), 0)
+        #     W_est[~mask] = 0.
+        #     G_est = nx.DiGraph(W_est)
+        #     assert nx.is_directed_acyclic_graph(G_est)
+        # G_true = nx.DiGraph(W_true)
+        # if configs['W_type'] == 'W_true':
+        #     G = G_true
+        #     W = W_true
+        # elif configs['W_type'] == 'W_est':
+        #     G = G_est
+        #     W = W_est
+        if not configs["v45_disable_knockoff_fit"]:
+            with open('./configs_dagma.yaml', 'r') as f:
+                configs_all = yaml.safe_load(f)
+            configs_all = utils.combine_configs(configs_all, configs)
+            configs_all['seed_knockoff'] = configs_all['seed_X']
+
+            # fit knockoff
+            X_tilde = knockoff.knockoff(X, configs_all)
+        else:
+            X_tilde = X.copy()
+        rng = np.random.default_rng(seed=configs['seed_X'])
+        C = rng.normal(0, configs['v45_sigma'], X_tilde.shape)
+        X_tilde += C
+
+        suffix = ""
+        if configs["lasso_alpha"] == 'lasso':
+            suffix += f'_{configs["lasso_alpha"]}'
+        if configs["v45_disable_knockoff_fit"]:
+            suffix += f'_disable_knockoff_fit'
+
+
+        data_dir = os.path.join(
+            data_dir,
+            configs["exp_group_idx"],
+            f'v{configs["d"]}_{configs["method_diagn_gen"]}_sigma_{configs["v45_sigma"]}'+suffix,
+            "knockoff"
+        )
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+
+        data_path = os.path.join(data_dir, f"knockoff_1.pkl")
+        with open(data_path, 'wb') as f:
+            pickle.dump(X_tilde, f)
+
+        config_path = os.path.join(data_dir, f"knockoff_1_configs.yaml")
+        with open(config_path, 'w') as f:
+            yaml.dump(configs, f)
+        
 
     print("DONE!")
         

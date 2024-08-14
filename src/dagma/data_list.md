@@ -52,5 +52,6 @@ v41: (ER4, in-degree experiments, exp 1, gen_copies.py when --method_diagn_gen=l
 
 v42: (ER4, in-degree experiments, exp 2, test.py when exp_group_idx == v42)
 v43: (ER4, relation experiments, test.py when exp_group_idx == v43)
+v44: (ER4, markov blanket experiments, test.py when exp_group_idx == v44)
 
 

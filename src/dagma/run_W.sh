@@ -43,7 +43,7 @@ run() {
 
     n=2000
     s0=$(( d * 4 ))
-    version_list=(${d}_W_true_option_4_lasso_OLS ${d}_W_est_option_4_lasso_OLS ${d}_W_true_option_5_lasso_OLS ${d}_W_est_option_5_lasso_OLS)
+    version_list=(${d}_lasso_OLS)
 
     for version in "${version_list[@]}"; do
 
@@ -71,7 +71,7 @@ run() {
     
 }
 
-data_version=44
+data_version=34
 # src_data_version=11
 # dst_data_version=${data_version}
 
@@ -91,11 +91,14 @@ data_version=44
 #     mkdir $direc
 # fi
 
-
-d=40
-cuda_idx=4
+d=20
+cuda_idx=5
 run $data_version $d $cuda_idx
 
-d=80
-cuda_idx=4
+d=60
+cuda_idx=5
+run $data_version $d $cuda_idx
+
+d=100
+cuda_idx=6
 run $data_version $d $cuda_idx

@@ -92,27 +92,23 @@
 ####################################################################
 
 run() {
-    data_version=44
-    log_file_global=96
+    data_version=34
+    log_file_global=77
 
     n=2000
-    nodes=(40 80)
-    methods=(W_est_option_5_lasso_OLS W_true_option_5_lasso_OLS)
+    nodes=(20 40 60 80 100)
     for d in "${nodes[@]}"; do
-        for method in "${methods[@]}"; do
-            
-            version=${d}_${method}
-            s0=$(( d * 4 ))
+        version=${d}_lasso_OLS
+        s0=$(( d * 4 ))
 
-            python multi_main.py \
-            --n $n --s0 $s0 --d $d \
-            --control_type=type_3_global \
-            --seed_knockoff_list=1 \
-            --seed_model_list=0 \
-            --version=$version \
-            --root_path simulated_data/v${data_version} \
-            --log_file=log_${log_file_global}/log_${data_version}_$version &
-        done
+        python multi_main.py \
+        --n $n --s0 $s0 --d $d \
+        --control_type=type_3_global \
+        --seed_knockoff_list=1 \
+        --seed_model_list=0 \
+        --version=$version \
+        --root_path simulated_data/v${data_version} \
+        --log_file=log_${log_file_global}/log_${data_version}_$version &
         # wait
     done
 }

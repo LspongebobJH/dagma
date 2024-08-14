@@ -128,6 +128,12 @@ if __name__ == '__main__':
             data_W, W_configs = utils.process_simulated_data(None, _configs, behavior='load')
 
             W_est = data_W['W_est']
+            
+            # removing self loops in case previous steps forget it.
+            real_p = W_est.shape[0]
+            W_est[np.eye(real_p, real_p).astype(bool)] = 0.
+            W_est[np.eye(real_p, real_p, k=real_p // 2).astype(bool)] = 0.
+            W_est[np.eye(real_p, real_p, k=-real_p // 2).astype(bool)] = 0.
 
             if configs['deconv_type'] == 'deconv_1':
                 W_est = utils.net_deconv(W_est, configs)
