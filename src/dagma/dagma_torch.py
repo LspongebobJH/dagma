@@ -201,7 +201,7 @@ class DagmaLinear(nn.Module):
                     diag_mat = \
                         torch.diag(torch.diag(w, 0)) + \
                         torch.diag(torch.diag(w, d // 2), d // 2) + \
-                        torch.diag(torch.diag(w, -d // 2), d // 2)
+                        torch.diag(torch.diag(w, -d // 2), -d // 2)
             w_res = w - diag_mat
             return w_res
         

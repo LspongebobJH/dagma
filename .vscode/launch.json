@@ -29,8 +29,7 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--gen_type=knockoff",
-                "--knock_type=knockoff_diagn",
+                "--gen_type=W_torch",
                 "--n=2000",
                 "--d=20",
                 "--s0=80",
@@ -38,7 +37,6 @@
                 "--root_path=simulated_data/v11",
                 "--version=20",
                 "--device=cuda:7",
-                "--method_diagn_gen=lasso"
             ]
         },
         {
