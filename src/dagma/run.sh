@@ -17,12 +17,12 @@
 ########################################
 
 # n=2000
-# nodes=(20 40 60 80)
+# nodes=(20 40 60 80 100)
 # for d in "${nodes[@]}"; do
-#     s0=$(( d * 5 ))
+#     s0=$(( d * 6 ))
 #     python gen_copies.py --gen_type X \
 #     --n $n --d $d --s0 $s0 \
-#     --root_path simulated_data/v33 \
+#     --root_path simulated_data/v11 \
 #     --version ${d}_${s0} &
 # done
 
@@ -54,34 +54,44 @@
 #########################################
 
 data_option=X
-dst_data_version=34
+dst_data_version=44
 src_data_version=11
 n=2000
 cuda_idx=0
-nodes=(20 60 100)
+nodes=(20 40 60 80 100)
+options=(5)
 
-for d in "${nodes[@]}"; do
-    dst_version=${d}_lasso_OLS
+for option in "${options[@]}"; do
+    suffix=_option_${option}_lasso_OLS
+    for d in "${nodes[@]}"; do
+        s0=$(( d * 6 ))
+        dst_version=${d}_${s0}${suffix}
+        src_version=${d}_${s0}
+        
+        ./create_data_dir.sh $data_option $dst_data_version $dst_version $src_data_version $src_version
 
-    s0=$(( d * 4 ))
-    src_version=${d}
-    
-    ./create_data_dir.sh $data_option $dst_data_version $dst_version $src_data_version $src_version
+        target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff
+        if [ ! -d "$target_dir$" ]; then
+            mkdir -p ${target_dir}
+        fi
 
-    target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff
-    if [ ! -d "$target_dir$" ]; then
-        mkdir -p ${target_dir}
-    fi
+        for i in {1..10}; do
+            python new_knockoff_generation.py \
+            --exp_group_idx=v44 --v44_option=${option} \
+            --d=${d} --s0=${s0} --W_type=W_est \
+            --method_diagn_gen=lasso --lasso_alpha=OLS \
+            --seed_knockoff=$i --notes=$suffix \
+            >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${i} 2>&1 &
 
-    for i in {1..1}; do
-        python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn --n $n --d $d --s0 $s0 --seed_knockoff $i \
-        --method_diagn_gen=lasso --lasso_alpha=OLS \
-        --root_path simulated_data/v${dst_data_version} \
-        --version $dst_version --device cuda:${cuda_idx} \
-        >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${i} 2>&1 &
-    
+            # python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn --n $n --d $d --s0 $s0 --seed_knockoff $i \
+            # --method_diagn_gen=lasso --lasso_alpha=OLS \
+            # --root_path simulated_data/v${dst_data_version} \
+            # --version $dst_version --device cuda:${cuda_idx} \
+            # >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${i} 2>&1 &
+        done
+        # cuda_idx=$(( cuda_idx + 1 ))
     done
-    cuda_idx=$(( cuda_idx + 1 ))
+    # wait
 done
 
 #########################################

@@ -42,12 +42,12 @@ run() {
     src_data_version=11
 
     n=2000
-    s0=$(( d * 4 ))
-    version_list=(${d}_lasso_OLS)
+    s0=$(( d * 6 ))
+    version_list=(${d}_${s0}_option_5_lasso_OLS)
 
     for version in "${version_list[@]}"; do
 
-        ./create_data_dir.sh X $dst_data_version $version $src_data_version ${d}
+        # ./create_data_dir.sh X $dst_data_version $version $src_data_version ${d}
 
         target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$version/W
         if [ ! -d "$target_dir$" ]; then
@@ -55,7 +55,7 @@ run() {
         fi
     
 
-        for i in {1..1}; do
+        for i in {1..10}; do
             stdbuf -o0 -e0 \
             python gen_copies.py \
             --gen_type W_torch \
@@ -64,14 +64,16 @@ run() {
             --root_path simulated_data/v${dst_data_version} \
             --version ${version} \
             --device cuda:${cuda_idx} > simulated_data/v${dst_data_version}/v${version}/W/log_$i 2>&1 &
-        done
 
-        cuda_idx=$(( cuda_idx + 1 ))
+            cuda_idx=$(( cuda_idx + 1 ))
+            cuda_idx=$(( cuda_idx % 8))
+        done
+        # wait
     done
     
 }
 
-data_version=34
+data_version=44
 # src_data_version=11
 # dst_data_version=${data_version}
 
@@ -92,13 +94,49 @@ data_version=34
 # fi
 
 d=20
-cuda_idx=5
+cuda_idx=0
 run $data_version $d $cuda_idx
+
+wait
+
+d=40
+cuda_idx=0
+run $data_version $d $cuda_idx
+
+wait
 
 d=60
-cuda_idx=5
+cuda_idx=0
 run $data_version $d $cuda_idx
 
-d=100
-cuda_idx=6
+wait
+
+d=80
+cuda_idx=0
 run $data_version $d $cuda_idx
+
+wait
+
+d=100
+cuda_idx=0
+run $data_version $d $cuda_idx
+
+# wait
+
+# d=80
+# cuda_idx=0
+# run $data_version $d $cuda_idx
+
+# wait
+
+# d=100
+# cuda_idx=0
+# run $data_version $d $cuda_idx
+
+# d=60
+# cuda_idx=5
+# run $data_version $d $cuda_idx
+
+# d=100
+# cuda_idx=6
+# run $data_version $d $cuda_idx
