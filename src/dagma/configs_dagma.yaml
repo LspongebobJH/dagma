@@ -10,6 +10,8 @@ numeric: False # let values < numeric_precision be 0.
 numeric_precision : 1e-1
 device : cuda:7
 root_path: simulated_data
+dagma_type: dagma_1
+knock_type: knockoff_diagn
 
 # True: t_list = concat([0], sort.unique.abs(Z))
 # False: t_list = sort.concat([0], unique(Z))
@@ -79,19 +81,16 @@ trick: None ## trick only for type_3_global now
 # trick_8: Z <- Z(11, 21) - Z(21, 22) = |W11| + |W22| - 2|W21|
 
 
-
-##############################
-# knockoffGAN parameters
-##############################
-
-niter: 2000
-norm_knockoffGAN: False
-
 ##############################
 # knockoffDiagn parameters
 ##############################
 
 disable_adjust_marg: False
+method_diagn_gen: dagma # which method to generate X_pred, used in X' = X_pred + shuffle(X - X_pred).
+# can be ['dagma', 'lasso'], the latter one is original knockoffdiagn
+lasso_alpha: knockoff_diagn # available only when method_diagn_gen == lasso. this is the alpha of l1 norm. 
+# when knockoff_diagn, using the default values calculated by knockoffDiagn.
+# when sklearn, using the default values set by sklearn
 
 ##############################
 # DAGMA parameters
@@ -102,6 +101,18 @@ warm_iter: 50000
 use_g_dir_loss: False
 T: 4
 disable_block_diag_removal: False
+
+##############################
+# DEPRECATED
+##############################
+
+
+##############################
+# knockoffGAN parameters
+##############################
+
+niter: 2000
+norm_knockoffGAN: False
 
 ##############################
 # both

@@ -201,7 +201,7 @@ class DagmaLinear(nn.Module):
                     diag_mat = \
                         torch.diag(torch.diag(w, 0)) + \
                         torch.diag(torch.diag(w, d // 2), d // 2) + \
-                        torch.diag(torch.diag(w, -d // 2), d // 2)
+                        torch.diag(torch.diag(w, -d // 2), -d // 2)
             w_res = w - diag_mat
             return w_res
         
@@ -432,32 +432,41 @@ class DagmaTorch:
         W_est[np.abs(W_est) < w_threshold] = 0
         if return_no_filter:
             return W_est_no_filter, W_est
-        return W_est
-        
-
-
-def test():
-    import utils_dagma as utils
+        return W_est    
     
-    utils.set_random_seed(1)
-    torch.manual_seed(1)
+if __name__ == '__main__':
+    import utils, os, pickle, utils_dagma
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_argument('--d', type=int, default=None)
+    parser.add_argument('--seed', type=int, default=1)
+    parser.add_argument('--device', type=str, default='cuda:7') 
+    args = parser.parse_args()
+
     
-    n, d, s0, graph_type, sem_type = 1000, 20, 50, 'ER', 'gauss'
-    device = 'cuda:7'
-    print("simulated dag")
-    B_true = utils.simulate_dag(d, s0, graph_type)
-    # print("simulated nonlinear SEM")
-    # X = utils.simulate_nonlinear_sem(B_true, n, sem_type)
-    print("simulated linear dag")
-    X = utils.simulate_linear_sem(B_true, n, sem_type)
+    utils.set_random_seed(args.seed)
+    
+    n, d = 2000, args.d
+    s0 = 4 * d
+    version = f"v11/v{d}"
+    device = args.device
+    data_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    data_path = os.path.join(data_dir, version, 'X', 'X_1.pkl')
+
+    with open(data_path, 'rb') as f:
+        data = pickle.load(f)
+    X, W_true = data['X'], data['W_true']
+    B_true = (W_true != 0)
 
     eq_model = DagmaLinear(d=d, dagma_type=None, device=device, original=True).to(device)
     model = DagmaTorch(eq_model, device=device, verbose=True)
     print("fit dagma")
-    W_est = model.fit(X, lambda1=0.02, lambda2=0.005)
-    acc = utils.count_accuracy(B_true, W_est != 0, use_logger=False)
+    W_est_no_filter, W_est = model.fit(X, lambda1=0.02, lambda2=0.005, return_no_filter=True)
+    acc = utils_dagma.count_accuracy(B_true, W_est != 0, use_logger=False)
     print(acc)
-    
-    
-if __name__ == '__main__':
-    test()
+
+    data_path = os.path.join(data_dir, "v39", f"W_{d}_{s0}_{args.seed}.pkl")
+    with open(data_path, 'wb') as f:
+        pickle.dump(W_est_no_filter, f)
+    print("DONE")

@@ -7,8 +7,12 @@ from hidimstat.knockoffs.gaussian_knockoff import (_estimate_distribution,
 from sklearn.covariance import (GraphicalLassoCV, empirical_covariance,
                                 ledoit_wolf)
 from statsmodels.distributions.empirical_distribution import ECDF, monotone_fn_inverter
+from sklearn.linear_model import (Lasso,
+                                  LogisticRegressionCV,
+                                  ElasticNet)
 
 import utils
+import xgboost as xgb
 
 #########################
 # Main 
@@ -16,14 +20,15 @@ import utils
 
 def get_knockoffs_stats(X, configs, n_jobs=1,
                         gaussian=False,
-                        method_ko_gen='lasso',
                         cov_estimator='graph_lasso'):
     """
     X: n * p, feature matrix
     gaussian: if True, use second-order knockoff for Gaussian cases from candes paper
     cov_estimator is used by "gaussian'
-    method_ko_gen: no use.
     """
+    method_diagn_gen = configs['method_diagn_gen']
+    lasso_alpha = configs['lasso_alpha']
+    device = configs['device']
     
     if gaussian: # second-order knockoff for Gaussian cases, candes paper, baselines
         mu, Sigma = _estimate_distribution(
@@ -32,13 +37,17 @@ def get_knockoffs_stats(X, configs, n_jobs=1,
         X_tildes = gaussian_knockoff_generation(X, mu, Sigma, method='equi', memory=None)
 
     else: # knockoff diagnostic
-        # preds = np.array(Parallel(n_jobs=n_jobs)(delayed(
-        #     _get_single_clf_ko)(X, j, method_ko_gen) for j in tqdm(range(p))))
         adjust_marg=not configs['disable_adjust_marg']
-        _configs = configs.copy()
-        _configs['gen_W'] = 'torch'
-        W_est_no_filter, _, _ = utils.fit(X, _configs, original=True)
-        preds = X @ W_est_no_filter
+        if method_diagn_gen in ['lasso', 'xgb', 'elastic']:
+            p = configs['d']
+            preds = np.array(Parallel(n_jobs=n_jobs)(delayed(
+            _get_single_clf_ko)(X, j, method_diagn_gen, lasso_alpha, device) for j in tqdm(range(p))))
+            preds = preds.T
+        elif method_diagn_gen == 'dagma':
+            _configs = configs.copy()
+            _configs['gen_W'] = 'torch'
+            W_est_no_filter, _, _ = utils.fit(X, _configs, original=True)
+            preds = X @ W_est_no_filter
         X_tildes = conditional_sequential_gen_ko(X, preds, n_jobs=n_jobs, discrete=False, adjust_marg=adjust_marg)
 
     return X_tildes
@@ -46,6 +55,59 @@ def get_knockoffs_stats(X, configs, n_jobs=1,
 #########################
 # Utilities 
 #########################
+
+def _get_fitting_model(X_input, X_target, method, alpha, device):
+    p = X_input.shape[1] + 1
+
+    if method == "lasso":
+        if alpha == 'knockoff_diagn':
+            lambda_max = np.max(np.abs(np.dot(X_input.T, X_target))) / (2 * (p - 1))
+            alpha = (lambda_max / 100)
+            clf = Lasso(alpha)
+        elif alpha == 'sklearn':
+            clf = Lasso()
+        elif alpha == 'OLS':
+            clf = Lasso(alpha=0)
+    
+    if method == "logreg_cv":
+        clf = LogisticRegressionCV(cv=5, max_iter=int(10e4), n_jobs=-1)
+
+    if method == "xgb":
+        # clf = xgb.XGBRegressor(n_jobs=-1)
+        clf = xgb.XGBRegressor(device=device)
+
+    if method == 'elastic':
+        clf = ElasticNet()
+
+    return clf
+
+def _get_single_clf_ko(X, j, method="lasso", alpha='knockoff_diagn', device='cpu'):
+    """
+    Fit a single classifier to predict the j-th variable from all others.
+
+    Args:
+        X : input data
+        j (int): variable index
+        method (str, optional): Classifier used. Defaults to "lasso".
+        all_X: if True, all X is used to fit j rather than only X[i] where i != j.
+
+    Returns:
+        pred: Predicted values for variable j from all others.
+    """
+    
+    n, p = X.shape
+    idc = np.array([i for i in np.arange(0, p) if i != j])
+
+    clf = _get_fitting_model(X[:, idc], X[:, j], method, alpha, device)
+    clf.fit(X[:, idc], X[:, j])
+    pred = clf.predict(X[:, idc])
+    return pred
+
+def _get_single_clf(X_input, X_target, method="lasso", alpha='knockoff_diagn', device='cpu'):
+    clf = _get_fitting_model(X_input, X_target, method, alpha, device)
+    clf.fit(X_input, X_target)
+    pred = clf.predict(X_input)
+    return pred
 
 def _estimate_distribution(X, shrink=True, cov_estimator='ledoit_wolf', n_jobs=1):
     """
@@ -141,7 +203,7 @@ def _get_samples_ko(X, pred, j, discrete=False, adjust_marg=True):
     TODO(jiahang):
     In codes, this shuffle is applied to the sample dimension, not the feature dimension
     different from the paper.
-    but very similar to my proposed permutation knockoff initially.
+    but very similar to permutation knockoff initially.
     """
     sample = pred + residuals[indices_]
 

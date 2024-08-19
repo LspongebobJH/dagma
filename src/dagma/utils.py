@@ -121,8 +121,7 @@ def fit(X_all, configs, original=False):
                                disable_block_diag_removal=disable_block_diag_removal,
                                original=original).to(device)
         
-        model = DagmaTorch(eq_model, device=device, verbose=True, 
-                           dagma_type=dagma_type, dtype=dtype)
+        model = DagmaTorch(eq_model, device=device, verbose=True, dtype=dtype)
         
         W_est_no_filter, _  = model.fit(X_all, lambda1=0.02, lambda2=0.005, warm_iter=warm_iter, 
                                         T=T,
@@ -130,12 +129,15 @@ def fit(X_all, configs, original=False):
     
     return W_est_no_filter, Z_true, Z_knock
 
-def combine_configs(configs_yaml : dict, args : ArgumentParser):
+def combine_configs(configs_yaml : dict, args):
     configs = {}
     for key, val in configs_yaml.items():
         configs[key] = val
 
-    _args = vars(args)
+    if isinstance(args, dict):
+        _args = args
+    else:
+        _args = vars(args)
 
     for key, val in _args.items():
         if val in ["None", "none", -1]:
