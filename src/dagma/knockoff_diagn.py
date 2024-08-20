@@ -13,6 +13,8 @@ from sklearn.linear_model import (Lasso,
 
 import utils
 import xgboost as xgb
+from cuml import LinearRegression
+import cupy as cp
 
 #########################
 # Main 
@@ -38,16 +40,17 @@ def get_knockoffs_stats(X, configs, n_jobs=1,
 
     else: # knockoff diagnostic
         adjust_marg=not configs['disable_adjust_marg']
-        if method_diagn_gen in ['lasso', 'xgb', 'elastic']:
-            p = configs['d']
-            preds = np.array(Parallel(n_jobs=n_jobs)(delayed(
-            _get_single_clf_ko)(X, j, method_diagn_gen, lasso_alpha, device) for j in tqdm(range(p))))
-            preds = preds.T
-        elif method_diagn_gen == 'dagma':
+        if method_diagn_gen == 'dagma':
             _configs = configs.copy()
             _configs['gen_W'] = 'torch'
             W_est_no_filter, _, _ = utils.fit(X, _configs, original=True)
             preds = X @ W_est_no_filter
+        else:
+            p = configs['d']
+            preds = np.array(Parallel(n_jobs=n_jobs)(delayed(
+            _get_single_clf_ko)(X, j, method_diagn_gen, lasso_alpha, device) for j in tqdm(range(p))))
+            preds = preds.T
+        
         X_tildes = conditional_sequential_gen_ko(X, preds, n_jobs=n_jobs, discrete=False, adjust_marg=adjust_marg)
 
     return X_tildes
@@ -68,6 +71,9 @@ def _get_fitting_model(X_input, X_target, method, alpha, device):
             clf = Lasso()
         elif alpha == 'OLS':
             clf = Lasso(alpha=0)
+
+    if method == "OLS_cuda":
+        clf = LinearRegression()
     
     if method == "logreg_cv":
         clf = LogisticRegressionCV(cv=5, max_iter=int(10e4), n_jobs=-1)
@@ -105,8 +111,14 @@ def _get_single_clf_ko(X, j, method="lasso", alpha='knockoff_diagn', device='cpu
 
 def _get_single_clf(X_input, X_target, method="lasso", alpha='knockoff_diagn', device='cpu'):
     clf = _get_fitting_model(X_input, X_target, method, alpha, device)
+
+    if "cuda" in method:
+        X_input = cp.asarray(X_input)
+        X_target = cp.asarray(X_target)
     clf.fit(X_input, X_target)
     pred = clf.predict(X_input)
+    if "cuda" in method:
+        pred = pred.get()
     return pred
 
 def _estimate_distribution(X, shrink=True, cov_estimator='ledoit_wolf', n_jobs=1):

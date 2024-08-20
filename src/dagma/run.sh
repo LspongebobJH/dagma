@@ -58,12 +58,13 @@ dst_data_version=44
 src_data_version=11
 n=2000
 cuda_idx=0
-nodes=(20 40 60 80 100)
+nodes=(60 80)
 options=(5)
 
-for option in "${options[@]}"; do
-    suffix=_option_${option}_lasso_OLS
-    for d in "${nodes[@]}"; do
+for d in "${nodes[@]}"; do
+    for option in "${options[@]}"; do
+    
+        suffix=_option_${option}_XGB
         s0=$(( d * 6 ))
         dst_version=${d}_${s0}${suffix}
         src_version=${d}_${s0}
@@ -76,20 +77,22 @@ for option in "${options[@]}"; do
         fi
 
         for i in {1..10}; do
+            # CUDA_VISIBLE_DEVICES=$cuda_idx \
             python new_knockoff_generation.py \
             --exp_group_idx=v44 --v44_option=${option} \
             --d=${d} --s0=${s0} --W_type=W_est \
-            --method_diagn_gen=lasso --lasso_alpha=OLS \
+            --method_diagn_gen=xgb --device=cuda:${cuda_idx} \
             --seed_knockoff=$i --notes=$suffix \
             >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${i} 2>&1 &
 
             # python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn --n $n --d $d --s0 $s0 --seed_knockoff $i \
-            # --method_diagn_gen=lasso --lasso_alpha=OLS \
+            # --method_diagn_gen=xgb \
             # --root_path simulated_data/v${dst_data_version} \
             # --version $dst_version --device cuda:${cuda_idx} \
             # >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${i} 2>&1 &
+            cuda_idx=$(( cuda_idx + 1 ))
+            cuda_idx=$(( cuda_idx % 8))
         done
-        # cuda_idx=$(( cuda_idx + 1 ))
     done
     # wait
 done
@@ -98,14 +101,13 @@ done
 # Misc
 #########################################
 
-# python dagma_torch.py --d 10 --seed 1 --device cuda:0 &
-# python dagma_torch.py --d 10 --seed 2 --device cuda:1 &
-# python dagma_torch.py --d 20 --seed 1 --device cuda:2 &
-# python dagma_torch.py --d 20 --seed 2 --device cuda:3 &
-# python dagma_torch.py --d 40 --seed 1 --device cuda:4 &
-# python dagma_torch.py --d 40 --seed 2 --device cuda:5 &
-# python dagma_torch.py --d 60 --seed 1 --device cuda:6 &
-# python dagma_torch.py --d 60 --seed 2 --device cuda:7 &
+# nodes=(20 40 60 80 100)
+# cuda_idx=0
+# for d in "${nodes[@]}"; do
+#     s0=$(( d * 6 ))
+#     python dagma_torch.py --d $d --s0 $s0 --seed 1 --device cuda:${cuda_idx} &
+#     cuda_idx=$(( cuda_idx + 1 ))
+# done
 
 # python test.py --exp_group_idx=v43 --d=20 --v43_method='elastic' --v43_disable_dag_control --device=cuda:6 &
 # python test.py --exp_group_idx=v43 --d=100 --v43_method='elastic' --v43_disable_dag_control --device=cuda:7 &

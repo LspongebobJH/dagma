@@ -8,15 +8,14 @@
             "name": "test.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "test.py",
+            "program": "new_knockoff_generation.py",
             "console": "integratedTerminal",
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--exp_group_idx=v45",
-                "--method_diagn_gen=xgb",
-                "--v45_sigma=10",
-                "--d=40"
+                "--exp_group_idx=v44", "--v44_option=5",
+                "--method_diagn_gen=OLS_cuda",
+                "--d=20", "--s0=80"
             ]
         },
         
@@ -64,12 +63,13 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "args": [
                 "--control_type=type_3_global",
-                "--seed_knockoff_list=1",
+                "--seed_knockoff_list=2",
                 "--seed_model_list=0",
-                "--version=40_lasso_OLS",
-                "--root_path=simulated_data/v34",
-                "--d=40",
-                "--s0=160",
+                "--version=60_360_option_5_OLS",
+                "--root_path=simulated_data/v44",
+                "--d=60",
+                "--s0=360",
+                "--n_jobs=4"
             ]
         },
         {

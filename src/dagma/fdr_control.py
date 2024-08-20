@@ -6,6 +6,8 @@ import torch
 import logging
 
 from utils import extract_dag_mask
+from joblib import Parallel, delayed
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,7 @@ def type_1_threshold(configs : dict, W : np.ndarray, B_true : np.ndarray):
         _W = W[:num_feat, :num_feat].copy()
         _W[np.abs(_W) <= t] = 0.
         try:
-            acc = utils_dagma.count_accuracy(B_true, _W != 0.)
+            acc = utils_dagma.count_accuracy_simplify(B_true, _W != 0.)
         except ValueError as e:
             print(f"threshold {t} | {e}")
             continue
@@ -85,7 +87,7 @@ def type_1_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
     mask = T_T_true > 0.
     T_T_true[mask], T_T_true[~mask] = 1, 0
     try:
-        fdr_true = utils_dagma.count_accuracy(T_T_true, T_T)['fdr']
+        fdr_true = utils_dagma.count_accuracy_simplify(T_T_true, T_T)['fdr']
     except Exception as e:
         print(e)
 
@@ -139,7 +141,7 @@ def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
             T_T = col.copy()
             mask = (T_T >= t)
             T_T[mask], T_T[~mask] = 1, 0
-            perf = utils_dagma.count_accuracy(T_T_true[:, i], T_T, verify_dag = False)
+            perf = utils_dagma.count_accuracy_simplify(T_T_true[:, i], T_T, verify_dag = False)
             fdr_true, power = perf['fdr'], perf['tpr']
 
             logger.debug(f"feat {i} | thresh {t:.4f} | est fdr {fdr_est:.4f} | true fdr {fdr_true:.4f}")
@@ -158,7 +160,7 @@ def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
         Z[mask, i], Z[~mask, i] = 1, 0
     T_T = Z
     
-    perf = utils_dagma.count_accuracy(T_T_true, T_T)
+    perf = utils_dagma.count_accuracy_simplify(T_T_true, T_T)
     fdr_true, power = perf['fdr'], perf['tpr']
     if utils_dagma.is_dag(T_T):
         logger.info("W_est is DAG")
@@ -176,6 +178,7 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
     abs_t_list = configs['abs_t_list']
     abs_selection = configs['abs_selection']
     trick = configs['trick']
+    n_jobs = configs['n_jobs']
 
     logger.info(f"==============================")
     logger.info(f"expected FDR {fdr}")
@@ -244,25 +247,47 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
     else:
         t_list = np.sort(np.concatenate(([0], np.unique(Z))))
 
-    for t in reversed(t_list):
-        if t < 0.:
-            break
-        if est_type == 'tau':
-            fdr_est = ((Z <= -t).sum()) / np.max((1, (Z >= t).sum()))
-        else:
-            fdr_est = (1 + (Z <= -t).sum()) / np.max((1, (Z >= t).sum()))
+    def _get_t(t_list: list):
+        t_last = np.inf
+        fdr_est_last = None
+        for t in reversed(t_list):
+            if t < 0.:
+                break
+            if est_type == 'tau':
+                fdr_est = ((Z <= -t).sum()) / np.max((1, (Z >= t).sum()))
+            else:
+                fdr_est = (1 + (Z <= -t).sum()) / np.max((1, (Z >= t).sum()))
+            
+            T_T = Z.copy()
+            mask = (T_T >= t)
+            T_T[mask], T_T[~mask] = 1, 0
+            perf = utils_dagma.count_accuracy_simplify(T_T_true, T_T)
+            fdr_true, power = perf['fdr'], perf['tpr']
+
+            logger.debug(f"thresh {t:.4f} | est fdr {fdr_est:.4f} | true fdr {fdr_true:.4f} | true power {power:.4f}")
+
+            if fdr_est <= fdr:
+                t_last = t
+                fdr_est_last = fdr_est
+        return t_last, fdr_est_last
         
-        T_T = Z.copy()
-        mask = (T_T >= t)
-        T_T[mask], T_T[~mask] = 1, 0
-        perf = utils_dagma.count_accuracy(T_T_true, T_T)
-        fdr_true, power = perf['fdr'], perf['tpr']
+    interval = len(t_list) // n_jobs
+    intervals = [(j * interval, (j+1) * interval) for j in range(n_jobs - 1)]
+    intervals.append(
+        ((n_jobs-1) * interval, len(t_list))
+    )
+    res = Parallel(n_jobs=n_jobs)(
+            delayed(_get_t)(
+                t_list[interval[0]:interval[1]]
+            ) for interval in tqdm(intervals)
+        )
 
-        logger.debug(f"thresh {t:.4f} | est fdr {fdr_est:.4f} | true fdr {fdr_true:.4f} | true power {power:.4f}")
 
-        if fdr_est <= fdr:
-            t_last = t
-            fdr_est_last = fdr_est
+    res = np.array([list(_res) for _res in res if not np.isinf(_res[0]) and _res[1] is not None])
+    if len(res) > 0: # otherwise, no edge being selected
+        t_last = res[:, 0].min()
+        t_last_idx = np.argmin(res[:, 0])
+        fdr_est_last = res[t_last_idx, 1]
 
     if abs_selection: # NOTE: deprecated
         mask = (np.abs(Z >= t_last))
@@ -271,7 +296,7 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
     Z[mask], Z[~mask] = 1, 0
     T_T = Z
     
-    perf = utils_dagma.count_accuracy(T_T_true, T_T)
+    perf = utils_dagma.count_accuracy_simplify(T_T_true, T_T)
     fdr_true, power = perf['fdr'], perf['tpr']
 
     if utils_dagma.is_dag(T_T):
@@ -344,7 +369,7 @@ def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
         T_T = Z.copy()
         mask = (T_T >= t)
         T_T[mask], T_T[~mask] = 1, 0
-        perf = utils_dagma.count_accuracy(T_T_true, T_T)
+        perf = utils_dagma.count_accuracy_simplify(T_T_true, T_T)
         fdr_true, power = perf['fdr'], perf['tpr']
 
         logger.debug(f"thresh {t:.4f} | est fdr {fdr_est:.4f} | true fdr {fdr_true:.4f} | true power {power:.4f}")
@@ -377,7 +402,7 @@ def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
     Z[mask * dag_mask], Z[~(mask * dag_mask)] = 1, 0
     T_T = Z
 
-    perf = utils_dagma.count_accuracy(T_T_true, T_T)
+    perf = utils_dagma.count_accuracy_simplify(T_T_true, T_T)
     fdr_true, power = perf['fdr'], perf['tpr']
 
     if utils_dagma.is_dag(T_T):
@@ -450,7 +475,7 @@ def type_4_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
             T_T = col.copy()
             mask = (T_T >= t)
             T_T[mask], T_T[~mask] = 1, 0
-            perf = utils_dagma.count_accuracy(T_T_true[:, i], T_T, verify_dag = False)
+            perf = utils_dagma.count_accuracy_simplify(T_T_true[:, i], T_T, verify_dag = False)
             fdr_true, power = perf['fdr'], perf['tpr']
 
             logger.debug(f"feat {i} | thresh {t:.4f} | est fdr {fdr_est:.4f} | true fdr {fdr_true:.4f}")
@@ -488,7 +513,7 @@ def type_4_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
     Z[mask * dag_mask], Z[~(mask * dag_mask)] = 1, 0
     T_T = Z
     
-    perf = utils_dagma.count_accuracy(T_T_true, T_T)
+    perf = utils_dagma.count_accuracy_simplify(T_T_true, T_T)
     fdr_true, power = perf['fdr'], perf['tpr']
     if utils_dagma.is_dag(T_T):
         logger.info("W_est is DAG")

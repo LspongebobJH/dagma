@@ -440,6 +440,7 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument('--d', type=int, default=None)
+    parser.add_argument('--s0', type=int, default=None)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda:7') 
     args = parser.parse_args()
@@ -448,8 +449,8 @@ if __name__ == '__main__':
     utils.set_random_seed(args.seed)
     
     n, d = 2000, args.d
-    s0 = 4 * d
-    version = f"v11/v{d}"
+    s0 = args.s0
+    version = f"v11/v{d}_{s0}"
     device = args.device
     data_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
     data_path = os.path.join(data_dir, version, 'X', 'X_1.pkl')

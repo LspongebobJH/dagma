@@ -97,11 +97,11 @@ run() {
     options=(5)
 
     n=2000
-    nodes=(20 40 60 80 100)
+    nodes=(80)
     for option in "${options[@]}"; do
         for d in "${nodes[@]}"; do
             s0=$(( d * 6 ))
-            version=${d}_${s0}_option_${option}_lasso_OLS
+            version=${d}_${s0}_option_${option}_XGB
 
             python multi_main.py \
             --n $n --s0 $s0 --d $d \
@@ -110,9 +110,11 @@ run() {
             --seed_model_list=0 \
             --version=$version \
             --root_path simulated_data/v${data_version} \
+            --n_jobs=4 \
             --log_file=log_${log_file_global}/log_${data_version}_$version &
             # wait
         done
+        # wait
     done
 }
 

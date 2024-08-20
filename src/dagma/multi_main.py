@@ -46,6 +46,7 @@ parser.add_argument('--seed_knockoff_list', type=str, required=True)
 parser.add_argument('--seed_model_list', type=str, required=True)
 parser.add_argument('--version', type=str, default=None)
 parser.add_argument('--log_file', type=str, default='temp')
+parser.add_argument('--n_jobs', type=int, default=1)
 
 # testing trick for fdr control
 parser.add_argument('--trick', type=str, default=None, 

@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--v44_option_3_radius', type=int, default=None, help="available only when v44_option=3")
     parser.add_argument('--v45_sigma', type=float, default=None)
     parser.add_argument('--v45_disable_knockoff_fit', action='store_true', default=False)
-    parser.add_argument('--method_diagn_gen', type=str, default='lasso', choices=['lasso', 'xgb', 'elastic'])
+    parser.add_argument('--method_diagn_gen', type=str, default='lasso', choices=['lasso', 'xgb', 'elastic', 'OLS_cuda'])
     parser.add_argument('--lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
     parser.add_argument('--W_type', type=str, default=None, choices=["W_true", "W_est"])
     parser.add_argument('--disable_dag_control', action='store_true', default=False, help="it's available only when W_type=W_est")
@@ -250,10 +250,8 @@ if __name__ == '__main__':
 
     elif configs['exp_group_idx'] == 'v44':
         # load X
-        if int(configs['d']) < 200:
-            version = f"v11/v{configs['d']}"
-        else:
-            version = f"v11/v{configs['d']}_{configs['s0']}"
+        
+        version = f"v11/v{configs['d']}_{configs['s0']}"
         data_path = os.path.join(data_dir, version, 'X', 'X_1.pkl')
         with open(data_path, 'rb') as f:
             data = pickle.load(f)
