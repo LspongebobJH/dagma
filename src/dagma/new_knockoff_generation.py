@@ -12,19 +12,12 @@ from sklearn.linear_model import Lasso, ElasticNet
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--exp_group_idx', type=str, default=None, choices=['v40', 'v42', 'v43', 'v44', 'v45'])
-    parser.add_argument('--v40_exp_idx', type=int, default=None, choices=[0])
-    parser.add_argument('--v42_i_idx', type=int, default=None, choices=[1, 2])
-    parser.add_argument('--v42_ii_idx', type=int, default=None, choices=[1, 2, 3])
-    parser.add_argument('--v43_method', type=str, default='elastic', choices=['lasso', 'elastic'])
-    parser.add_argument('--v44_option', type=int, default=None, choices=[1, 2, 3, 4, 5, 6])
-    parser.add_argument('--v44_option_3_radius', type=int, default=None, help="available only when v44_option=3")
-    parser.add_argument('--v45_sigma', type=float, default=None)
-    parser.add_argument('--v45_disable_knockoff_fit', action='store_true', default=False)
-    parser.add_argument('--method_diagn_gen', type=str, default='lasso', choices=['lasso', 'xgb', 'elastic', 'OLS_cuda'])
+    parser.add_argument('--v44_option', type=int, default=None, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9])
+    parser.add_argument('--method_diagn_gen', type=str, default='OLS_cuda', choices=['lasso', 'xgb', 'elastic', 'OLS_cuda'])
     parser.add_argument('--lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
     parser.add_argument('--W_type', type=str, default=None, choices=["W_true", "W_est"])
     parser.add_argument('--disable_dag_control', action='store_true', default=False, help="it's available only when W_type=W_est")
-    parser.add_argument('--seed_model', type=int, default=1, choices=[1, 2])
+    parser.add_argument('--seed_model', type=int, default=1, choices=[1, 2, 3])
     parser.add_argument('--seed_X', type=int, default=1)
     parser.add_argument('--seed_knockoff', type=int, default=1)
     parser.add_argument('--d', type=int, required=True)
@@ -33,6 +26,15 @@ if __name__ == '__main__':
     parser.add_argument('--n_jobs', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda:7')
     parser.add_argument('--notes', type=str, default=None)
+
+    # deprecated
+    parser.add_argument('--v40_exp_idx', type=int, default=None, choices=[0])
+    parser.add_argument('--v42_i_idx', type=int, default=None, choices=[1, 2])
+    parser.add_argument('--v42_ii_idx', type=int, default=None, choices=[1, 2, 3])
+    parser.add_argument('--v43_method', type=str, default='elastic', choices=['lasso', 'elastic'])
+    parser.add_argument('--v44_option_3_radius', type=int, default=None, help="available only when v44_option=3")
+    parser.add_argument('--v45_sigma', type=float, default=None)
+    parser.add_argument('--v45_disable_knockoff_fit', action='store_true', default=False)
 
     args = parser.parse_args()
     configs = vars(args)
@@ -288,6 +290,21 @@ if __name__ == '__main__':
                 res_list.remove(self_n)
             return res_list
 
+        def ancestors_X(G: nx.DiGraph, i: int, X: np.ndarray, return_idx: bool = False):
+            ancestors = list(nx.ancestors(G, i))
+            ancestors = postprocess_res(ancestors, i)
+            if len(ancestors) != 0:
+                if return_idx:
+                    return X[:, ancestors], ancestors
+                else:    
+                    return X[:, ancestors]
+            else:
+                print(f"No ancestors: {i}")
+                if return_idx:
+                    return None, None
+                else:
+                    return None
+
         def parents_X(G: nx.DiGraph, i: int, X: np.ndarray, return_idx: bool = False):
             parents = list(G.predecessors(i))
             parents = postprocess_res(parents, i)
@@ -357,12 +374,12 @@ if __name__ == '__main__':
         X_tilde = np.zeros_like(X)
         nodes = list(range(X.shape[1]))
         for j in tqdm(nodes):
-
+            no_need_pred = False
             no_input = False
             preds = 0.
             X_input = None
 
-            if configs['v44_option'] == 1:
+            if configs['v44_option'] == 1: # A + B + C
                 X_input = [
                     func(G, j, X) for func in [parents_X, children_X, parents_of_children_X]
                 ]
@@ -372,7 +389,7 @@ if __name__ == '__main__':
                         no_input = False
                         break
                     
-            elif configs['v44_option'] == 2:
+            elif configs['v44_option'] == 2: # B + C
                 X_input = [
                     func(G, j, X) for func in [children_X, parents_of_children_X]
                 ]
@@ -382,7 +399,7 @@ if __name__ == '__main__':
                         no_input = False
                         break
 
-            elif configs['v44_option'] == 3:
+            elif configs['v44_option'] == 3: # B - w(C -> B)*C
                 child_X, child = children_X(G, j, X, True)
                 par_of_child_X, par_of_child = parents_of_children_X(G, j, X, True)
                 if child is None:
@@ -393,7 +410,7 @@ if __name__ == '__main__':
                     _W = W[par_of_child, :][:, child]
                     X_input = child_X - par_of_child_X @ _W
 
-            elif configs['v44_option'] == 4:
+            elif configs['v44_option'] == 4: # A + B - w(C -> B)*C
                 par_X, par = parents_X(G, j, X, True)
                 child_X, child = children_X(G, j, X, True)
                 par_of_child_X, par_of_child = parents_of_children_X(G, j, X, True)
@@ -417,24 +434,49 @@ if __name__ == '__main__':
                     else:
                         pass # X_input kept as is
 
-            elif configs['v44_option'] == 5:
+            elif configs['v44_option'] == 5: # all nodes
                 p = X.shape[1]
                 input_idx = np.array([i for i in np.arange(0, p) if i != j])
                 X_input = X[:, input_idx]
             
-            # elif configs['v44_option'] == 6:
-            #     X_input = ego_graph_X(G, j, X)
+            elif configs['v44_option'] == 7: # only parents
+                X_input = [
+                    func(G, j, X) for func in [parents_X]
+                ]
+                no_input = True
+                for _input in X_input:
+                    if _input is not None:
+                        no_input = False
+                        break
 
-            if not no_input:
-                if isinstance(X_input, list):
-                    X_input = [val for val in X_input if val is not None]
-                    X_input = np.concatenate(X_input, axis=1)
-                preds = _get_single_clf(X_input, X[:, j], 
-                                        configs['method_diagn_gen'], 
-                                        configs['lasso_alpha'],
-                                        configs['device'])
-            else:
-                preds = 0.
+
+            elif configs['v44_option'] == 8: # all nodes or after dag control, but dagma knockoffdiagn
+                preds = X @ W
+                preds = preds[:, j]
+                no_need_pred = True
+
+            elif configs['v44_option'] == 9: # only ancestors
+                X_input = [
+                    func(G, j, X) for func in [ancestors_X]
+                ]
+                no_input = True
+                for _input in X_input:
+                    if _input is not None:
+                        no_input = False
+                        break
+
+
+            if not no_need_pred: # need to fit model for X_pred
+                if not no_input: # has no X_input for model fitting
+                    if isinstance(X_input, list):
+                        X_input = [val for val in X_input if val is not None]
+                        X_input = np.concatenate(X_input, axis=1)
+                    preds = _get_single_clf(X_input, X[:, j], 
+                                            configs['method_diagn_gen'], 
+                                            configs['lasso_alpha'],
+                                            configs['device'])
+                else:
+                    preds = 0.
             residuals = X[:, j] - preds
             indices_ = np.arange(residuals.shape[0])
             np.random.shuffle(indices_)

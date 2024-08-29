@@ -8,14 +8,13 @@
             "name": "test.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "new_knockoff_generation.py",
+            "program": "knockoff_v44.py",
             "console": "integratedTerminal",
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--exp_group_idx=v44", "--v44_option=5",
-                "--method_diagn_gen=OLS_cuda",
-                "--d=20", "--s0=80"
+                "--option=10",
+                "--d=60", "--s0=360", "--W_type=W_est", "--seed_model=1"
             ]
         },
         
@@ -28,13 +27,13 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--gen_type=W_torch",
+                "--gen_type=X",
                 "--n=2000",
-                "--d=20",
-                "--s0=80",
-                "--seed_knockoff=100",
+                "--d=60",
+                "--s0=360",
+                "--seed_knockoff=1",
                 "--root_path=simulated_data/v11",
-                "--version=20",
+                "--version=601",
                 "--device=cuda:7",
             ]
         },
@@ -63,13 +62,14 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "args": [
                 "--control_type=type_3_global",
-                "--seed_knockoff_list=2",
+                "--seed_X_list=47",
+                "--seed_knockoff_list=1",
                 "--seed_model_list=0",
                 "--version=60_360_option_5_OLS",
-                "--root_path=simulated_data/v44",
+                "--root_path=simulated_data/v46",
                 "--d=60",
                 "--s0=360",
-                "--n_jobs=4"
+                "--n_jobs=1"
             ]
         },
         {

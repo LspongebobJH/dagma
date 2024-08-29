@@ -50,7 +50,8 @@ parser.add_argument('--method_diagn_gen', type=str, default=None, choices=['dagm
 parser.add_argument('--lasso_alpha', type=str, default=None, choices=['knockoff_diagn', 'sklearn', 'OLS'])
 
 # parameters of damga
-parser.add_argument('--norm_DAGMA', action='store_true', default=None)
+parser.add_argument('--norm_DAGMA', action='store_true', default=None) # deprecated
+parser.add_argument('--norm', type=str, choices=['col', 'row'])
 parser.add_argument('--disable_block_diag_removal', action='store_true', default=None)
 parser.add_argument('--deconv_type_dagma', type=str, default=None, 
                     choices=[None, 'deconv_1', 'deconv_2', 'deconv_4',
@@ -86,7 +87,7 @@ if __name__ == '__main__':
     else:
         if configs['gen_type'] == 'X':
             # only one X for now
-            assert configs['seed_X'] == 1
+            # assert configs['seed_X'] == 1
             utils.set_random_seed(configs['seed_X'])
 
             B_true = utils_dagma.simulate_dag(configs['d'], configs['s0'], configs['graph_type'])
@@ -124,10 +125,16 @@ if __name__ == '__main__':
             X_tilde, _ = utils.process_simulated_data(None, _configs, behavior='load')
 
             utils.set_random_seed(configs['seed_model'])
-            X_all = np.concatenate([X, X_tilde], axis=-1)
 
-            if configs['norm_DAGMA']:
-                X_all =utils.norm(X_all)
+            if configs['norm'] == 'col':
+                X_mean = X.mean(axis=0, keepdims=True)
+                X_std = X.std(axis=0, keepdims=True)
+            elif configs['norm'] == 'row':
+                X_mean = X.mean(axis=1, keepdims=True)
+                X_std = X.std(axis=1, keepdims=True)
+            X = (X - X_mean) / (X_std + 1e-8)
+
+            X_all = np.concatenate([X, X_tilde], axis=-1)
 
             W_est_no_filter, Z_true, Z_knock = utils.fit(X_all, configs)
             data_W = {
