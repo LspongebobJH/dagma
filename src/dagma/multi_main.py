@@ -41,7 +41,7 @@ parser.add_argument('--control_type', type=str, default='type_3',
 parser.add_argument('--dagma_type', type=str, default='dagma_1', 
                     choices = ['dagma_1'])
 parser.add_argument('--dag_control', type=str, default=None)
-parser.add_argument('--seed_X', type=int, default=1)
+parser.add_argument('--seed_X_list', type=str, required=True)
 parser.add_argument('--seed_knockoff_list', type=str, required=True)
 parser.add_argument('--seed_model_list', type=str, required=True)
 parser.add_argument('--version', type=str, default=None)
@@ -105,61 +105,62 @@ logger.info("%s\n", pformat(configs, width=20))
 if __name__ == '__main__':
         
     _configs = configs.copy()
-    _configs['gen_type'] = 'X'
+    
     # type_3_global and type_3 have the same knockoff statistics, but different 
     ## FDR estimation
-    if configs['control_type'] == 'type_3_global':
-        _configs['control_type'] = 'type_3'
-
-    data_X, _ = utils.process_simulated_data(None, _configs, behavior='load')
-    W_true = data_X['W_true']
-
+    # if configs['control_type'] == 'type_3_global':
+    #     _configs['control_type'] = 'type_3'
     fdp_true_list, power_list = [], []
-
-    _configs['gen_type'] = 'W'
     fdr = 0.2
-    for seed_knockoff in configs['seed_knockoff_list']:
-        for seed_model in configs['seed_model_list']:
-            
-            logger.info(f"knockoff: {seed_knockoff} | model: {seed_model}")
-            
-            _configs['seed_knockoff'] = seed_knockoff
-            _configs['seed_model'] = seed_model
-            
-            data_W, W_configs = utils.process_simulated_data(None, _configs, behavior='load')
+    for seed_X in configs['seed_X_list']:
+        for seed_knockoff in configs['seed_knockoff_list']:
+            for seed_model in configs['seed_model_list']:
+                
+                logger.info(f"X: {seed_X} | knockoff: {seed_knockoff} | model: {seed_model}")
+                
+                _configs['seed_X'] = seed_X
+                _configs['seed_knockoff'] = seed_knockoff
+                _configs['seed_model'] = seed_model
 
-            W_est = data_W['W_est']
-            
-            # removing self loops in case previous steps forget it.
-            real_p = W_est.shape[0]
-            W_est[np.eye(real_p, real_p).astype(bool)] = 0.
-            W_est[np.eye(real_p, real_p, k=real_p // 2).astype(bool)] = 0.
-            W_est[np.eye(real_p, real_p, k=-real_p // 2).astype(bool)] = 0.
+                _configs['gen_type'] = 'X'
+                data_X, _ = utils.process_simulated_data(None, _configs, behavior='load')
+                W_true = data_X['W_true']
 
-            if configs['deconv_type'] == 'deconv_1':
-                W_est = utils.net_deconv(W_est, configs)
-                # W_est[:configs['d'], :configs['d']] = utils.net_deconv(W_est[:configs['d'], :configs['d']], configs)
-            elif configs['deconv_type'] == 'deconv_2':
-                W_est = deconv.net_deconv(W_est, configs)
+                _configs['gen_type'] = 'W'
+                data_W, W_configs = utils.process_simulated_data(None, _configs, behavior='load')
 
-            if configs['dagma_type'] == 'dagma_1':
-                W_est = W_est[:, :configs['d']]
+                W_est = data_W['W_est']
+                
+                # removing self loops in case previous steps forget it.
+                real_p = W_est.shape[0]
+                W_est[np.eye(real_p, real_p).astype(bool)] = 0.
+                W_est[np.eye(real_p, real_p, k=real_p // 2).astype(bool)] = 0.
+                W_est[np.eye(real_p, real_p, k=-real_p // 2).astype(bool)] = 0.
 
-            """
-            FDR Control based on learned adjacent matrix
-            """
-            if configs['control_type'] == 'type_3':
-                fdp_true, power = type_3_control(configs, W_est, W_true, fdr)
-            elif configs['control_type'] == 'type_3_global':
-                fdp_true, power = type_3_control_global(configs, W_est, W_true, fdr, W_full = data_W['W_est'])
-            elif configs['control_type'] == 'type_4_global':
-                fdp_true, power = type_4_control_global(configs, W_est, W_true, fdr, W_full = data_W['W_est'])
-            elif configs['control_type'] == 'type_4':
-                fdp_true, power = type_4_control(configs, W_est, W_true, fdr, W_full = data_W['W_est'])
-            else:
-                raise Exception(f"{configs['control_type']} not implemented yet.")
-            fdp_true_list.append(fdp_true)
-            power_list.append(power)
+                if configs['deconv_type'] == 'deconv_1':
+                    W_est = utils.net_deconv(W_est, configs)
+                    # W_est[:configs['d'], :configs['d']] = utils.net_deconv(W_est[:configs['d'], :configs['d']], configs)
+                elif configs['deconv_type'] == 'deconv_2':
+                    W_est = deconv.net_deconv(W_est, configs)
+
+                if configs['dagma_type'] == 'dagma_1':
+                    W_est = W_est[:, :configs['d']]
+
+                """
+                FDR Control based on learned adjacent matrix
+                """
+                if configs['control_type'] == 'type_3':
+                    fdp_true, power = type_3_control(configs, W_est, W_true, fdr)
+                elif configs['control_type'] == 'type_3_global':
+                    fdp_true, power = type_3_control_global(configs, W_est, W_true, fdr, W_full = data_W['W_est'])
+                elif configs['control_type'] == 'type_4_global':
+                    fdp_true, power = type_4_control_global(configs, W_est, W_true, fdr, W_full = data_W['W_est'])
+                elif configs['control_type'] == 'type_4':
+                    fdp_true, power = type_4_control(configs, W_est, W_true, fdr, W_full = data_W['W_est'])
+                else:
+                    raise Exception(f"{configs['control_type']} not implemented yet.")
+                fdp_true_list.append(fdp_true)
+                power_list.append(power)
 
     fdr_mean = np.mean(fdp_true_list)
     fdr_std = np.std(fdp_true_list)

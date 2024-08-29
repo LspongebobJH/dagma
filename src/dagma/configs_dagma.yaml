@@ -96,11 +96,12 @@ lasso_alpha: knockoff_diagn # available only when method_diagn_gen == lasso. thi
 # DAGMA parameters
 ##############################
 
-norm_DAGMA: False
+norm_DAGMA: False # deprecated
 warm_iter: 50000
 use_g_dir_loss: False
 T: 4
 disable_block_diag_removal: False
+norm: None
 
 ##############################
 # DEPRECATED

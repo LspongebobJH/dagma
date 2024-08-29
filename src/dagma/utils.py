@@ -35,11 +35,6 @@ def process_simulated_data(data, configs, behavior):
     
     if behavior == 'save' and not os.path.exists(data_dir):
         os.makedirs(data_dir)
-    
-    if gen_type == 'X':
-        _seed = configs['seed_X']
-    else: # knockoff or W
-        _seed = str(configs['seed_knockoff']) if gen_type == 'knockoff' else f"{configs['seed_knockoff']}_{configs['seed_model']}"
 
     if behavior == 'save':
         logger.debug(f"save {gen_type} with seed {_seed} in {data_dir}")
@@ -73,8 +68,10 @@ def get_data_path(configs : dict):
 
     if gen_type == 'X':
         _seed = configs['seed_X']
-    else: # knockoff or W
-        _seed = str(configs['seed_knockoff']) if gen_type == 'knockoff' else f"{configs['seed_knockoff']}_{configs['seed_model']}"
+    elif gen_type == 'knockoff':
+        _seed = f"{configs['seed_X']}_{configs['seed_knockoff']}"
+    else: # W_torch
+        _seed = f"{configs['seed_X']}_{configs['seed_knockoff']}_{configs['seed_model']}"
 
     path_config = os.path.join(data_dir, f'{gen_type}_{_seed}_configs.yaml')
     path_data = os.path.join(data_dir, f'{gen_type}_{_seed}.pkl')
@@ -153,8 +150,10 @@ def combine_configs(configs_yaml : dict, args):
                 logger.debug(f"{key}:{_args[key]} will be updated by {val}")
             else:
                 continue
-        if key in ['seed_knockoff_list', 'seed_model_list']:
+        if key in ['seed_X_list', 'seed_knockoff_list', 'seed_model_list']:
             val = [int(s.strip()) for s in val.split(",")]
+            if val[-1] == -1:
+                val = list(range(val[0], val[1]+1))
         configs[key] = val
     return configs
 

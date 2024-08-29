@@ -460,7 +460,7 @@ if __name__ == '__main__':
     X, W_true = data['X'], data['W_true']
     B_true = (W_true != 0)
 
-    eq_model = DagmaLinear(d=d, dagma_type=None, device=device, original=True).to(device)
+    eq_model = DagmaLinear(d=d, dagma_type='dagma_1', device=device, original=True).to(device)
     model = DagmaTorch(eq_model, device=device, verbose=True)
     print("fit dagma")
     W_est_no_filter, W_est = model.fit(X, lambda1=0.02, lambda2=0.005, return_no_filter=True)

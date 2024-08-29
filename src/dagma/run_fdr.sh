@@ -92,27 +92,30 @@
 ####################################################################
 
 run() {
-    data_version=44
-    log_file_global=97
+    data_version=46
+    log_file_global=98
     options=(5)
-
+    norms=(col row)
     n=2000
-    nodes=(80)
+    nodes=(60)
     for option in "${options[@]}"; do
         for d in "${nodes[@]}"; do
-            s0=$(( d * 6 ))
-            version=${d}_${s0}_option_${option}_XGB
+            for norm in "${norms[@]}"; do
+                s0=$(( d * 6 ))
+                version=${d}_${s0}_option_${option}_OLS_${norm}
 
-            python multi_main.py \
-            --n $n --s0 $s0 --d $d \
-            --control_type=type_3_global \
-            --seed_knockoff_list=1,2,3,4,5,6,7,8,9,10 \
-            --seed_model_list=0 \
-            --version=$version \
-            --root_path simulated_data/v${data_version} \
-            --n_jobs=4 \
-            --log_file=log_${log_file_global}/log_${data_version}_$version &
-            # wait
+                python multi_main.py \
+                --n $n --s0 $s0 --d $d \
+                --control_type=type_3_global \
+                --seed_X_list=86,85,52,40,18,26,74,63,2,1 \
+                --seed_knockoff_list=1 \
+                --seed_model_list=0 \
+                --version=$version \
+                --root_path simulated_data/v${data_version} \
+                --n_jobs=4 \
+                --log_file=log_${log_file_global}/log_${data_version}_${version} &
+                # wait
+            done
         done
         # wait
     done

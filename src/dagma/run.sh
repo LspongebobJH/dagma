@@ -13,17 +13,21 @@
 # --version $d --root_path simulated_data/v${version} &
 
 ########################################
-# Generating X, sweep over n_nodes
+# Generating X, sweep over n_nodes or 
+# seeds
 ########################################
 
 # n=2000
-# nodes=(20 40 60 80 100)
+# nodes=(60)
 # for d in "${nodes[@]}"; do
-#     s0=$(( d * 6 ))
-#     python gen_copies.py --gen_type X \
-#     --n $n --d $d --s0 $s0 \
-#     --root_path simulated_data/v11 \
-#     --version ${d}_${s0} &
+#     for (( seed=21; seed<=100; seed++ )); do
+#         s0=$(( d * 6 ))
+#         python gen_copies.py --gen_type X \
+#         --n $n --d $d --s0 $s0 \
+#         --seed_X $seed \
+#         --root_path simulated_data/v11 \
+#         --version ${d}_${s0} &
+#     done
 # done
 
 # wait
@@ -54,18 +58,20 @@
 #########################################
 
 data_option=X
-dst_data_version=44
+dst_data_version=46
 src_data_version=11
 n=2000
 cuda_idx=0
-nodes=(60 80)
-options=(5)
+nodes=(60)
+seedsX=(86 85 52 40 18 26 74 63 2 1)
+norms=(row)
 
 for d in "${nodes[@]}"; do
-    for option in "${options[@]}"; do
-    
-        suffix=_option_${option}_XGB
+    for norm in "${norms[@]}"; do
+        option=5
+        suffix=_option_${option}_OLS_${norm}
         s0=$(( d * 6 ))
+
         dst_version=${d}_${s0}${suffix}
         src_version=${d}_${s0}
         
@@ -76,22 +82,30 @@ for d in "${nodes[@]}"; do
             mkdir -p ${target_dir}
         fi
 
-        for i in {1..10}; do
-            # CUDA_VISIBLE_DEVICES=$cuda_idx \
-            python new_knockoff_generation.py \
-            --exp_group_idx=v44 --v44_option=${option} \
-            --d=${d} --s0=${s0} --W_type=W_est \
-            --method_diagn_gen=xgb --device=cuda:${cuda_idx} \
-            --seed_knockoff=$i --notes=$suffix \
-            >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${i} 2>&1 &
+        # for (( seedX=1; seedX<=100; seedX++ )); do
+        for seedX in "${seedsX[@]}"; do
+            CUDA_VISIBLE_DEVICES=${cuda_idx} \
+            python knockoff_v44.py \
+            --data_version=v${dst_data_version} \
+            --option=${option} \
+            --d=${d} --s0=${s0} \
+            --method_diagn_gen=OLS_cuda \
+            --device=cuda:${cuda_idx} \
+            --seed_X=${seedX} \
+            --seed_knockoff=1 \
+            --norm=${norm} \
+            --notes=$suffix \
+            >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_1 2>&1 &
 
-            # python gen_copies.py --gen_type knockoff --knock_type knockoff_diagn --n $n --d $d --s0 $s0 --seed_knockoff $i \
-            # --method_diagn_gen=xgb \
-            # --root_path simulated_data/v${dst_data_version} \
-            # --version $dst_version --device cuda:${cuda_idx} \
-            # >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${i} 2>&1 &
             cuda_idx=$(( cuda_idx + 1 ))
-            cuda_idx=$(( cuda_idx % 8))
+            cuda_idx=$(( cuda_idx % 8 ))
+
+            # _seedX=$(( seedX % 20 ))
+
+            # if [ ${_seedX} -eq 19 ]; then
+            #     wait
+            # fi
+        
         done
     done
     # wait
@@ -101,12 +115,16 @@ done
 # Misc
 #########################################
 
-# nodes=(20 40 60 80 100)
+# nodes=(60 80 20 40 100)
+# seeds=(1 2 3)
 # cuda_idx=0
 # for d in "${nodes[@]}"; do
 #     s0=$(( d * 6 ))
-#     python dagma_torch.py --d $d --s0 $s0 --seed 1 --device cuda:${cuda_idx} &
-#     cuda_idx=$(( cuda_idx + 1 ))
+#     for seed in "${seeds[@]}"; do
+#         python dagma_torch.py --d $d --s0 $s0 --seed $seed --device cuda:${cuda_idx} &
+#         cuda_idx=$(( cuda_idx + 1 ))
+#         cuda_idx=$(( cuda_idx % 8 ))
+#     done
 # done
 
 # python test.py --exp_group_idx=v43 --d=20 --v43_method='elastic' --v43_disable_dag_control --device=cuda:6 &
