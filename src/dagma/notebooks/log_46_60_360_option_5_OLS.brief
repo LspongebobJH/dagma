@@ -1,0 +1,749 @@
+__main__    : INFO     configs
+__main__    : INFO     {'T': 4,
+ 'abs_dir': None,
+ 'abs_gt': False,
+ 'abs_selection': False,
+ 'abs_t_list': True,
+ 'alpha': 1.0,
+ 'beta': 0.9,
+ 'clean_diag': False,
+ 'control_type': 'type_3_global',
+ 'd': 60,
+ 'dag_control': None,
+ 'dag_control_deconv': None,
+ 'dagma_type': 'dagma_1',
+ 'deconv_type': None,
+ 'deconv_type_dagma': None,
+ 'device': 'cuda:7',
+ 'disable_adjust_marg': False,
+ 'disable_block_diag_removal': False,
+ 'epochs': 30000,
+ 'est_type': 'tau+',
+ 'fdr': 0.2,
+ 'get_abs_dir': False,
+ 'graph_type': 'ER',
+ 'knock_type': 'knockoff_diagn',
+ 'l2_w': 0.0,
+ 'lasso_alpha': 'knockoff_diagn',
+ 'log_file': 'log_98/log_46_60_360_option_5_OLS',
+ 'lr': 0.01,
+ 'method_diagn_gen': 'dagma',
+ 'n': 2000,
+ 'n_jobs': 4,
+ 'niter': 2000,
+ 'norm_DAGMA': False,
+ 'norm_knockoffGAN': False,
+ 'numeric': False,
+ 'numeric_precision': '1e-1',
+ 'order': 5,
+ 'root_path': 'simulated_data/v46',
+ 's0': 360,
+ 'seed_X_list': [1,
+                 2,
+                 3,
+                 4,
+                 5,
+                 6,
+                 7,
+                 8,
+                 9,
+                 10,
+                 11,
+                 12,
+                 13,
+                 14,
+                 15,
+                 16,
+                 17,
+                 18,
+                 19,
+                 20,
+                 21,
+                 22,
+                 23,
+                 24,
+                 25,
+                 26,
+                 27,
+                 28,
+                 29,
+                 30,
+                 31,
+                 32,
+                 33,
+                 34,
+                 35,
+                 36,
+                 37,
+                 38,
+                 39,
+                 40,
+                 41,
+                 42,
+                 43,
+                 44,
+                 45,
+                 46,
+                 47,
+                 48,
+                 49,
+                 50,
+                 51,
+                 52,
+                 53,
+                 54,
+                 55,
+                 56,
+                 57,
+                 58,
+                 59,
+                 60,
+                 61,
+                 62,
+                 63,
+                 64,
+                 65,
+                 66,
+                 67,
+                 68,
+                 69,
+                 70,
+                 71,
+                 72,
+                 73,
+                 74,
+                 75,
+                 76,
+                 77,
+                 78,
+                 79,
+                 80,
+                 81,
+                 82,
+                 83,
+                 84,
+                 85,
+                 86,
+                 87,
+                 88,
+                 89,
+                 90,
+                 91,
+                 92,
+                 93,
+                 94,
+                 95,
+                 96,
+                 97,
+                 98,
+                 99,
+                 100],
+ 'seed_knockoff_list': [1],
+ 'seed_model_list': [0],
+ 'sem_type': 'gauss',
+ 'trick': None,
+ 'use_g_dir_loss': False,
+ 'version': '60_360_option_5_OLS',
+ 'warm_iter': 50000}
+
+__main__    : INFO     X: 1 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 2.2294e+00 | est fdr 0.2000 | true fdr 0.8000 | true power 0.0056
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 2 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh inf | est fdr 1.0000 | true fdr 0.0000 | true power 0.0000
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 3 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 9.9387e-02 | est fdr 0.2000 | true fdr 0.1773 | true power 0.5028
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 4 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4116e-01 | est fdr 0.1970 | true fdr 0.1212 | true power 0.4833
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 5 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.5366e-01 | est fdr 0.1975 | true fdr 0.2716 | true power 0.3278
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 6 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1112e-01 | est fdr 0.1992 | true fdr 0.3242 | true power 0.4806
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 7 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2614e-01 | est fdr 0.1981 | true fdr 0.1604 | true power 0.4944
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 8 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.5954e-01 | est fdr 0.2000 | true fdr 0.1613 | true power 0.3611
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 9 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4422e-01 | est fdr 0.2000 | true fdr 0.1625 | true power 0.3722
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 10 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.5244e-01 | est fdr 0.1977 | true fdr 0.1525 | true power 0.4167
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 11 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3676e-01 | est fdr 0.1967 | true fdr 0.0984 | true power 0.4583
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 12 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1907e-01 | est fdr 0.1979 | true fdr 0.1354 | true power 0.4611
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 13 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3408e-01 | est fdr 0.1970 | true fdr 0.1133 | true power 0.5000
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 14 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4960e-01 | est fdr 0.2000 | true fdr 0.1543 | true power 0.4111
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 15 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.0010e-01 | est fdr 0.1980 | true fdr 0.3432 | true power 0.5528
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 16 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1826e-01 | est fdr 0.1981 | true fdr 0.1594 | true power 0.4833
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 17 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.8411e-01 | est fdr 0.1948 | true fdr 0.2338 | true power 0.3278
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 18 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh inf | est fdr 1.0000 | true fdr 0.0000 | true power 0.0000
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 19 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2041e-01 | est fdr 0.1991 | true fdr 0.3203 | true power 0.4361
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 20 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.6346e-01 | est fdr 0.1975 | true fdr 0.1667 | true power 0.3750
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 21 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3257e-01 | est fdr 0.1990 | true fdr 0.3350 | true power 0.3806
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 22 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4423e-01 | est fdr 0.1962 | true fdr 0.1139 | true power 0.3889
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 23 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1422e-01 | est fdr 0.1973 | true fdr 0.3184 | true power 0.4222
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 24 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3564e-01 | est fdr 0.1991 | true fdr 0.2227 | true power 0.4556
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 25 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.6048e-01 | est fdr 0.1944 | true fdr 0.2222 | true power 0.3111
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 26 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1375e+00 | est fdr 0.1818 | true fdr 0.0000 | true power 0.0306
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 27 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2035e-01 | est fdr 0.1972 | true fdr 0.2661 | true power 0.4444
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 28 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3945e-01 | est fdr 0.1978 | true fdr 0.1044 | true power 0.4528
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 29 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1376e-01 | est fdr 0.1983 | true fdr 0.2672 | true power 0.4722
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 30 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4426e-01 | est fdr 0.1959 | true fdr 0.0608 | true power 0.3861
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 31 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3700e-01 | est fdr 0.1977 | true fdr 0.1525 | true power 0.4167
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 32 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.0452e-01 | est fdr 0.1975 | true fdr 0.3782 | true power 0.4111
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 33 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2757e-01 | est fdr 0.1991 | true fdr 0.3348 | true power 0.4083
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 34 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3037e-01 | est fdr 0.1980 | true fdr 0.3416 | true power 0.3694
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 35 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3536e-01 | est fdr 0.1979 | true fdr 0.2031 | true power 0.4250
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 36 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4400e-01 | est fdr 0.1988 | true fdr 0.1180 | true power 0.3944
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 37 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4134e-01 | est fdr 0.1951 | true fdr 0.2439 | true power 0.3444
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 38 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3072e-01 | est fdr 0.1980 | true fdr 0.1634 | true power 0.4694
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 39 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.8521e-01 | est fdr 0.1983 | true fdr 0.3276 | true power 0.2167
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 40 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 6.5258e-02 | est fdr 0.1992 | true fdr 0.5805 | true power 0.6083
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 41 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2133e-01 | est fdr 0.1981 | true fdr 0.2222 | true power 0.4472
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 42 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3534e-01 | est fdr 0.2000 | true fdr 0.3111 | true power 0.3444
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 43 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1650e-01 | est fdr 0.1980 | true fdr 0.2723 | true power 0.4083
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 44 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1827e-01 | est fdr 0.2000 | true fdr 0.3750 | true power 0.4167
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 45 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1648e-01 | est fdr 0.1991 | true fdr 0.2251 | true power 0.4972
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 46 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.0260e-01 | est fdr 0.1993 | true fdr 0.4094 | true power 0.4528
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 47 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.9310e-01 | est fdr 0.1986 | true fdr 0.1712 | true power 0.3361
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 48 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3391e-01 | est fdr 0.2000 | true fdr 0.1486 | true power 0.4139
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 49 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1955e-01 | est fdr 0.1991 | true fdr 0.2941 | true power 0.4333
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 50 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4905e-01 | est fdr 0.1987 | true fdr 0.0993 | true power 0.3778
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 51 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1270e-01 | est fdr 0.1988 | true fdr 0.1404 | true power 0.4083
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 52 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.6048e-01 | est fdr 0.1991 | true fdr 0.3540 | true power 0.4056
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 53 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3082e-01 | est fdr 0.2000 | true fdr 0.2326 | true power 0.4583
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 54 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2675e-01 | est fdr 0.2000 | true fdr 0.3289 | true power 0.4194
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 55 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2185e-01 | est fdr 0.2000 | true fdr 0.1900 | true power 0.4500
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 56 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3646e-01 | est fdr 0.1967 | true fdr 0.1366 | true power 0.4389
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 57 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2012e-01 | est fdr 0.1955 | true fdr 0.1564 | true power 0.4194
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 58 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2066e-01 | est fdr 0.2000 | true fdr 0.4311 | true power 0.3556
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 59 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.6665e-01 | est fdr 0.1961 | true fdr 0.0980 | true power 0.3833
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 60 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4095e-01 | est fdr 0.1957 | true fdr 0.2717 | true power 0.3722
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 61 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2129e-01 | est fdr 0.2000 | true fdr 0.2093 | true power 0.4722
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 62 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1274e-01 | est fdr 0.1990 | true fdr 0.1796 | true power 0.4694
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 63 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 7.2088e-01 | est fdr 0.2000 | true fdr 0.3091 | true power 0.1056
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 64 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.0819e-01 | est fdr 0.1989 | true fdr 0.1237 | true power 0.4528
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 65 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2033e-01 | est fdr 0.2000 | true fdr 0.2625 | true power 0.4917
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 66 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1448e-01 | est fdr 0.1972 | true fdr 0.3239 | true power 0.4000
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 67 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.6486e-01 | est fdr 0.1972 | true fdr 0.2042 | true power 0.3139
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 68 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2178e-01 | est fdr 0.1969 | true fdr 0.1658 | true power 0.4472
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 69 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.7351e-01 | est fdr 0.1953 | true fdr 0.1953 | true power 0.3778
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 70 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2866e-01 | est fdr 0.1971 | true fdr 0.3125 | true power 0.3972
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 71 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2619e-01 | est fdr 0.2000 | true fdr 0.2909 | true power 0.4333
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 72 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.3843e-01 | est fdr 0.2000 | true fdr 0.0941 | true power 0.4278
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 73 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4639e-01 | est fdr 0.1946 | true fdr 0.3020 | true power 0.2889
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 74 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 8.1452e-01 | est fdr 0.2000 | true fdr 0.3600 | true power 0.0444
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 75 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.8261e-01 | est fdr 0.1966 | true fdr 0.0769 | true power 0.3000
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 76 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1368e-01 | est fdr 0.2000 | true fdr 0.0900 | true power 0.5056
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 77 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1626e-01 | est fdr 0.1979 | true fdr 0.1818 | true power 0.4250
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 78 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.5516e-01 | est fdr 0.1986 | true fdr 0.1844 | true power 0.3194
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 79 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4258e-01 | est fdr 0.1980 | true fdr 0.2284 | true power 0.4222
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 80 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1331e-01 | est fdr 0.1965 | true fdr 0.2140 | true power 0.5000
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 81 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.5874e-01 | est fdr 0.1989 | true fdr 0.2216 | true power 0.3806
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 82 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.9570e-01 | est fdr 0.1969 | true fdr 0.2441 | true power 0.2667
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 83 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4065e-01 | est fdr 0.1990 | true fdr 0.2723 | true power 0.3861
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 84 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4333e-01 | est fdr 0.1957 | true fdr 0.2446 | true power 0.3861
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 85 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.6168e-01 | est fdr 0.2000 | true fdr 0.4872 | true power 0.2778
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 86 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh inf | est fdr 1.0000 | true fdr 0.0000 | true power 0.0000
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 87 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4398e-01 | est fdr 0.1989 | true fdr 0.1547 | true power 0.4250
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 88 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.9088e-01 | est fdr 0.1951 | true fdr 0.0732 | true power 0.3167
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 89 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.7327e-01 | est fdr 0.1985 | true fdr 0.4559 | true power 0.2056
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 90 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 9.3984e-02 | est fdr 0.1967 | true fdr 0.3115 | true power 0.4667
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 91 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2747e-01 | est fdr 0.1966 | true fdr 0.1067 | true power 0.4417
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 92 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.7906e-01 | est fdr 0.1949 | true fdr 0.1102 | true power 0.2917
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 93 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.0926e-01 | est fdr 0.2000 | true fdr 0.1800 | true power 0.4556
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 94 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4815e-01 | est fdr 0.2000 | true fdr 0.2343 | true power 0.3722
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 95 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.5527e-01 | est fdr 0.1963 | true fdr 0.2577 | true power 0.3361
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 96 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1040e-01 | est fdr 0.2000 | true fdr 0.2565 | true power 0.4750
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 97 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.4087e-01 | est fdr 0.1978 | true fdr 0.0934 | true power 0.4583
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 98 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.1063e-01 | est fdr 0.1992 | true fdr 0.2712 | true power 0.4778
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 99 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.5213e-01 | est fdr 0.1978 | true fdr 0.1758 | true power 0.4167
+fdr_control : INFO     ==============================
+__main__    : INFO     X: 100 | knockoff: 1 | model: 0
+fdr_control : INFO     ==============================
+fdr_control : INFO     expected FDR 0.2
+fdr_control : INFO     W_est is DAG
+fdr_control : INFO     expected fdr 0.2 | sel thresh 1.2561e-01 | est fdr 0.1990 | true fdr 0.2913 | true power 0.4056
+fdr_control : INFO     ==============================
+__main__    : INFO     expected fdr 0.2 | fdr 0.2243±0.1220 | power 0.3833±0.1184
