@@ -102,6 +102,7 @@ def simulate_linear_sem(W: np.ndarray,
                         n: int, 
                         sem_type: str, 
                         noise_scale: typing.Optional[typing.Union[float,typing.List[float]]] = None,
+                        norm_X: str = None
                         ) -> np.ndarray:
     r"""
     Simulate samples from linear SEM with specified type of noise.
@@ -143,6 +144,9 @@ def simulate_linear_sem(W: np.ndarray,
             x = np.random.poisson(np.exp(X @ w)) * 1.0
         else:
             raise ValueError('unknown sem type')
+
+        if norm_X == 'topo_col':
+            x = (x - x.mean()) / (x.std() + 1e-8)
         return x
 
     d = W.shape[0]

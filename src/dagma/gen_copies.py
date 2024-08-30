@@ -25,6 +25,7 @@ parser.add_argument('--d', type=int, default=None)
 parser.add_argument('--s0', type=int, default=None)
 parser.add_argument('--device', type=str, default=None)
 parser.add_argument('--root_path', type=str, default=None)
+parser.add_argument('--norm_X', type=str, default=None, choices=['topo_col'])
 
 parser.add_argument('--knock_type', type=str, default=None, 
                     choices=['permutation', 'knockoff_gan', 'deep_knockoff', 
@@ -92,7 +93,7 @@ if __name__ == '__main__':
 
             B_true = utils_dagma.simulate_dag(configs['d'], configs['s0'], configs['graph_type'])
             W_true = utils_dagma.simulate_parameter(B_true)
-            X = utils_dagma.simulate_linear_sem(W_true, configs['n'], configs['sem_type'])
+            X = utils_dagma.simulate_linear_sem(W_true, configs['n'], configs['sem_type'], norm_X=configs['norm_X'])
             data_X = {'X': X, 'W_true': W_true}
 
             utils.process_simulated_data(data_X, configs, behavior='save')

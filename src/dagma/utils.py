@@ -27,6 +27,7 @@ def set_random_seed(seed):
 
 def process_simulated_data(data, configs, behavior):
     assert behavior in ['save', 'load']
+    force_save = configs['force_save']
     if behavior == 'load':
         assert data is None
 
@@ -39,13 +40,13 @@ def process_simulated_data(data, configs, behavior):
     if behavior == 'save':
         logger.debug(f"save {gen_type} with seed {_seed} in {data_dir}")
 
-        if os.path.exists(path_config):
+        if os.path.exists(path_config) and not force_save:
             logger.debug(f"{path_config} already exists.")
             return
         with open(path_config, 'w') as f:
             yaml.dump(configs, f)
 
-        if os.path.exists(path_data):
+        if os.path.exists(path_data) and not force_save:
             logger.debug(f"{path_config} already exists.")
             return
         with open(path_data, 'wb') as f:

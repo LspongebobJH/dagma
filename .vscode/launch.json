@@ -33,7 +33,9 @@
                 "--s0=360",
                 "--seed_knockoff=1",
                 "--root_path=simulated_data/v11",
-                "--version=601",
+                "--version=60_360_normX_topoCol",
+                "--force_save",
+                "--norm_X", "topo_col",
                 "--device=cuda:7",
             ]
         },
