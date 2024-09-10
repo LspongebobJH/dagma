@@ -27,7 +27,8 @@ def set_random_seed(seed):
 
 def process_simulated_data(data, configs, behavior):
     assert behavior in ['save', 'load']
-    force_save = configs['force_save']
+    if behavior == 'save':
+        force_save = configs.get('force_save', False)
     if behavior == 'load':
         assert data is None
 

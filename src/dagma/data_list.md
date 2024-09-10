@@ -28,21 +28,19 @@ v32: based on v11, increase the number of T to make DAG loss converge better and
 v36: (ER4, knockoffDiagnosis)
     2000 samples, [20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, 10 knockoff seeds, W_torch, ..., disable adjust_marg
 
-v35: (ER5/6, knockoffDiagnosis)
-    2000 samples, [60, 80] nodes, [n * 5 / 6] edges, 5 knockoff seeds, W_torch, ...
-v37: test whether disable "remove diagonal of W21 and W12 blocks" will impact the Z distribution shift
-
-=== common used datasets below ===
-v11: (ER4, knockoffGAN, only X is useful) 
-    2000 samples, [10, 20, 40, 60, 80, 100] nodes, [n * 4] edges, 10 knockoff seeds, W_torch, version index is the n_nodes.
 v33: (ER5/6, knockoffGAN, only X is useful)
     2000 samples, [10, 20, 40, 60, 80, 100] nodes, [n * 5 / 6] edges, 5 knockoff seeds, W_torch, version index is the n_nodes.
 v34: (ER4, knockoffDiagnosis)
     2000 samples, [20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, 10 knockoff seeds, W_torch, X from v11
 v38: (ER5/6, knockoffDiagnosis)
     2000 samples, [60, 80] nodes, [n * 5/6] edges, 5 knockoff seeds, W_torch, ..., X from v33
-v39: (ER4, original DAGMA, dagma_torch.py)
-    2000 samples, [80, 100], [n * 4] edges, 2 knockoff seeds, W_torch, ..., X from v11
+
+v35: (ER5/6, knockoffDiagnosis)
+    2000 samples, [60, 80] nodes, [n * 5 / 6] edges, 5 knockoff seeds, W_torch, ...
+v37: test whether disable "remove diagonal of W21 and W12 blocks" will impact the Z distribution shift
+
+
+
 v40: (ER4, transitive effect experiments, test.py when exp_group_idx == v40)
 v41: (ER4, in-degree experiments, exp 1, gen_copies.py when --method_diagn_gen=lasso)
     one problem: "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 2.269e+01, tolerance: 2.063e-01." Meaning that some features cannot be regressed well.
@@ -52,6 +50,24 @@ v41: (ER4, in-degree experiments, exp 1, gen_copies.py when --method_diagn_gen=l
 
 v42: (ER4, in-degree experiments, exp 2, test.py when exp_group_idx == v42)
 v43: (ER4, relation experiments, test.py when exp_group_idx == v43)
-v44: (ER4, markov blanket experiments, test.py when exp_group_idx == v44)
+v44_deprecated: (ER4, markov blanket experiments, test.py when exp_group_idx == v44)
+
+=== common used datasets below ===
+v11: (ER4, knockoffGAN, only X is useful) 
+    2000 samples, [10, 20, 40, 60, 80, 100] nodes, [n * 4] edges, 10 knockoff seeds, W_torch, version index is the n_nodes.
+- condX_n: only seeds of X with condition number of X < n
+- normX_topoCol: when --norm_data_gen = topo_col in gen_copies.py, basically each x is normalized after being generated.
+- normX_B1Col: when --norm_data_gen = B_1_Col in gen_copies.py, basically let W_true /= B_true.sum(axis=0), col norm. only
+on seeds with cond > 5e4
+
+v39: (ER4, original DAGMA, dagma_torch.py)
+    2000 samples, [80, 100], [n * 4] edges, 2 knockoff seeds, W_torch, ..., X from v11
+
+v44 (and v45 ): try different options of knockoff, such as LASSO / OLS / XGB for knockoff fitting, and all nodes / 
+parents / ancestors as input variables for knockoff fitting
+
+v46: only focus on option_5_OLS.
+v47: based on W_true in [-1, 1] (workable simulations), try different options of knockoff fitting
+
 
 

@@ -43,21 +43,30 @@ run() {
 
     n=2000
     s0=$(( d * 6 ))
-    norms=(col row)
     # version_list=(${d}_${s0}_option_5_OLS_col ${d}_${s0}_option_5_OLS_row)
-    seedsX=(86 85 52 40 18 26 74 63 2 1)
+    # seedsX=(11 12 13 15 17 18)
+    # seedsX=( 20 21 22 24 25 28 30 31 32 33 )
+    # seedsX=( 3 4 11 12 13 15 18 20 22 28 )
+    # seedsX=( 2 7 8 )
+    seedsX=( {1..10..1} )
+    # options=( 7 9 1 2 11 )
+    options=( 5 )
+    # options=( 1 2 7 9 10 11 12 )
+    cnt=0
+    # seedsX=(1 3 4 5 6 9 10)
+
 
     # for version in "${version_list[@]}"; do
-    for norm in "${norms[@]}"; do
+    for option in "${options[@]}"; do
 
-        version=${d}_${s0}_option_5_OLS_${norm}
+        version=${d}_${s0}_normX_sym1_option_${option}_OLS_new
         # ./create_data_dir.sh X $dst_data_version $version $src_data_version ${d}
 
         target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$version/W
         if [ ! -d "$target_dir$" ]; then
             mkdir -p ${target_dir}
         fi
-    
+
         # for (( seedX=1; seedX<=100; seedX++ )); do
         for seedX in "${seedsX[@]}"; do
             stdbuf -o0 -e0 \
@@ -66,88 +75,57 @@ run() {
             --n $n --s0 $s0 --d $d \
             --seed_X $seedX \
             --seed_knockoff 1 \
-            --norm $norm \
             --root_path simulated_data/v${dst_data_version} \
             --version ${version} \
             --device cuda:${cuda_idx} > simulated_data/v${dst_data_version}/v${version}/W/log_${seedX}_1_0 2>&1 &
 
-            cuda_idx=$(( cuda_idx + 1 ))
-            cuda_idx=$(( cuda_idx % 8))
+            cuda_idx=$(( cuda_idx + 1))
+            if [ $cuda_idx -eq 8 ]; then
+                cuda_idx=5
+            fi
+
+            cnt=$(( cnt + 1 ))
+            _cnt=$(( cnt % 20 ))
+            
+            if [ ${_cnt} -eq 19 ]; then
+                wait
+            fi
 
             # _seedX=$(( seedX % 20 ))
             # if [ ${_seedX} -eq 10 ]; then
             #     wait
             # fi
         done
-        wait
     done
     
 }
 
-data_version=46
-# src_data_version=11
-# dst_data_version=${data_version}
+data_version=47
 
-####################
-# initialize data dir
-####################
-# ./create_data_dir.sh X $dst_data_version ${d} $src_data_version ${d}
-# ./create_data_dir.sh knockoff $dst_data_version ${d} $src_data_version ${d}
 
-####################
-# initialization log
-# dir
-####################
-
-# direc=logs/log_temp/v${data_version}/
-# if [ ! -d "$direc" ]; then
-#     mkdir $direc
-# fi
-
-# d=20
-# cuda_idx=0
-# run $data_version $d $cuda_idx
-
-# wait
-
-# d=40
-# cuda_idx=0
-# run $data_version $d $cuda_idx
-
-# wait
-
-# d=20
-# cuda_idx=3
-# run $data_version $d $cuda_idx
-
-# wait
-
-# d=40
-# cuda_idx=0
-# run $data_version $d $cuda_idx
-
-# wait
-
-d=60
-cuda_idx=0
+d=20
+cuda_idx=5
 run $data_version $d $cuda_idx
 
 # wait
 
-# d=80
-# cuda_idx=0
-# run $data_version $d $cuda_idx
+d=40
+cuda_idx=6
+run $data_version $d $cuda_idx
 
 # wait
 
-# d=100
-# cuda_idx=0
-# run $data_version $d $cuda_idx
+d=60
+cuda_idx=7
+run $data_version $d $cuda_idx
 
-# d=60
-# cuda_idx=5
-# run $data_version $d $cuda_idx
+wait
 
-# d=100
-# cuda_idx=6
-# run $data_version $d $cuda_idx
+d=80
+cuda_idx=5
+run $data_version $d $cuda_idx
+
+d=100
+cuda_idx=6
+run $data_version $d $cuda_idx
+

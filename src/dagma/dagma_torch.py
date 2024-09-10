@@ -467,7 +467,7 @@ if __name__ == '__main__':
     acc = utils_dagma.count_accuracy(B_true, W_est != 0, use_logger=False)
     print(acc)
 
-    data_dir = os.path.join(root_dir, "v39")
+    data_dir = os.path.join(root_dir, "v39", f"{d}_{s0}")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
     data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.note}.pkl")
