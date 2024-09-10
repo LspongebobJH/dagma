@@ -97,7 +97,7 @@ run() {
     log_file_global=99
     # options=( 7 9 1 2 10 11 )
     # options=(1 2 7 9 10 11 12 )
-    options=(5)
+    options=(1 2 5 7 9 10 11 12)
     # option=5
     n=2000
     
@@ -119,7 +119,7 @@ run() {
             # --log_file=log_${log_file_global}/log_${data_version}_${version} &
             # wait
 
-            version=${d}_${s0}_normX_sym1_option_${option}_OLS_new
+            version=${d}_${s0}_normX_sym1_option_${option}_PLS
             python multi_main.py \
             --n $n --s0 $s0 --d $d \
             --control_type=type_3_global \

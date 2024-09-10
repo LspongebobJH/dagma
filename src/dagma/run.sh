@@ -88,7 +88,7 @@ nodes=(20 40 60 80 100)
 # seedsX=( 20 21 22 24 25 28 30 31 32 33 34 35 36 37 )
 # seedsX=( 2 7 8 )
 seedsX=( {1..10..1} )
-options=( 5 )
+options=( 1 2 5 7 9 10 11 12 )
 s0s=( 6 )
 cnt=0
 # norms=(row)
@@ -98,7 +98,7 @@ for d in "${nodes[@]}"; do
         for s0 in "${s0s[@]}"; do
             # for norm in "${norms[@]}"; do
             # option=5
-            suffix=_normX_sym1_option_${option}_OLS_new
+            suffix=_normX_sym1_option_${option}_PLS
             # suffix=_condX_3e4_option_${option}_OLS
             # suffix=_option_${option}_OLS
             s0=$(( d * 6 ))
@@ -125,7 +125,7 @@ for d in "${nodes[@]}"; do
                 --dst_version=v${dst_version} \
                 --option=${option} \
                 --d=${d} --s0=${s0} \
-                --method_diagn_gen=OLS_cuda \
+                --method_diagn_gen=PLS \
                 --device=cuda:${cuda_idx} \
                 --seed_X=${seedX} \
                 --seed_knockoff=1 \

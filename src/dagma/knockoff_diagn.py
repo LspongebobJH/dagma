@@ -10,6 +10,7 @@ from statsmodels.distributions.empirical_distribution import ECDF, monotone_fn_i
 from sklearn.linear_model import (Lasso,
                                   LogisticRegressionCV,
                                   ElasticNet)
+from sklearn.cross_decomposition import PLSRegression
 
 import utils
 import xgboost as xgb
@@ -84,6 +85,9 @@ def _get_fitting_model(X_input, X_target, method, alpha, device):
 
     if method == 'elastic':
         clf = ElasticNet()
+
+    if method == 'PLS':
+        clf = PLSRegression()
 
     return clf
 

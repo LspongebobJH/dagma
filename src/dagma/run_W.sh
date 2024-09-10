@@ -50,8 +50,8 @@ run() {
     # seedsX=( 2 7 8 )
     seedsX=( {1..10..1} )
     # options=( 7 9 1 2 11 )
-    options=( 5 )
-    # options=( 1 2 7 9 10 11 12 )
+    # options=( 5 )
+    options=( 1 2 5 7 9 10 11 12 )
     cnt=0
     # seedsX=(1 3 4 5 6 9 10)
 
@@ -59,7 +59,7 @@ run() {
     # for version in "${version_list[@]}"; do
     for option in "${options[@]}"; do
 
-        version=${d}_${s0}_normX_sym1_option_${option}_OLS_new
+        version=${d}_${s0}_normX_sym1_option_${option}_PLS
         # ./create_data_dir.sh X $dst_data_version $version $src_data_version ${d}
 
         target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$version/W

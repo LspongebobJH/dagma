@@ -5,13 +5,14 @@ from argparse import ArgumentParser
 from knockoff_diagn import _get_single_clf, _adjust_marginal
 from tqdm import tqdm
 from sklearn.linear_model import Lasso, ElasticNet
+from copy import deepcopy
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data_version', type=str, required=True)
     parser.add_argument('--dst_version', type=str, required=True)
     parser.add_argument('--option', type=int, default=None, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
-    parser.add_argument('--method_diagn_gen', type=str, default='OLS_cuda', choices=['lasso', 'xgb', 'elastic', 'OLS_cuda'])
+    parser.add_argument('--method_diagn_gen', type=str, default='OLS_cuda', choices=['lasso', 'xgb', 'elastic', 'OLS_cuda', "PLS"])
     parser.add_argument('--lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
     parser.add_argument('--W_type', type=str, default=None, choices=["W_true", "W_est"])
     parser.add_argument('--disable_dag_control', action='store_true', default=False, help="it's available only when W_type=W_est and option != 5")
@@ -311,10 +312,13 @@ if __name__ == '__main__':
                 if isinstance(X_input, list):
                     X_input = [val for val in X_input if val is not None]
                     X_input = np.concatenate(X_input, axis=1)
+                _configs = deepcopy(configs)
+                if _configs['method_diagn_gen'] == 'PLS' and X_input.shape[1] < 2:
+                    _configs['method_diagn_gen'] = 'OLS_cuda'
                 preds = _get_single_clf(X_input, X[:, j], 
-                                        configs['method_diagn_gen'], 
-                                        configs['lasso_alpha'],
-                                        configs['device'])
+                                        _configs['method_diagn_gen'], 
+                                        _configs['lasso_alpha'],
+                                        _configs['device'])
             else:
                 preds = 0.
         residuals = X[:, j] - preds
