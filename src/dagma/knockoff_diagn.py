@@ -31,6 +31,7 @@ def get_knockoffs_stats(X, configs, n_jobs=1,
     """
     method_diagn_gen = configs['method_diagn_gen']
     lasso_alpha = configs['lasso_alpha']
+    PLS_n_comp = configs['PLS_n_comp']
     device = configs['device']
     
     if gaussian: # second-order knockoff for Gaussian cases, candes paper, baselines
@@ -49,7 +50,7 @@ def get_knockoffs_stats(X, configs, n_jobs=1,
         else:
             p = configs['d']
             preds = np.array(Parallel(n_jobs=n_jobs)(delayed(
-            _get_single_clf_ko)(X, j, method_diagn_gen, lasso_alpha, device) for j in tqdm(range(p))))
+            _get_single_clf_ko)(X, j, method_diagn_gen, lasso_alpha, PLS_n_comp, device) for j in tqdm(range(p))))
             preds = preds.T
         
         X_tildes = conditional_sequential_gen_ko(X, preds, n_jobs=n_jobs, discrete=False, adjust_marg=adjust_marg)
@@ -60,7 +61,7 @@ def get_knockoffs_stats(X, configs, n_jobs=1,
 # Utilities 
 #########################
 
-def _get_fitting_model(X_input, X_target, method, alpha, device):
+def _get_fitting_model(X_input, X_target, method, alpha, n_comp, device):
     p = X_input.shape[1] + 1
 
     if method == "lasso":
@@ -87,11 +88,11 @@ def _get_fitting_model(X_input, X_target, method, alpha, device):
         clf = ElasticNet()
 
     if method == 'PLS':
-        clf = PLSRegression()
+        clf = PLSRegression(n_components=n_comp)
 
     return clf
 
-def _get_single_clf_ko(X, j, method="lasso", alpha='knockoff_diagn', device='cpu'):
+def _get_single_clf_ko(X, j, method="lasso", alpha='knockoff_diagn', n_comp=2, device='cpu'):
     """
     Fit a single classifier to predict the j-th variable from all others.
 
@@ -108,13 +109,13 @@ def _get_single_clf_ko(X, j, method="lasso", alpha='knockoff_diagn', device='cpu
     n, p = X.shape
     idc = np.array([i for i in np.arange(0, p) if i != j])
 
-    clf = _get_fitting_model(X[:, idc], X[:, j], method, alpha, device)
+    clf = _get_fitting_model(X[:, idc], X[:, j], method, alpha, n_comp, device)
     clf.fit(X[:, idc], X[:, j])
     pred = clf.predict(X[:, idc])
     return pred
 
-def _get_single_clf(X_input, X_target, method="lasso", alpha='knockoff_diagn', device='cpu'):
-    clf = _get_fitting_model(X_input, X_target, method, alpha, device)
+def _get_single_clf(X_input, X_target, method="lasso", alpha='knockoff_diagn', n_comp=2, device='cpu'):
+    clf = _get_fitting_model(X_input, X_target, method, alpha, n_comp, device)
 
     if "cuda" in method:
         X_input = cp.asarray(X_input)

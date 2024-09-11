@@ -114,7 +114,7 @@ if __name__ == '__main__':
             else:
                 preds = np.array(Parallel(n_jobs=n_jobs)(delayed(
                     _get_single_clf_ko)(
-                        X_start, j, configs['method_diagn_gen'], configs['lasso_alpha'], configs['device']
+                        X_start, j, configs['method_diagn_gen'], configs['lasso_alpha'], configs['PLS_n_comp'], configs['device']
                     ) for j in tqdm(range(p))))
                 preds = preds.T
             X_tildes_start = conditional_sequential_gen_ko(X_start, preds, n_jobs=n_jobs, discrete=False, adjust_marg=True)

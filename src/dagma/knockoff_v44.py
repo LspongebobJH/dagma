@@ -14,6 +14,8 @@ if __name__ == '__main__':
     parser.add_argument('--option', type=int, default=None, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
     parser.add_argument('--method_diagn_gen', type=str, default='OLS_cuda', choices=['lasso', 'xgb', 'elastic', 'OLS_cuda', "PLS"])
     parser.add_argument('--lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
+    parser.add_argument('--PLS_n_comp', type=int, default=2, choices=[2, 3, 4])
+    parser.add_argument('--topo_sort', action="store_true", default=False)
     parser.add_argument('--W_type', type=str, default=None, choices=["W_true", "W_est"])
     parser.add_argument('--disable_dag_control', action='store_true', default=False, help="it's available only when W_type=W_est and option != 5")
     parser.add_argument('--seed_model', type=int, default=0, choices=[0], help="it's available only when option != 5")
@@ -37,6 +39,8 @@ if __name__ == '__main__':
     assert configs['seed_model'] == 0
     n_jobs = configs['n_jobs']
     utils.set_random_seed(configs['seed_knockoff'])
+
+
     
     if configs['s0'] is None:
         configs['s0'] = configs['d'] * 4
@@ -174,13 +178,13 @@ if __name__ == '__main__':
 
     # fit knockoff
     X_tilde = np.zeros_like(X)
-    if configs['option'] == 12:
-        nodes = nx.topological_sort(G)
+    if configs['topo_sort']:
+        nodes = np.array(list(nx.topological_sort(G)))
     else:
         nodes = list(range(X.shape[1]))
         nodes.sort()
         
-    for j in tqdm(nodes):
+    for _idx, j in enumerate(tqdm(nodes)):
         no_need_pred = False
         no_input = False
         preds = 0.
@@ -280,11 +284,18 @@ if __name__ == '__main__':
             p = X.shape[1]
             input_idx = np.array([i for i in np.arange(0, p) if i != j])
             X_input = X[:, input_idx]
-            if j > 0:
-                X_input = np.concatenate(
-                    [X_input, X_tilde[:, :j]],
-                    axis=1
-                )
+            if configs['topo_sort']:
+                if _idx > 0:
+                    X_input = np.concatenate(
+                        [X_input, X_tilde[:, nodes[:_idx]]],
+                        axis=1
+                    )
+            else:
+                if j > 0:
+                    X_input = np.concatenate(
+                        [X_input, X_tilde[:, :j]],
+                        axis=1
+                    )
 
         elif configs['option'] == 11: # A + B
             X_input = [
@@ -313,12 +324,13 @@ if __name__ == '__main__':
                     X_input = [val for val in X_input if val is not None]
                     X_input = np.concatenate(X_input, axis=1)
                 _configs = deepcopy(configs)
-                if _configs['method_diagn_gen'] == 'PLS' and X_input.shape[1] < 2:
+                if _configs['method_diagn_gen'] == 'PLS' and X_input.shape[1] < configs['PLS_n_comp']:
                     _configs['method_diagn_gen'] = 'OLS_cuda'
                 preds = _get_single_clf(X_input, X[:, j], 
-                                        _configs['method_diagn_gen'], 
-                                        _configs['lasso_alpha'],
-                                        _configs['device'])
+                                        method=_configs['method_diagn_gen'], 
+                                        alpha=_configs['lasso_alpha'],
+                                        n_comp=_configs['PLS_n_comp'],
+                                        device=_configs['device'])
             else:
                 preds = 0.
         residuals = X[:, j] - preds
