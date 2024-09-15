@@ -11,6 +11,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data_version', type=str, required=True)
     parser.add_argument('--dst_version', type=str, required=True)
+    parser.add_argument('--fit_W_version', type=str, required=True)
     parser.add_argument('--option', type=int, default=None, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
     parser.add_argument('--method_diagn_gen', type=str, default='OLS_cuda', choices=['lasso', 'xgb', 'elastic', 'OLS_cuda', "PLS"])
     parser.add_argument('--lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
@@ -80,7 +81,8 @@ if __name__ == '__main__':
     # load W
     if configs['option'] != 5:
         if configs['W_type'] == 'W_est':
-            version = f"v39/{configs['d']}_{configs['s0']}/W_{configs['d']}_{configs['s0']}_{configs['seed_X']}_{configs['seed_model']}{configs['note']}.pkl"
+            # version = f"v39/{configs['d']}_{configs['s0']}/W_{configs['d']}_{configs['s0']}_{configs['seed_X']}_{configs['seed_model']}{configs['note']}.pkl"
+            version = f"{configs['fit_W_version']}/{configs['d']}_{configs['s0']}/W_{configs['d']}_{configs['s0']}_{configs['seed_X']}_{configs['seed_model']}{configs['note']}.pkl"
             data_path = os.path.join(data_dir, version)
             with open(data_path, 'rb') as f:
                 W_est = pickle.load(f)

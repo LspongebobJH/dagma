@@ -76,17 +76,20 @@
 #########################################
 
 data_option=X
-dst_data_version=47
+# dst_data_version=47
+dst_data_version=49
 src_data_version=11
+# fit_W_version=39
+fit_W_version=48
 n=2000
 cuda_idx=5
-nodes=(20 40 60 80 100)
+nodes=(100)
 # seedsX=( {11..30..1} )
 seedsX=( {1..10..1} )
 seedsKnockoff=( 1 )
 # nComps=( 3 4 )
 # options=( 10 )
-suffixs=(_normX_sym1_option_14_PLS _normX_sym1_option_15_PLS _normX_sym1_option_15_PLS_topo_sort)
+suffixs=(_normX_sym1_option_10_PLS_topo_sort _normX_sym1_option_10_PLS_topo_sort_nComp_3)
 # suffixs=(_normX_sym1_option_1_PLS_dedup)
 cnt=0
 
@@ -107,54 +110,43 @@ for d in "${nodes[@]}"; do
             fi
 
             for seedX in "${seedsX[@]}"; do
-                if [ $suffix = '_normX_sym1_option_14_PLS' ]; then
+                if [ $suffix = '_normX_sym1_option_10_PLS_topo_sort' ]; then
                     CUDA_VISIBLE_DEVICES=${cuda_idx} \
                     python knockoff_v44.py \
                     --W_type=W_est \
                     --data_version=v${dst_data_version} \
                     --dst_version=v${dst_version} \
-                    --option=14 \
+                    --fit_W_version=v${fit_W_version} \
+                    --option=10 \
                     --d=${d} --s0=${s0} \
                     --method_diagn_gen=PLS \
                     --dedup \
+                    --topo_sort \
                     --device=cuda:${cuda_idx} \
                     --seed_X=${seedX} \
                     --seed_knockoff=${seedKnockoff} \
                     --note="_normX_sym1" \
                     >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
 
-                elif [ $suffix = '_normX_sym1_option_15_PLS' ]; then
+                elif [ $suffix = '_normX_sym1_option_10_PLS_topo_sort_nComp_3' ]; then
                     CUDA_VISIBLE_DEVICES=${cuda_idx} \
                     python knockoff_v44.py \
                     --W_type=W_est \
                     --data_version=v${dst_data_version} \
                     --dst_version=v${dst_version} \
-                    --option=15 \
+                    --fit_W_version=v${fit_W_version} \
+                    --option=10 \
                     --d=${d} --s0=${s0} \
                     --method_diagn_gen=PLS \
                     --dedup \
-                    --device=cuda:${cuda_idx} \
-                    --seed_X=${seedX} \
-                    --seed_knockoff=${seedKnockoff} \
-                    --note="_normX_sym1" \
-                    >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
-                    
-                elif [ $suffix = '_normX_sym1_option_15_PLS_topo_sort' ]; then
-                    CUDA_VISIBLE_DEVICES=${cuda_idx} \
-                    python knockoff_v44.py \
-                    --W_type=W_est \
-                    --data_version=v${dst_data_version} \
-                    --dst_version=v${dst_version} \
-                    --option=15 \
-                    --d=${d} --s0=${s0} \
-                    --method_diagn_gen=PLS \
                     --topo_sort \
-                    --dedup \
+                    --PLS_n_comp=3 \
                     --device=cuda:${cuda_idx} \
                     --seed_X=${seedX} \
                     --seed_knockoff=${seedKnockoff} \
                     --note="_normX_sym1" \
                     >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
+
                 fi
 
                 # control cuda device
@@ -207,6 +199,14 @@ done
 #             fi
 #         done
 #     # done
+# done
+
+#########################################
+# vanilla GENIE3, genie3.py
+#########################################
+# seedsX=( {1..10..1} )
+# for seedX in "${seedsX[@]}"; do
+#     python genie3.py --d=100 --s0=600 --seed_X=${seedX} --note="_normX_sym1" --nthreads=4 &
 # done
 
 #########################################

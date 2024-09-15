@@ -30,7 +30,7 @@ parser.add_argument('--norm_data_gen', type=str, default=None, choices=['topo_co
 parser.add_argument('--knock_type', type=str, default=None, 
                     choices=['permutation', 'deep_knockoff', 
                              'knockoff_diagn'])
-parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W', 'W_torch'])
+parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W', 'W_torch', 'W_genie3'])
 parser.add_argument('--cond_thresh_X', type=float, default=None, help="available only when gen_type == X")
 parser.add_argument('--noise_scale_X', type=float, default=1., help="available only when gen_type == X")
 
@@ -65,12 +65,19 @@ parser.add_argument('--warm_iter', type=int, default=None)
 parser.add_argument('--use_g_dir_loss', action='store_true', default=None)
 parser.add_argument('--T', type=int, default=None)
 
+# parameters of genie3
+parser.add_argument('--nthreads', type=int, default=1)
+
 args = parser.parse_args()
 
 args.gen_W = None
 if args.gen_type == 'W_torch':
     args.gen_type = 'W'
     args.gen_W = 'torch'
+
+elif args.gen_type == 'W_genie3':
+    args.gen_type = 'W'
+    args.gen_W = 'genie3'
 
 configs = utils.combine_configs(configs, args)
 

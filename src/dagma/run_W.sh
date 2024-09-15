@@ -43,7 +43,7 @@ run() {
 
     n=2000
     s0=$(( d * 6 ))
-    suffixs=(_normX_sym1_option_14_PLS _normX_sym1_option_15_PLS _normX_sym1_option_15_PLS_topo_sort)
+    suffixs=(_normX_sym1_option_10_PLS_topo_sort _normX_sym1_option_10_PLS_topo_sort_nComp_3)
     seedsX=( {1..10..1} )
     seedsKnockoff=( 1 )
     # options=( 5 )
@@ -68,12 +68,13 @@ run() {
                 for seedX in "${seedsX[@]}"; do
                     stdbuf -o0 -e0 \
                     python gen_copies.py \
-                    --gen_type W_torch \
+                    --gen_type W_genie3 \
                     --n $n --s0 $s0 --d $d \
                     --seed_X $seedX \
                     --seed_knockoff $seedKnockoff \
                     --root_path simulated_data/v${dst_data_version} \
                     --version ${version} \
+                    --force_save \
                     --device cuda:${cuda_idx} > simulated_data/v${dst_data_version}/v${version}/W/log_${seedX}_${seedKnockoff}_0 2>&1 &
 
                     cuda_idx=$(( cuda_idx + 1))
@@ -99,33 +100,33 @@ run() {
     
 }
 
-data_version=47
+data_version=49
 
 
-d=20
-cuda_idx=5
-run $data_version $d $cuda_idx
+# d=20
+# cuda_idx=5
+# run $data_version $d $cuda_idx
+
+# # wait
+
+# d=40
+# cuda_idx=6
+# run $data_version $d $cuda_idx
+
+# # wait
+
+# d=60
+# cuda_idx=7
+# run $data_version $d $cuda_idx
 
 # wait
 
-d=40
-cuda_idx=6
-run $data_version $d $cuda_idx
-
-# wait
-
-d=60
-cuda_idx=7
-run $data_version $d $cuda_idx
-
-wait
-
-d=80
-cuda_idx=5
-run $data_version $d $cuda_idx
+# d=80
+# cuda_idx=5
+# run $data_version $d $cuda_idx
 
 
 d=100
-cuda_idx=6
+cuda_idx=7
 run $data_version $d $cuda_idx
 

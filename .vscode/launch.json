@@ -30,17 +30,17 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--gen_type=W_torch",
+                "--gen_type=W_genie3",
                 "--n=2000",
-                "--d=60",
-                "--s0=360",
-                "--root_path=simulated_data/v47_repr",
-                "--version=60_360_normX_sym1_option_9_OLS_X+knockoff",
+                "--d=100",
+                "--s0=600",
+                "--root_path=simulated_data/v49",
+                "--version=100_600_normX_sym1_option_10_PLS_topo_sort",
                 // "--norm_data_gen=B_1_col", 
                 "--force_save",
                 "--seed_X=1",
                 "--seed_knockoff=1",
-                "--device=cuda:7"
+                // "--device=cuda:7"
             ]
         },
         {
