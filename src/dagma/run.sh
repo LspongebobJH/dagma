@@ -81,74 +81,95 @@ src_data_version=11
 n=2000
 cuda_idx=5
 nodes=(20 40 60 80 100)
-# seedsX=( 1 2 7 8 9 10 14 16 19 23 )
-# seedsX=( 3 4 5 6 11 12 13 15 17 18 )
-# seedsX=( 3 4 11 12 13 15 18 20 22 28 )
-# seedsX=( 11 12 13 15 17 18 )
-# seedsX=( 20 21 22 24 25 28 30 31 32 33 34 35 36 37 )
-# seedsX=( 2 7 8 )
-seedsX=( {11..30..1} )
+# seedsX=( {11..30..1} )
+seedsX=( {1..10..1} )
 seedsKnockoff=( 1 )
 # nComps=( 3 4 )
-options=( 5 )
+# options=( 10 )
+suffixs=(_normX_sym1_option_14_PLS _normX_sym1_option_15_PLS _normX_sym1_option_15_PLS_topo_sort)
+# suffixs=(_normX_sym1_option_1_PLS_dedup)
 cnt=0
-# norms=(row)
 
 for d in "${nodes[@]}"; do
-    for option in "${options[@]}"; do
+    # for option in "${options[@]}"; do
+    for suffix in "${suffixs[@]}"; do
         for seedKnockoff in "${seedsKnockoff[@]}"; do
-            # for nComp in "${nComps[@]}"; do
-                # for norm in "${norms[@]}"; do
-                # option=5
-                suffix=_normX_sym1_option_${option}_PLS
-                # suffix=_condX_3e4_option_${option}_OLS
-                # suffix=_option_${option}_OLS
-                s0=$(( d * 6 ))
+            s0=$(( d * 6 ))
+            # suffix=_normX_sym1_option_${option}_PLS
+            dst_version=${d}_${s0}${suffix}
+            src_version=${d}_${s0}_normX_sym1
+            
+            ./create_data_dir.sh $data_option $dst_data_version $dst_version $src_data_version $src_version
 
-                dst_version=${d}_${s0}${suffix}
-                # src_version=${d}_${s0}_normX_B1Col
-                # src_version=${d}_${s0}_condX_5e4
-                src_version=${d}_${s0}_normX_sym1
-                
-                ./create_data_dir.sh $data_option $dst_data_version $dst_version $src_data_version $src_version
+            target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff
+            if [ ! -d "$target_dir$" ]; then
+                mkdir -p ${target_dir}
+            fi
 
-                target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff
-                if [ ! -d "$target_dir$" ]; then
-                    mkdir -p ${target_dir}
-                fi
-
-                # for (( seedX=1; seedX<=100; seedX++ )); do
-                for seedX in "${seedsX[@]}"; do
-                    # echo $cuda_idx
+            for seedX in "${seedsX[@]}"; do
+                if [ $suffix = '_normX_sym1_option_14_PLS' ]; then
                     CUDA_VISIBLE_DEVICES=${cuda_idx} \
                     python knockoff_v44.py \
                     --W_type=W_est \
                     --data_version=v${dst_data_version} \
                     --dst_version=v${dst_version} \
-                    --option=${option} \
+                    --option=14 \
                     --d=${d} --s0=${s0} \
                     --method_diagn_gen=PLS \
+                    --dedup \
                     --device=cuda:${cuda_idx} \
                     --seed_X=${seedX} \
                     --seed_knockoff=${seedKnockoff} \
                     --note="_normX_sym1" \
                     >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
 
-                    cuda_idx=$(( cuda_idx + 1))
-                    if [ $cuda_idx -eq 8 ]; then
-                        cuda_idx=5
-                    fi
+                elif [ $suffix = '_normX_sym1_option_15_PLS' ]; then
+                    CUDA_VISIBLE_DEVICES=${cuda_idx} \
+                    python knockoff_v44.py \
+                    --W_type=W_est \
+                    --data_version=v${dst_data_version} \
+                    --dst_version=v${dst_version} \
+                    --option=15 \
+                    --d=${d} --s0=${s0} \
+                    --method_diagn_gen=PLS \
+                    --dedup \
+                    --device=cuda:${cuda_idx} \
+                    --seed_X=${seedX} \
+                    --seed_knockoff=${seedKnockoff} \
+                    --note="_normX_sym1" \
+                    >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
                     
+                elif [ $suffix = '_normX_sym1_option_15_PLS_topo_sort' ]; then
+                    CUDA_VISIBLE_DEVICES=${cuda_idx} \
+                    python knockoff_v44.py \
+                    --W_type=W_est \
+                    --data_version=v${dst_data_version} \
+                    --dst_version=v${dst_version} \
+                    --option=15 \
+                    --d=${d} --s0=${s0} \
+                    --method_diagn_gen=PLS \
+                    --topo_sort \
+                    --dedup \
+                    --device=cuda:${cuda_idx} \
+                    --seed_X=${seedX} \
+                    --seed_knockoff=${seedKnockoff} \
+                    --note="_normX_sym1" \
+                    >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
+                fi
 
-                    cnt=$(( cnt + 1 ))
-                    _cnt=$(( cnt % 30 ))
-                    
-                    if [ ${_cnt} -eq 29 ]; then
-                        wait
-                    fi
-                    
-                    # done
-                # done
+                # control cuda device
+                cuda_idx=$(( cuda_idx + 1))
+                if [ $cuda_idx -eq 8 ]; then
+                    cuda_idx=5
+                fi
+                
+                # control parallel process number
+                cnt=$(( cnt + 1 ))
+                _cnt=$(( cnt % 40 ))
+                
+                if [ ${_cnt} -eq 39 ]; then
+                    wait
+                fi
             done
         done
     done

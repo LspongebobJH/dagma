@@ -97,14 +97,16 @@ run() {
     log_file_global=99
     # options=( 7 9 1 2 10 11 )
     # options=(1 2 7 9 10 11 12 )
-    options=( 5 )
+    # options=( 5 )
+    suffixs=(_normX_sym1_option_14_PLS _normX_sym1_option_15_PLS _normX_sym1_option_15_PLS_topo_sort)
     # option=5
     n=2000
     # nComps=( 3 4 )
     
     nodes=(20 40 60 80 100)
     for d in "${nodes[@]}"; do
-        for option in "${options[@]}"; do
+        # for option in "${options[@]}"; do
+        for suffix in "${suffixs[@]}"; do
             # for nComp in "${nComps[@]}"; do
                 s0=$(( d * 6 ))
 
@@ -121,17 +123,18 @@ run() {
                 # --log_file=log_${log_file_global}/log_${data_version}_${version} &
                 # wait
 
-                version=${d}_${s0}_normX_sym1_option_${option}_PLS
+                # version=${d}_${s0}_normX_sym1_option_${option}_PLS
+                version=${d}_${s0}${suffix}
                 python multi_main.py \
                 --n $n --s0 $s0 --d $d \
                 --control_type=type_3_global \
-                --seed_X_list=1,30,-1 \
+                --seed_X_list=1,10,-1 \
                 --seed_knockoff_list=1 \
                 --seed_model_list=0 \
                 --version=$version \
                 --root_path simulated_data/v${data_version} \
                 --n_jobs=4 \
-                --log_file=log_${log_file_global}/log_${data_version}_${version}_1-30 &
+                --log_file=log_${log_file_global}/log_${data_version}_${version}_1-10 &
 
                 # version=${d}_${s0}_normX_B1Col_option_5_OLS
                 # python multi_main.py \

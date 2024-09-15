@@ -11,11 +11,12 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data_version', type=str, required=True)
     parser.add_argument('--dst_version', type=str, required=True)
-    parser.add_argument('--option', type=int, default=None, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+    parser.add_argument('--option', type=int, default=None, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
     parser.add_argument('--method_diagn_gen', type=str, default='OLS_cuda', choices=['lasso', 'xgb', 'elastic', 'OLS_cuda', "PLS"])
     parser.add_argument('--lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
     parser.add_argument('--PLS_n_comp', type=int, default=2, choices=[2, 3, 4])
     parser.add_argument('--topo_sort', action="store_true", default=False)
+    parser.add_argument('--dedup', action="store_true", default=False, help="deduplicate valid only when option=1. from option=14, deduplicate is forced.") # NOT DONE
     parser.add_argument('--W_type', type=str, default=None, choices=["W_true", "W_est"])
     parser.add_argument('--disable_dag_control', action='store_true', default=False, help="it's available only when W_type=W_est and option != 5")
     parser.add_argument('--seed_model', type=int, default=0, choices=[0], help="it's available only when option != 5")
@@ -40,10 +41,23 @@ if __name__ == '__main__':
     n_jobs = configs['n_jobs']
     utils.set_random_seed(configs['seed_knockoff'])
 
-
+    assert configs['dedup'] is True
     
     if configs['s0'] is None:
         configs['s0'] = configs['d'] * 4
+
+
+    output_data_dir = os.path.join(
+        data_dir,
+        configs['data_version'],
+        configs['dst_version'],
+        "knockoff"
+    )
+    output_data_path = os.path.join(output_data_dir, f'knockoff_{configs["seed_X"]}_{configs["seed_knockoff"]}.pkl')
+    output_config_path = os.path.join(output_data_dir, f'knockoff_{configs["seed_X"]}_{configs["seed_knockoff"]}_configs.yaml')
+
+    if os.path.exists(output_data_path) or os.path.exists(output_data_path):
+        raise Exception(f"{output_data_dir} already exists.")
 
     # load X
     # version = f"v11/v{configs['src_data_version']}"
@@ -106,6 +120,26 @@ if __name__ == '__main__':
                 return X[:, ancestors]
         else:
             print(f"No ancestors: {i}")
+            if return_idx:
+                return None, None
+            else:
+                return None
+
+    def non_descendants_X(G: nx.DiGraph, i: int, X: np.ndarray, return_idx: bool = False): # unfinished
+        descendants = list(nx.descendants(G, i))
+        all_n = list(G.nodes)
+        non_descendants = list(
+            set(all_n).difference(set(descendants))
+        )
+        non_descendants = postprocess_res(non_descendants, i)
+        assert i not in non_descendants
+        if len(non_descendants) != 0:
+            if return_idx:
+                return X[:, non_descendants], non_descendants
+            else:    
+                return X[:, non_descendants]
+        else:
+            print(f"No non_descendants: {i}")
             if return_idx:
                 return None, None
             else:
@@ -176,14 +210,16 @@ if __name__ == '__main__':
             else:
                 return None
 
+    def intersection(n1_list: list, n2_list: list):
+        return list(set(n1_list).intersection(set(n2_list)))
+
     # fit knockoff
     X_tilde = np.zeros_like(X)
     if configs['topo_sort']:
-        nodes = np.array(list(nx.topological_sort(G)))
+        nodes = list(nx.topological_sort(G))
     else:
         nodes = list(range(X.shape[1]))
-        nodes.sort()
-        
+    
     for _idx, j in enumerate(tqdm(nodes)):
         no_need_pred = False
         no_input = False
@@ -195,16 +231,39 @@ if __name__ == '__main__':
         C: parents of children
         A+B+C: markov blanket
         """
-        if configs['option'] == 1: # A + B + C
-            X_input = [
-                func(G, j, X) for func in [parents_X, children_X, parents_of_children_X]
-            ]
-            no_input = True
-            for _input in X_input:
-                if _input is not None:
+        if configs['option'] in [1, 13]: # A + B + C (+ knockoff) fit j
+            if configs['dedup']:
+                n_list = []
+                for func in [parents_X, children_X, parents_of_children_X]:
+                    _, _n = func(G, j, X, return_idx=True)
+                    if _n is not None:
+                        n_list.append(_n)
+                if len(n_list) > 0:
                     no_input = False
-                    break
-                
+                    n_list = list(set(np.concatenate(n_list).tolist()))
+                    X_input = X[:, n_list]
+                else:
+                    no_input = True
+            else:
+                raise NotImplementedError("non-deduplicated version is not valid")
+                X_input = [
+                    func(G, j, X) for func in [parents_X, children_X, parents_of_children_X]
+                ]
+                no_input = True
+                for _input in X_input:
+                    if _input is not None:
+                        no_input = False
+                        break
+            if configs['option'] == 13:
+                if _idx > 0:
+                    # find intersection of nodes with knockoff and A+B+C
+                    n_knockoff = intersection(nodes[:_idx], n_list)
+                    if len(n_knockoff) > 0:
+                        X_input = np.concatenate(
+                            [X_input, X_tilde[:, n_knockoff]],
+                            axis=1
+                        )
+
         elif configs['option'] == 2: # B + C
             X_input = [
                 func(G, j, X) for func in [children_X, parents_of_children_X]
@@ -250,10 +309,16 @@ if __name__ == '__main__':
                 else:
                     pass # X_input kept as is
 
-        elif configs['option'] == 5: # all nodes
+        elif configs['option'] in [5, 10]: # all nodes (+ knockoff) fit j
             p = X.shape[1]
             input_idx = np.array([i for i in np.arange(0, p) if i != j])
             X_input = X[:, input_idx]
+            if configs['option'] == 10:
+                if _idx > 0:
+                    X_input = np.concatenate(
+                        [X_input, X_tilde[:, nodes[:_idx]]],
+                        axis=1
+                    )
         
         elif configs['option'] == 7: # only parents (only A)
             X_input = [
@@ -280,23 +345,6 @@ if __name__ == '__main__':
                     no_input = False
                     break
 
-        elif configs['option'] == 10: # all nodes + existing knockoff -> j.
-            p = X.shape[1]
-            input_idx = np.array([i for i in np.arange(0, p) if i != j])
-            X_input = X[:, input_idx]
-            if configs['topo_sort']:
-                if _idx > 0:
-                    X_input = np.concatenate(
-                        [X_input, X_tilde[:, nodes[:_idx]]],
-                        axis=1
-                    )
-            else:
-                if j > 0:
-                    X_input = np.concatenate(
-                        [X_input, X_tilde[:, :j]],
-                        axis=1
-                    )
-
         elif configs['option'] == 11: # A + B
             X_input = [
                 func(G, j, X) for func in [parents_X, children_X]
@@ -317,6 +365,23 @@ if __name__ == '__main__':
                     [X_input, X_tilde[:, ancestors_n]],
                     axis=1
                 )
+
+        elif configs['option'] in [14, 15]: # non-descendants
+            X_input, non_descendants_n = non_descendants_X(G, j, X, return_idx=True)
+            if X_input is None:
+                no_input = True
+            else:
+                no_input = False
+            if configs['option'] == 15:
+                if _idx > 0 and non_descendants_n is not None:
+                    # find intersection of nodes with knockoff and A+B+C
+                    n_knockoff = intersection(nodes[:_idx], non_descendants_n)
+                    if len(n_knockoff) > 0:
+                        X_input = np.concatenate(
+                            [X_input, X_tilde[:, n_knockoff]],
+                            axis=1
+                        )
+
 
         if not no_need_pred: # need to fit model for X_pred
             if not no_input: # has no X_input for model fitting
@@ -339,23 +404,13 @@ if __name__ == '__main__':
         sample = preds + residuals[indices_]
         sample = _adjust_marginal(sample, X[:, j], discrete=False)
         X_tilde[:, j] = sample
-
-    data_dir = os.path.join(
-        data_dir,
-        configs['data_version'],
-        configs['dst_version'],
-        "knockoff"
-    )
     
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
+    if not os.path.exists(output_data_dir):
+        os.makedirs(output_data_dir)
 
-    data_path = os.path.join(data_dir, f'knockoff_{configs["seed_X"]}_{configs["seed_knockoff"]}.pkl')
-    with open(data_path, 'wb') as f:
+    with open(output_data_path, 'wb') as f:
         pickle.dump(X_tilde, f)
-
-    config_path = os.path.join(data_dir, f'knockoff_{configs["seed_X"]}_{configs["seed_knockoff"]}_configs.yaml')
-    with open(config_path, 'w') as f:
+    with open(output_config_path, 'w') as f:
         yaml.dump(configs, f)
 
     print("DONE!")

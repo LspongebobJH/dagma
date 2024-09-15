@@ -43,25 +43,19 @@ run() {
 
     n=2000
     s0=$(( d * 6 ))
-    # version_list=(${d}_${s0}_option_5_OLS_col ${d}_${s0}_option_5_OLS_row)
-    # seedsX=(11 12 13 15 17 18)
-    # seedsX=( 20 21 22 24 25 28 30 31 32 33 )
-    # seedsX=( 3 4 11 12 13 15 18 20 22 28 )
-    # seedsX=( 2 7 8 )
-    seedsX=( {11..30..1} )
+    suffixs=(_normX_sym1_option_14_PLS _normX_sym1_option_15_PLS _normX_sym1_option_15_PLS_topo_sort)
+    seedsX=( {1..10..1} )
     seedsKnockoff=( 1 )
-    # options=( 7 9 1 2 11 )
     # options=( 5 )
-    options=( 5 )
     # nComps=( 3 4 )
     cnt=0
-    # seedsX=(1 3 4 5 6 9 10)
 
 
     # for version in "${version_list[@]}"; do
-    for option in "${options[@]}"; do
+    for suffix in "${suffixs[@]}"; do
         # for nComp in "${nComps[@]}"; do
-            version=${d}_${s0}_normX_sym1_option_${option}_PLS
+            # version=${d}_${s0}_normX_sym1_option_${option}_PLS
+            version=${d}_${s0}${suffix}
             # ./create_data_dir.sh X $dst_data_version $version $src_data_version ${d}
 
             target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$version/W
@@ -72,7 +66,6 @@ run() {
             # for (( seedX=1; seedX<=100; seedX++ )); do
             for seedKnockoff in "${seedsKnockoff[@]}"; do
                 for seedX in "${seedsX[@]}"; do
-                    
                     stdbuf -o0 -e0 \
                     python gen_copies.py \
                     --gen_type W_torch \
