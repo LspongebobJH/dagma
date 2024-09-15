@@ -1,5 +1,5 @@
 from sklearn.tree import BaseDecisionTree
-from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingRegressor
 from numpy import *
 import time
 from operator import itemgetter
@@ -10,163 +10,63 @@ from sklearn.metrics import auc, precision_recall_curve, roc_auc_score
 from cuml.ensemble import RandomForestRegressor as RandomForestRegressor_cuda 
 from copy import deepcopy
 
+EARLY_STOP_WINDOW_LENGTH = 25
+
 def compute_feature_importances(estimator):
-    if isinstance(estimator, BaseDecisionTree) or isinstance(estimator, RandomForestRegressor_cuda):
+    if isinstance(estimator, RandomForestRegressor) or isinstance(estimator, ExtraTreesRegressor) :
         return estimator.tree_.compute_feature_importances(normalize=False)
+    elif isinstance(estimator, GradientBoostingRegressor):
+        n_estimators = len(estimator.estimators_)
+        denormalized_importances = estimator.feature_importances_ * n_estimators
+        return denormalized_importances
     else:
         importances = [e.tree_.compute_feature_importances(normalize=False)
                        for e in estimator.estimators_]
         importances = array(importances)
         return sum(importances,axis=0) / len(estimator)
-        
 
+class EarlyStopMonitor:
 
-def get_link_list(VIM,gene_names=None,regulators='all',maxcount='all',file_name=None):
-    
-    """Gets the ranked list of (directed) regulatory links.
-    
-    Parameters
-    ----------
-    
-    VIM: numpy array
-        Array as returned by the function GENIE3(), in which the element (i,j) is the score of the edge directed from the i-th gene to the j-th gene. 
-        
-    gene_names: list of strings, optional
-        List of length p, where p is the number of rows/columns in VIM, containing the names of the genes. The i-th item of gene_names must correspond to the i-th row/column of VIM. When the gene names are not provided, the i-th gene is named Gi.
-        default: None
-        
-    regulators: list of strings, optional
-        List containing the names of the candidate regulators. When a list of regulators is provided, the names of all the genes must be provided (in gene_names), and the returned list contains only edges directed from the candidate regulators. When regulators is set to 'all', any gene can be a candidate regulator.
-        default: 'all'
-        
-    maxcount: 'all' or positive integer, optional
-        Writes only the first maxcount regulatory links of the ranked list. When maxcount is set to 'all', all the regulatory links are written.
-        default: 'all'
-        
-    file_name: string, optional
-        Writes the ranked list of regulatory links to the file file_name.
-        default: None
-        
-        
-    
-    Returns
-    -------
-    
-    The list of regulatory links, ordered according to the edge score. Auto-regulations do not appear in the list. Regulatory links with a score equal to zero are randomly permuted. In the ranked list of edges, each line has format:
-        
-        regulator   target gene     score of edge
-    """
-    
-    # Check input arguments      
-    if not isinstance(VIM,ndarray):
-        raise ValueError('VIM must be a square array')
-    elif VIM.shape[0] != VIM.shape[1]:
-        raise ValueError('VIM must be a square array')
-        
-    ngenes = VIM.shape[0]
-        
-    if gene_names is not None:
-        if not isinstance(gene_names,(list,tuple)):
-            raise ValueError('input argument gene_names must be a list of gene names')
-        elif len(gene_names) != ngenes:
-            raise ValueError('input argument gene_names must be a list of length p, where p is the number of columns/genes in the expression data')
-        
-    if regulators != 'all':
-        if not isinstance(regulators,(list,tuple)):
-            raise ValueError('input argument regulators must be a list of gene names')
+    def __init__(self, window_length=EARLY_STOP_WINDOW_LENGTH):
+        """
+        :param window_length: length of the window over the out-of-bag errors.
+        """
 
-        if gene_names is None:
-            raise ValueError('the gene names must be specified (in input argument gene_names)')
+        self.window_length = window_length
+
+    def window_boundaries(self, current_round):
+        """
+        :param current_round:
+        :return: the low and high boundaries of the estimators window to consider.
+        """
+
+        lo = max(0, current_round - self.window_length + 1)
+        hi = current_round + 1
+
+        return lo, hi
+
+    def __call__(self, current_round, regressor, _):
+        """
+        Implementation of the GradientBoostingRegressor monitor function API.
+
+        :param current_round: the current boosting round.
+        :param regressor: the regressor.
+        :param _: ignored.
+        :return: True if the regressor should stop early, else False.
+        """
+
+        if current_round >= self.window_length - 1:
+            lo, hi = self.window_boundaries(current_round)
+            return np.mean(regressor.oob_improvement_[lo: hi]) < 0
         else:
-            sIntersection = set(gene_names).intersection(set(regulators))
-            if not sIntersection:
-                raise ValueError('The genes must contain at least one candidate regulator')
-        
-    if maxcount != 'all' and not isinstance(maxcount,int):
-        raise ValueError('input argument maxcount must be "all" or a positive integer')
-        
-    if file_name is not None and not isinstance(file_name,str):
-        raise ValueError('input argument file_name must be a string')
-    
-    
+            return False
 
-    # Get the indices of the candidate regulators
-    if regulators == 'all':
-        input_idx = range(ngenes)
-    else:
-        input_idx = [i for i, gene in enumerate(gene_names) if gene in regulators]
-    
-    # Get the non-ranked list of regulatory links
-    vInter = [(i,j,score) for (i,j),score in ndenumerate(VIM) if i in input_idx and i!=j]
-    
-    # Rank the list according to the weights of the edges        
-    vInter_sort = sorted(vInter,key=itemgetter(2),reverse=True)
-    nInter = len(vInter_sort)
-    
-    # Random permutation of edges with score equal to 0
-    flag = 1
-    i = 0
-    while flag and i < nInter:
-        (TF_idx,target_idx,score) = vInter_sort[i]
-        if score == 0:
-            flag = 0
-        else:
-            i += 1
-            
-    if not flag:
-        items_perm = vInter_sort[i:]
-        items_perm = random.permutation(items_perm)
-        vInter_sort[i:] = items_perm
-        
-    # Write the ranked list of edges
-    nToWrite = nInter
-    if isinstance(maxcount,int) and maxcount >= 0 and maxcount < nInter:
-        nToWrite = maxcount
-        
-    if file_name:
-    
-        outfile = open(file_name,'w')
-    
-        if gene_names is not None:
-            for i in range(nToWrite):
-                (TF_idx,target_idx,score) = vInter_sort[i]
-                TF_idx = int(TF_idx)
-                target_idx = int(target_idx)
-                outfile.write('%s\t%s\t%.6f\n' % (gene_names[TF_idx],gene_names[target_idx],score))
-        else:
-            for i in range(nToWrite):
-                (TF_idx,target_idx,score) = vInter_sort[i]
-                TF_idx = int(TF_idx)
-                target_idx = int(target_idx)
-                outfile.write('G%d\tG%d\t%.6f\n' % (TF_idx+1,target_idx+1,score))
-            
-        
-        outfile.close()
-        
-    else:
-        
-        if gene_names is not None:
-            for i in range(nToWrite):
-                (TF_idx,target_idx,score) = vInter_sort[i]
-                TF_idx = int(TF_idx)
-                target_idx = int(target_idx)
-                print('%s\t%s\t%.6f' % (gene_names[TF_idx],gene_names[target_idx],score))
-        else:
-            for i in range(nToWrite):
-                (TF_idx,target_idx,score) = vInter_sort[i]
-                TF_idx = int(TF_idx)
-                target_idx = int(target_idx)
-                print('G%d\tG%d\t%.6f' % (TF_idx+1,target_idx+1,score))
-                
-                
-                
-
-
-
-def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',ntrees=1000,nthreads=1,use_knockoff=False):
+def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',ntrees=1000,nthreads=1,use_knockoff=False,use_grnboost2=False):
     
     '''Computation of tree-based scores for all putative regulatory links.
-    
+    Notes: GRNBoost2 = GENIE3(RF -> Gradient Boosted Tree) + Early stop + new feature importance measure + SGBM kwargs.
+    adopted from arboreto
+
     Parameters
     ----------
     
@@ -279,7 +179,7 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
                 _input_idx.remove(i)
             if use_knockoff:
                 _input_idx.remove(i + target_ngenes)
-            input_data.append( [expr_data,i,_input_idx,tree_method,K,ntrees] )
+            input_data.append( [expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2] )
 
         pool = Pool(nthreads)
         alloutput = pool.map(wr_GENIE3_single, input_data)
@@ -297,7 +197,7 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
                 _input_idx.remove(i)
             if use_knockoff:
                 _input_idx.remove(i + target_ngenes)
-            vi = GENIE3_single(expr_data,i,_input_idx,tree_method,K,ntrees)
+            vi = GENIE3_single(expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2)
             VIM[i,:] = vi
 
    
@@ -314,11 +214,11 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
     
     
 def wr_GENIE3_single(args):
-    return([args[1], GENIE3_single(args[0], args[1], args[2], args[3], args[4], args[5])])
+    return([args[1], GENIE3_single(args[0], args[1], args[2], args[3], args[4], args[5], args[6])])
     
 
 
-def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees):
+def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboost2):
     
     ngenes = expr_data.shape[1]
     
@@ -340,15 +240,25 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees):
         max_features = "auto"
     else:
         max_features = K
-    
-    if tree_method == 'RF':
-        treeEstimator = RandomForestRegressor(n_estimators=ntrees,max_features=max_features)
-        
-    elif tree_method == 'ET':
-        treeEstimator = ExtraTreesRegressor(n_estimators=ntrees,max_features=max_features)
+    if use_grnboost2:
+        treeEstimator = GradientBoostingRegressor(
+            learning_rate=0.01,
+            n_estimators=5000,
+            max_features=0.1,
+            subsample=0.9
+        )
+    else:
+        if tree_method == 'RF':
+            treeEstimator = RandomForestRegressor(n_estimators=ntrees,max_features=max_features)
+            
+        elif tree_method == 'ET':
+            treeEstimator = ExtraTreesRegressor(n_estimators=ntrees,max_features=max_features)
 
     # Learn ensemble of trees
-    treeEstimator.fit(expr_data_input,output)
+    if use_grnboost2:
+        treeEstimator.fit(expr_data_input,output,monitor=EarlyStopMonitor(EARLY_STOP_WINDOW_LENGTH))
+    else:
+        treeEstimator.fit(expr_data_input,output)
     
     # Compute importance scores
     feature_importances = compute_feature_importances(treeEstimator)
@@ -362,11 +272,12 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument('--d', type=int, default=None)
-    parser.add_argument('--s0', type=int, default=None)
+    parser.add_argument('--d', type=int, default=10)
+    parser.add_argument('--s0', type=int, default=40)
     parser.add_argument('--seed_X', type=int, default=1)
     parser.add_argument('--note', type=str, default="")
-    parser.add_argument('--nthreads', type=int, default=1) 
+    parser.add_argument('--nthreads', type=int, default=1)
+    parser.add_argument('--use_grnboost2', action='store_true', default=False) 
     args = parser.parse_args()
 
     utils.set_random_seed(0)
@@ -382,7 +293,7 @@ if __name__ == '__main__':
     X, W_true = data['X'], data['W_true']
     B_true = (W_true != 0)
 
-    W_est = GENIE3(X, nthreads=args.nthreads)
+    W_est = GENIE3(X, nthreads=args.nthreads, use_grnboost2=args.use_grnboost2)
 
     prec, rec, threshold = precision_recall_curve(B_true.flatten(), np.abs(W_est).flatten())
     auprc = auc(rec, prec)
