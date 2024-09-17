@@ -93,17 +93,17 @@
 
 run() {
     # data_version=44
-    data_version=47
-    log_file_global=99
+    data_version=49
+    log_file_global=100
     # options=( 7 9 1 2 10 11 )
     # options=(1 2 7 9 10 11 12 )
     # options=( 5 )
-    suffixs=(_normX_sym1_option_14_PLS _normX_sym1_option_15_PLS _normX_sym1_option_15_PLS_topo_sort)
+    suffixs=(_normX_sym1_option_5_OLS_grnboost2 _normX_sym1_option_10_OLS_grnboost2)
     # option=5
     n=2000
     # nComps=( 3 4 )
     
-    nodes=(20 40 60 80 100)
+    nodes=(100)
     for d in "${nodes[@]}"; do
         # for option in "${options[@]}"; do
         for suffix in "${suffixs[@]}"; do

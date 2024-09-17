@@ -89,7 +89,7 @@ seedsX=( {1..10..1} )
 seedsKnockoff=( 1 )
 # nComps=( 3 4 )
 # options=( 10 )
-suffixs=(_normX_sym1_option_10_PLS_topo_sort _normX_sym1_option_10_PLS_topo_sort_nComp_3)
+suffixs=(_normX_sym1_option_5_OLS_grnboost2 _normX_sym1_option_10_OLS_grnboost2)
 # suffixs=(_normX_sym1_option_1_PLS_dedup)
 cnt=0
 
@@ -110,25 +110,24 @@ for d in "${nodes[@]}"; do
             fi
 
             for seedX in "${seedsX[@]}"; do
-                if [ $suffix = '_normX_sym1_option_10_PLS_topo_sort' ]; then
+                if [ $suffix = '_normX_sym1_option_5_OLS_grnboost2' ]; then
                     CUDA_VISIBLE_DEVICES=${cuda_idx} \
                     python knockoff_v44.py \
                     --W_type=W_est \
                     --data_version=v${dst_data_version} \
                     --dst_version=v${dst_version} \
                     --fit_W_version=v${fit_W_version} \
-                    --option=10 \
+                    --option=5 \
                     --d=${d} --s0=${s0} \
-                    --method_diagn_gen=PLS \
+                    --method_diagn_gen=OLS_cuda \
                     --dedup \
-                    --topo_sort \
                     --device=cuda:${cuda_idx} \
                     --seed_X=${seedX} \
                     --seed_knockoff=${seedKnockoff} \
-                    --note="_normX_sym1" \
+                    --note="_normX_sym1_grnboost2" \
                     >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
 
-                elif [ $suffix = '_normX_sym1_option_10_PLS_topo_sort_nComp_3' ]; then
+                elif [ $suffix = '_normX_sym1_option_10_OLS_grnboost2' ]; then
                     CUDA_VISIBLE_DEVICES=${cuda_idx} \
                     python knockoff_v44.py \
                     --W_type=W_est \
@@ -137,14 +136,12 @@ for d in "${nodes[@]}"; do
                     --fit_W_version=v${fit_W_version} \
                     --option=10 \
                     --d=${d} --s0=${s0} \
-                    --method_diagn_gen=PLS \
+                    --method_diagn_gen=OLS_cuda \
                     --dedup \
-                    --topo_sort \
-                    --PLS_n_comp=3 \
                     --device=cuda:${cuda_idx} \
                     --seed_X=${seedX} \
                     --seed_knockoff=${seedKnockoff} \
-                    --note="_normX_sym1" \
+                    --note="_normX_sym1_grnboost2" \
                     >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
 
                 fi
@@ -157,11 +154,11 @@ for d in "${nodes[@]}"; do
                 
                 # control parallel process number
                 cnt=$(( cnt + 1 ))
-                _cnt=$(( cnt % 40 ))
+                _cnt=$(( cnt % 20 ))
                 
-                if [ ${_cnt} -eq 39 ]; then
-                    wait
-                fi
+                # if [ ${_cnt} -eq 19 ]; then
+                #     wait
+                # fi
             done
         done
     done
@@ -206,7 +203,20 @@ done
 #########################################
 # seedsX=( {1..10..1} )
 # for seedX in "${seedsX[@]}"; do
+#     python genie3.py --d=100 --s0=600 --seed_X=${seedX} --note="_normX_sym1" --nthreads=4 --use_grnboost2 &
+#     # _cnt=$(( seedsX % 10 ))
+#     # if [ ${_cnt} -eq 9 ]; then
+#     #     wait
+#     # fi
+# done
+
+# seedsX=( {11..30..1} )
+# for seedX in "${seedsX[@]}"; do
 #     python genie3.py --d=100 --s0=600 --seed_X=${seedX} --note="_normX_sym1" --nthreads=4 &
+#     _cnt=$(( seedsX % 10 ))
+#     if [ ${_cnt} -eq 9 ]; then
+#         wait
+#     fi
 # done
 
 #########################################

@@ -43,7 +43,7 @@ run() {
 
     n=2000
     s0=$(( d * 6 ))
-    suffixs=(_normX_sym1_option_10_PLS_topo_sort _normX_sym1_option_10_PLS_topo_sort_nComp_3)
+    suffixs=(_normX_sym1_option_5_OLS_grnboost2 _normX_sym1_option_10_OLS_grnboost2)
     seedsX=( {1..10..1} )
     seedsKnockoff=( 1 )
     # options=( 5 )
@@ -68,13 +68,12 @@ run() {
                 for seedX in "${seedsX[@]}"; do
                     stdbuf -o0 -e0 \
                     python gen_copies.py \
-                    --gen_type W_genie3 \
+                    --gen_type W_grnboost2 \
                     --n $n --s0 $s0 --d $d \
                     --seed_X $seedX \
                     --seed_knockoff $seedKnockoff \
                     --root_path simulated_data/v${dst_data_version} \
                     --version ${version} \
-                    --force_save \
                     --device cuda:${cuda_idx} > simulated_data/v${dst_data_version}/v${version}/W/log_${seedX}_${seedKnockoff}_0 2>&1 &
 
                     cuda_idx=$(( cuda_idx + 1))
@@ -85,9 +84,9 @@ run() {
                     cnt=$(( cnt + 1 ))
                     _cnt=$(( cnt % 20 ))
                     
-                    if [ ${_cnt} -eq 19 ]; then
-                        wait
-                    fi
+                    # if [ ${_cnt} -eq 19 ]; then
+                    #     wait
+                    # fi
 
                     # _seedX=$(( seedX % 20 ))
                     # if [ ${_seedX} -eq 10 ]; then

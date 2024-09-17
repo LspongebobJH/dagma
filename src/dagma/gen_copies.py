@@ -30,7 +30,7 @@ parser.add_argument('--norm_data_gen', type=str, default=None, choices=['topo_co
 parser.add_argument('--knock_type', type=str, default=None, 
                     choices=['permutation', 'deep_knockoff', 
                              'knockoff_diagn'])
-parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W', 'W_torch', 'W_genie3'])
+parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W', 'W_torch', 'W_genie3', 'W_grnboost2'])
 parser.add_argument('--cond_thresh_X', type=float, default=None, help="available only when gen_type == X")
 parser.add_argument('--noise_scale_X', type=float, default=1., help="available only when gen_type == X")
 
@@ -78,6 +78,10 @@ if args.gen_type == 'W_torch':
 elif args.gen_type == 'W_genie3':
     args.gen_type = 'W'
     args.gen_W = 'genie3'
+
+elif args.gen_type == 'W_grnboost2':
+    args.gen_type = 'W'
+    args.gen_W = 'grnboost2'
 
 configs = utils.combine_configs(configs, args)
 

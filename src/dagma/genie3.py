@@ -203,8 +203,9 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
    
     VIM = transpose(VIM)
 
-    assert (np.diag(VIM[:target_ngenes, :target_ngenes]) == 0).all()
-    assert (np.diag(VIM[target_ngenes:, :target_ngenes]) == 0).all()
+    if use_knockoff:
+        assert (np.diag(VIM[:target_ngenes, :target_ngenes]) == 0).all()
+        assert (np.diag(VIM[target_ngenes:, :target_ngenes]) == 0).all()
  
     time_end = time.time()
     print("Elapsed time: %.2f seconds" % (time_end - time_start))
@@ -304,7 +305,12 @@ if __name__ == '__main__':
     data_dir = os.path.join(root_dir, "v48", f"{d}_{s0}")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
-    data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.note}.pkl")
+    if args.use_grnboost2:
+        data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.note}_grnboost2.pkl")
+    else:
+        data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.note}.pkl")
+    if os.path.exists(data_path):
+        raise Exception(f"{data_path} already exists")
     with open(data_path, 'wb') as f:
         pickle.dump(W_est, f)
     print("DONE")

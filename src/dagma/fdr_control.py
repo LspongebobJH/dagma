@@ -110,7 +110,7 @@ def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
     logger.info(f"expected FDR {fdr}")
 
     if Z_true is not None and Z_knock is not None:
-        Z = np.abs(Z_true) - np.abs(Z_knock)    
+        Z = np.abs(Z_true) - np.abs(Z_knock)
     else:
         Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])
 

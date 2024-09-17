@@ -393,6 +393,7 @@ if __name__ == '__main__':
                 _configs = deepcopy(configs)
                 if _configs['method_diagn_gen'] == 'PLS' and X_input.shape[1] < configs['PLS_n_comp']:
                     _configs['method_diagn_gen'] = 'OLS_cuda'
+                    print("use OLS_cuda rather than PLS")
                 preds = _get_single_clf(X_input, X[:, j], 
                                         method=_configs['method_diagn_gen'], 
                                         alpha=_configs['lasso_alpha'],

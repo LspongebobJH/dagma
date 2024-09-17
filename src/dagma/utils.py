@@ -89,7 +89,7 @@ def fit(X_all, configs, original=False):
     warm_iter = configs['warm_iter']
 
     # assert gen_W in [None, 'torch']
-    assert gen_W in ['torch', 'genie3']
+    assert gen_W in ['torch', 'genie3', 'grnboost2']
     assert dagma_type == 'dagma_1'
 
     W_est_no_filter, Z_true, Z_knock = \
@@ -129,6 +129,9 @@ def fit(X_all, configs, original=False):
 
     elif gen_W == 'genie3':
         W_est_no_filter = GENIE3(X_all, nthreads=configs['nthreads'], use_knockoff=True)
+
+    elif gen_W == 'grnboost2':
+        W_est_no_filter = GENIE3(X_all, nthreads=configs['nthreads'], use_knockoff=True, use_grnboost2=True)
     
     return W_est_no_filter, Z_true, Z_knock
 
