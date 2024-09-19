@@ -65,7 +65,7 @@ parser.add_argument('--warm_iter', type=int, default=None)
 parser.add_argument('--use_g_dir_loss', action='store_true', default=None)
 parser.add_argument('--T', type=int, default=None)
 
-# parameters of genie3
+# parameters of genie3 and grnboost2
 parser.add_argument('--nthreads', type=int, default=1)
 
 args = parser.parse_args()
@@ -166,7 +166,13 @@ if __name__ == '__main__':
                     X_std = X.std(axis=1, keepdims=True)
                 X = (X - X_mean) / (X_std + 1e-8)
 
-            X_all = np.concatenate([X, X_tilde], axis=-1)
+            if configs['gen_W'] in ['genie3', 'grnboost2']:
+                X_all = {
+                    'X': X,
+                    'X_tilde': X_tilde
+                }
+            else:
+                X_all = np.concatenate([X, X_tilde], axis=-1)
 
             W_est_no_filter, Z_true, Z_knock = utils.fit(X_all, configs)
             data_W = {

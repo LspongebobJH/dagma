@@ -117,25 +117,30 @@ def ego_graph_X(G: nx.DiGraph, i: int, X: np.ndarray, radius: int, return_idx: b
 def intersection(n1_list: list, n2_list: list):
     return list(set(n1_list).intersection(set(n2_list)))
 
-def knockoff_single_X(X: np.ndarray, G: nx.DiGraph, j: int, configs: dict):
+def knockoff_single_X(X: np.ndarray, G: nx.DiGraph, target_n: int, configs: dict):
     option, topo_sort = configs['option'], configs['topo_sort']
-    p = X.shape[1]
-    input_idx = [i for i in range(0, p) if i != j]
-    X = X[:, input_idx]
+    
     if topo_sort:
-        nodes = list(nx.topological_sort(G))
-        nodes.remove(j)
-    else:
-        nodes = input_idx
+        design_G = deepcopy(G)
+        design_G.remove_node(target_n)
+        nodes = list(nx.topological_sort(design_G))
 
-    for _idx, j in enumerate(tqdm(nodes)):
+    else:
+        p = X.shape[1]
+        design_n = [i for i in range(0, p) if i != target_n]
+        nodes = design_n
+
+    X = X[:, nodes]
+
+    X_tilde = np.zeros_like(X)
+    for j in tqdm(range(X.shape[1])):
         if option in [5, 10]:
             p = X.shape[1]
             input_idx = [i for i in range(0, p) if i != j]
             X_input = X[:, input_idx]
-            if option == 10 and _idx > 0:
+            if option == 10 and j > 0:
                 X_input = np.concatenate(
-                    [X_input, X_tilde[:, nodes[:_idx]]],
+                    [X_input, X_tilde[:, :j]],
                     axis=1
                 )
 
@@ -180,6 +185,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_jobs', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda:7')
     parser.add_argument('--note', type=str, default='')
+    parser.add_argument('--force_save', action='store_true', default=False)
 
     # normalization to mitigate ill-condition of X
     parser.add_argument('--norm', type=str, choices=['col', 'row'])
@@ -208,7 +214,7 @@ if __name__ == '__main__':
     output_data_path = os.path.join(output_data_dir, f'knockoff_{configs["seed_X"]}_{configs["seed_knockoff"]}.pkl')
     output_config_path = os.path.join(output_data_dir, f'knockoff_{configs["seed_X"]}_{configs["seed_knockoff"]}_configs.yaml')
 
-    if os.path.exists(output_data_path) or os.path.exists(output_data_path):
+    if (os.path.exists(output_data_path) or os.path.exists(output_data_path)) and not configs['force_save']:
         raise Exception(f"{output_data_dir} already exists.")
 
     # load X
@@ -258,9 +264,21 @@ if __name__ == '__main__':
     # fit knockoff
     X_tildes = []
     for j in range(X.shape[1]):
-        X_tildes.append(knockoff_single_X(X, G, j, configs))
+        if configs['topo_sort']:
+            X_tildes.append(knockoff_single_X(X, G, j, configs))
+        else:
+            X_tildes.append(knockoff_single_X(X, None, j, configs))
+        
     X_tilde = np.stack(X_tildes, axis=0)
 
-    pass
+    if not os.path.exists(output_data_dir):
+        os.makedirs(output_data_dir)
+
+    with open(output_data_path, 'wb') as f:
+        pickle.dump(X_tilde, f)
+    with open(output_config_path, 'w') as f:
+        yaml.dump(configs, f)
+
+    print("DONE!")
         
         

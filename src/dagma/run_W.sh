@@ -43,7 +43,7 @@ run() {
 
     n=2000
     s0=$(( d * 6 ))
-    suffixs=(_normX_sym1_option_5_OLS_grnboost2 _normX_sym1_option_10_OLS_grnboost2)
+    suffixs=(_normX_sym1_option_5_OLS_new_grnboost2 _normX_sym1_option_10_OLS_new_grnboost2 _normX_sym1_option_10_OLS_topo_sort_new_grnboost2)
     seedsX=( {1..10..1} )
     seedsKnockoff=( 1 )
     # options=( 5 )
@@ -88,10 +88,10 @@ run() {
                     #     wait
                     # fi
 
-                    # _seedX=$(( seedX % 20 ))
-                    # if [ ${_seedX} -eq 10 ]; then
-                    #     wait
-                    # fi
+                    _seedX=$(( seedX % 20 ))
+                    if [ ${_seedX} -eq 10 ]; then
+                        wait
+                    fi
                 done
             done
         # done

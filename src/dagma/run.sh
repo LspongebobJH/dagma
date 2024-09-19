@@ -89,7 +89,7 @@ seedsX=( {1..10..1} )
 seedsKnockoff=( 1 )
 # nComps=( 3 4 )
 # options=( 10 )
-suffixs=(_normX_sym1_option_5_OLS_grnboost2 _normX_sym1_option_10_OLS_grnboost2)
+suffixs=(_normX_sym1_option_5_OLS_new_grnboost2 _normX_sym1_option_10_OLS_new_grnboost2 _normX_sym1_option_10_OLS_topo_sort_new_grnboost2)
 # suffixs=(_normX_sym1_option_1_PLS_dedup)
 cnt=0
 
@@ -110,9 +110,9 @@ for d in "${nodes[@]}"; do
             fi
 
             for seedX in "${seedsX[@]}"; do
-                if [ $suffix = '_normX_sym1_option_5_OLS_grnboost2' ]; then
+                if [ $suffix = '_normX_sym1_option_5_OLS_new_grnboost2' ]; then
                     CUDA_VISIBLE_DEVICES=${cuda_idx} \
-                    python knockoff_v44.py \
+                    python knockoff_genie3.py \
                     --W_type=W_est \
                     --data_version=v${dst_data_version} \
                     --dst_version=v${dst_version} \
@@ -127,9 +127,9 @@ for d in "${nodes[@]}"; do
                     --note="_normX_sym1_grnboost2" \
                     >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
 
-                elif [ $suffix = '_normX_sym1_option_10_OLS_grnboost2' ]; then
+                elif [ $suffix = '_normX_sym1_option_10_OLS_new_grnboost2' ]; then
                     CUDA_VISIBLE_DEVICES=${cuda_idx} \
-                    python knockoff_v44.py \
+                    python knockoff_genie3.py \
                     --W_type=W_est \
                     --data_version=v${dst_data_version} \
                     --dst_version=v${dst_version} \
@@ -137,6 +137,25 @@ for d in "${nodes[@]}"; do
                     --option=10 \
                     --d=${d} --s0=${s0} \
                     --method_diagn_gen=OLS_cuda \
+                    --dedup \
+                    --device=cuda:${cuda_idx} \
+                    --seed_X=${seedX} \
+                    --seed_knockoff=${seedKnockoff} \
+                    --note="_normX_sym1_grnboost2" \
+                    >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
+
+
+                elif [ $suffix = '_normX_sym1_option_10_OLS_topo_sort_new_grnboost2' ]; then
+                    CUDA_VISIBLE_DEVICES=${cuda_idx} \
+                    python knockoff_genie3.py \
+                    --W_type=W_est \
+                    --data_version=v${dst_data_version} \
+                    --dst_version=v${dst_version} \
+                    --fit_W_version=v${fit_W_version} \
+                    --option=10 \
+                    --d=${d} --s0=${s0} \
+                    --method_diagn_gen=OLS_cuda \
+                    --topo_sort \
                     --dedup \
                     --device=cuda:${cuda_idx} \
                     --seed_X=${seedX} \
@@ -156,9 +175,9 @@ for d in "${nodes[@]}"; do
                 cnt=$(( cnt + 1 ))
                 _cnt=$(( cnt % 20 ))
                 
-                # if [ ${_cnt} -eq 19 ]; then
-                #     wait
-                # fi
+                if [ ${_cnt} -eq 19 ]; then
+                    wait
+                fi
             done
         done
     done

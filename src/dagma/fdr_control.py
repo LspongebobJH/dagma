@@ -98,7 +98,7 @@ def type_1_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
 def type_2_control(W : np.ndarray, W_true : np.ndarray, fdr : int):
     pass
 
-def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int, Z_true : torch.Tensor = None, Z_knock : torch.Tensor = None):
+def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : float, Z_true : torch.Tensor = None, Z_knock : torch.Tensor = None):
     num_feat = configs['d']
     est_type = configs['est_type']
     numeric = configs['numeric']
@@ -120,6 +120,7 @@ def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
     T_T_true = np.abs(W_true)
     mask = (T_T_true > 0.)
     T_T_true[mask], T_T_true[~mask] = 1, 0
+    T_T_res = np.zeros_like(T_T_true, dtype=int)
 
     for i, col in enumerate(Z.T):
         if abs_t_list:
@@ -127,7 +128,6 @@ def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
         else:
             t_list = np.sort(np.concatenate(([0], np.unique(col))))
         fdr_est_last = 1.
-        fdr_true_last, power_last = 1., 1.
         t_last = np.inf
             
         for t in reversed(t_list):
@@ -149,20 +149,23 @@ def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
             if fdr_est <= fdr:
                 t_last = t
                 fdr_est_last = fdr_est
-                fdr_true_last, power_last = fdr_true, power
-
-        logger.debug(f"end feat {i} | expected fdr {fdr:.4f} | sel thresh {t_last:.4e} | "
-              f"est fdr {fdr_est_last:.4f} | true fdr {fdr_true_last:.4f} | true power {power_last:.4f}")
+        
         if abs_selection:
             mask = (np.abs(Z[:, i] >= t_last))
         else:
             mask = (Z[:, i] >= t_last)
-        Z[mask, i], Z[~mask, i] = 1, 0
-    T_T = Z
+        Z_B = np.zeros(Z.shape[0], dtype=int)
+        Z_B[mask], Z_B[~mask] = 1, 0
+        perf = utils_dagma.count_accuracy_simplify(T_T_true[:, i], Z_B, verify_dag = False)
+        fdr_true, power = perf['fdr'], perf['tpr']
+
+        logger.debug(f"end feat {i} | expected fdr {fdr:.4f} | sel thresh {t_last:.4e} | "
+              f"est fdr {fdr_est_last:.4f} | true fdr {fdr_true:.4f} | true power {power:.4f}")
+        T_T_res[:, i] = Z_B
     
-    perf = utils_dagma.count_accuracy_simplify(T_T_true, T_T)
+    perf = utils_dagma.count_accuracy_simplify(T_T_true, T_T_res)
     fdr_true, power = perf['fdr'], perf['tpr']
-    if utils_dagma.is_dag(T_T):
+    if utils_dagma.is_dag(T_T_res):
         logger.info("W_est is DAG")
     else:
         logger.info("W_est is NOT DAG")
@@ -170,7 +173,7 @@ def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : in
     logger.info(f"==============================")
     return fdr_true, power
 
-def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int, W_full: np.ndarray = None):
+def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : float, W_full: np.ndarray = None):
     num_feat = configs['d']
     est_type = configs['est_type']
     numeric = configs['numeric']

@@ -108,10 +108,12 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
     time_start = time.time()
     
     # Check input arguments
-    if not isinstance(expr_data,ndarray):
+    if not use_knockoff and not isinstance(expr_data,ndarray):
         raise ValueError('expr_data must be an array in which each row corresponds to a condition/sample and each column corresponds to a gene')
-        
-    ngenes = expr_data.shape[1]
+    if use_knockoff:
+        ngenes = expr_data['X'].shape[1] * 2
+    else:
+        ngenes = expr_data.shape[1]
     target_ngenes = ngenes // 2
     
     if gene_names is not None: # default not in
@@ -179,7 +181,12 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
                 _input_idx.remove(i)
             if use_knockoff:
                 _input_idx.remove(i + target_ngenes)
-            input_data.append( [expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2] )
+                _expr_data = np.zeros((expr_data['X'].shape[0], ngenes))
+                _expr_data[:, :target_ngenes] = expr_data['X']
+                _expr_data[:, target_ngenes+1:] = expr_data['X_tilde'][i]
+            else:
+                _expr_data = expr_data
+            input_data.append( [_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2] )
 
         pool = Pool(nthreads)
         alloutput = pool.map(wr_GENIE3_single, input_data)
@@ -197,7 +204,12 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
                 _input_idx.remove(i)
             if use_knockoff:
                 _input_idx.remove(i + target_ngenes)
-            vi = GENIE3_single(expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2)
+                _expr_data = np.zeros((expr_data['X'].shape[0], ngenes))
+                _expr_data[:, :target_ngenes] = expr_data['X']
+                _expr_data[:, target_ngenes+1:] = expr_data['X_tilde'][i]
+            else:
+                _expr_data = expr_data
+            vi = GENIE3_single(_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2)
             VIM[i,:] = vi
 
    
@@ -230,9 +242,9 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboo
     output = output / std(output)
     
     # Remove target gene from candidate regulators
-    input_idx = input_idx[:]
-    if output_idx in input_idx:
-        input_idx.remove(output_idx)
+    # input_idx = input_idx[:]
+    # if output_idx in input_idx:
+    #     input_idx.remove(output_idx)
 
     expr_data_input = expr_data[:,input_idx]
     
