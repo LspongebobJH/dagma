@@ -1,6 +1,8 @@
 * log_97: test different options and knockoff fitting models (OLS, XGB, etc)
 * log_98: based on option 5 all variants
 * log_99: based on W_true in [-1, 1] (workable simulations), try different options of knockoff fitting
+* log_100: similar to log_99, but for genie3 and grnboost2
+* * col: column-wise fdr control
 
 
 

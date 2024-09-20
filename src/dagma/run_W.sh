@@ -43,7 +43,12 @@ run() {
 
     n=2000
     s0=$(( d * 6 ))
-    suffixs=(_normX_sym1_option_5_OLS_new_grnboost2 _normX_sym1_option_10_OLS_new_grnboost2 _normX_sym1_option_10_OLS_topo_sort_new_grnboost2)
+    suffixs=(_normX_sym1_option_5_PLS_disable_norm_grnboost2
+         _normX_sym1_option_10_PLS_disable_norm_grnboost2
+         _normX_sym1_option_10_PLS_topo_sort_disable_norm_grnboost2
+         _normX_sym1_option_5_OLS_disable_norm_grnboost2
+         _normX_sym1_option_10_OLS_disable_norm_grnboost2
+         _normX_sym1_option_10_OLS_topo_sort_disable_norm_grnboost2)
     seedsX=( {1..10..1} )
     seedsKnockoff=( 1 )
     # options=( 5 )
@@ -74,6 +79,8 @@ run() {
                     --seed_knockoff $seedKnockoff \
                     --root_path simulated_data/v${dst_data_version} \
                     --version ${version} \
+                    --knock_genie3_type unified \
+                    --disable_norm \
                     --device cuda:${cuda_idx} > simulated_data/v${dst_data_version}/v${version}/W/log_${seedX}_${seedKnockoff}_0 2>&1 &
 
                     cuda_idx=$(( cuda_idx + 1))
@@ -84,14 +91,14 @@ run() {
                     cnt=$(( cnt + 1 ))
                     _cnt=$(( cnt % 20 ))
                     
-                    # if [ ${_cnt} -eq 19 ]; then
-                    #     wait
-                    # fi
-
-                    _seedX=$(( seedX % 20 ))
-                    if [ ${_seedX} -eq 10 ]; then
+                    if [ ${_cnt} -eq 19 ]; then
                         wait
                     fi
+
+                    # _seedX=$(( seedX % 20 ))
+                    # if [ ${_seedX} -eq 10 ]; then
+                    #     wait
+                    # fi
                 done
             done
         # done

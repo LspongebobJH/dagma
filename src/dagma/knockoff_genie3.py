@@ -1,3 +1,9 @@
+"""
+Knockoff generation specific to Genie3 and GRNBoost2, fit p*n*(p-1) X_tilde,
+where each n*(p-1) is X_tilde of a design matrix X (n*(p-1)) corresponding to 
+a regression task.
+"""
+
 import utils, utils_dagma, pickle, os, yaml
 import numpy as np
 import networkx as nx

@@ -186,7 +186,14 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
     logger.info(f"==============================")
     logger.info(f"expected FDR {fdr}")
 
+    if not (np.diag(W[:num_feat, :]) == 0.).all():
+        logger.warning("W11 has non-zero diagonals, now forcibly remove self-loops.")
+        W[:num_feat, :] = W[:num_feat, :] - np.diag(np.diag(W[:num_feat, :]))
+    if not (np.diag(W[num_feat:, :]) == 0.).all():
+        logger.warning("W21 has non-zero diagonals, now forcibly remove self-loops.")
+        W[num_feat:, :] = W[num_feat:, :] - np.diag(np.diag(W[num_feat:, :]))
     Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])
+        
 
     if trick == 'trick_1':
         Z1 = np.abs(W_full[:num_feat, num_feat:]) - np.abs(W_full[num_feat:, num_feat:])

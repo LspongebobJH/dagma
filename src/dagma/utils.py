@@ -128,10 +128,21 @@ def fit(X_all, configs, original=False):
                                         return_no_filter=True)
 
     elif gen_W == 'genie3':
-        W_est_no_filter = GENIE3(X_all, nthreads=configs['nthreads'], use_knockoff=True)
+        W_est_no_filter = GENIE3(X_all, 
+                                 knock_genie3_type=configs['knock_genie3_type'], 
+                                 nthreads=configs['nthreads'], 
+                                 use_knockoff=True,
+                                 disable_remove_self=configs['disable_remove_self'],
+                                 disable_norm=configs['disable_norm'])
 
     elif gen_W == 'grnboost2':
-        W_est_no_filter = GENIE3(X_all, nthreads=configs['nthreads'], use_knockoff=True, use_grnboost2=True)
+        W_est_no_filter = GENIE3(X_all, 
+                                 knock_genie3_type=configs['knock_genie3_type'], 
+                                 nthreads=configs['nthreads'], 
+                                 use_knockoff=True, 
+                                 use_grnboost2=True,
+                                 disable_remove_self=configs['disable_remove_self'],
+                                 disable_norm=configs['disable_norm'])
     
     return W_est_no_filter, Z_true, Z_knock
 

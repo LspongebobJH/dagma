@@ -61,7 +61,46 @@ class EarlyStopMonitor:
         else:
             return False
 
-def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',ntrees=1000,nthreads=1,use_knockoff=False,use_grnboost2=False):
+def preprocess_input_idx_expr_data(expr_data, knock_genie3_type, input_idx: list, use_knockoff: bool, remove_self: bool, 
+                    i: int, target_ngenes: int, input_ngenes: int):
+    _input_idx = deepcopy(input_idx)
+    if remove_self:
+        # input_idx
+        if i in _input_idx:
+            _input_idx.remove(i)
+        if use_knockoff:
+            _input_idx.remove(i + target_ngenes)
+        
+    if use_knockoff:
+        if knock_genie3_type == 'separate':
+            _expr_data = np.zeros((expr_data['X'].shape[0], input_ngenes))
+            _expr_data[:, :target_ngenes] = expr_data['X']
+            _expr_data[:, target_ngenes+1:] = expr_data['X_tilde'][i] 
+            # we manipulate _expr_data since they are insufficient elements in expr_data['X_tilde'][i]
+            # to fill in _expr_data[:, target_ngenes:]
+            
+        elif knock_genie3_type == 'unified':
+            _expr_data = expr_data
+
+    else:
+        _expr_data = expr_data
+    
+    return _input_idx, _expr_data
+
+
+def GENIE3(expr_data, 
+           knock_genie3_type=None,
+           gene_names=None,
+           regulators='all',
+           tree_method='RF',
+           K='sqrt',
+           ntrees=1000,
+           nthreads=1,
+           use_knockoff=False,
+           use_grnboost2=False,
+           disable_remove_self=False,
+           disable_norm=False
+           ):
     
     '''Computation of tree-based scores for all putative regulatory links.
     Notes: GRNBoost2 = GENIE3(RF -> Gradient Boosted Tree) + Early stop + new feature importance measure + SGBM kwargs.
@@ -106,20 +145,28 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
     '''
     
     time_start = time.time()
-    
+    if use_knockoff:
+        assert knock_genie3_type is not None and knock_genie3_type in ['separate', 'unified']
+
     # Check input arguments
     if not use_knockoff and not isinstance(expr_data,ndarray):
         raise ValueError('expr_data must be an array in which each row corresponds to a condition/sample and each column corresponds to a gene')
+    
     if use_knockoff:
-        ngenes = expr_data['X'].shape[1] * 2
+        if knock_genie3_type == 'separate':
+            target_ngenes = expr_data['X'].shape[1]
+            input_ngenes = expr_data['X'].shape[1] * 2
+        elif knock_genie3_type == 'unified':
+            target_ngenes = expr_data.shape[1] // 2
+            input_ngenes = expr_data.shape[1]
     else:
-        ngenes = expr_data.shape[1]
-    target_ngenes = ngenes // 2
+        target_ngenes = expr_data.shape[1]
+        input_ngenes = target_ngenes
     
     if gene_names is not None: # default not in
         if not isinstance(gene_names,(list,tuple)):
             raise ValueError('input argument gene_names must be a list of gene names')
-        elif len(gene_names) != ngenes:
+        elif len(gene_names) != target_ngenes:
             raise ValueError('input argument gene_names must be a list of length p, where p is the number of columns/genes in the expr_data')
         
     if regulators != 'all':
@@ -157,36 +204,29 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
     print('K: ' + str(K))
     print('Number of trees: ' + str(ntrees))
     print('\n')
-        
     
     # Get the indices of the candidate regulators
     if regulators == 'all':
-        input_idx = list(range(ngenes))
+        input_idx = list(range(input_ngenes))
     else:
         input_idx = [i for i, gene in enumerate(gene_names) if gene in regulators]
 
     
     # Learn an ensemble of trees for each target gene, and compute scores for candidate regulators
 
-    VIM = zeros((ngenes,ngenes))
+    # actual only the [:, :target_ngenes] being used.
+    VIM = zeros((input_ngenes,input_ngenes))
     
     if nthreads > 1:
         print('running jobs on %d threads' % nthreads)
 
         input_data = list()
-        _ngenes = ngenes if not use_knockoff else target_ngenes
-        for i in range(_ngenes):
-            _input_idx = deepcopy(input_idx)
-            if i in _input_idx:
-                _input_idx.remove(i)
-            if use_knockoff:
-                _input_idx.remove(i + target_ngenes)
-                _expr_data = np.zeros((expr_data['X'].shape[0], ngenes))
-                _expr_data[:, :target_ngenes] = expr_data['X']
-                _expr_data[:, target_ngenes+1:] = expr_data['X_tilde'][i]
-            else:
-                _expr_data = expr_data
-            input_data.append( [_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2] )
+        for i in range(target_ngenes):
+            _input_idx, _expr_data = \
+                preprocess_input_idx_expr_data(expr_data, knock_genie3_type, input_idx, use_knockoff, 
+                                               not disable_remove_self, 
+                                               i, target_ngenes, input_ngenes)
+            input_data.append( [_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm] )
 
         pool = Pool(nthreads)
         alloutput = pool.map(wr_GENIE3_single, input_data)
@@ -196,26 +236,19 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
 
     else:
         print('running single threaded jobs')
-        _ngenes = ngenes if not use_knockoff else target_ngenes
-        for i in range(_ngenes):
-            print('Gene %d/%d...' % (i+1,_ngenes))
-            _input_idx = deepcopy(input_idx)
-            if i in _input_idx:
-                _input_idx.remove(i)
-            if use_knockoff:
-                _input_idx.remove(i + target_ngenes)
-                _expr_data = np.zeros((expr_data['X'].shape[0], ngenes))
-                _expr_data[:, :target_ngenes] = expr_data['X']
-                _expr_data[:, target_ngenes+1:] = expr_data['X_tilde'][i]
-            else:
-                _expr_data = expr_data
-            vi = GENIE3_single(_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2)
+        for i in range(target_ngenes):
+            print('Gene %d/%d...' % (i+1,target_ngenes))
+            _input_idx, _expr_data = \
+                preprocess_input_idx_expr_data(expr_data, knock_genie3_type, input_idx, use_knockoff, 
+                                               not disable_remove_self, 
+                                               i, target_ngenes, input_ngenes)
+            vi = GENIE3_single(_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm)
             VIM[i,:] = vi
 
    
     VIM = transpose(VIM)
 
-    if use_knockoff:
+    if use_knockoff and not disable_remove_self:
         assert (np.diag(VIM[:target_ngenes, :target_ngenes]) == 0).all()
         assert (np.diag(VIM[target_ngenes:, :target_ngenes]) == 0).all()
  
@@ -227,11 +260,11 @@ def GENIE3(expr_data,gene_names=None,regulators='all',tree_method='RF',K='sqrt',
     
     
 def wr_GENIE3_single(args):
-    return([args[1], GENIE3_single(args[0], args[1], args[2], args[3], args[4], args[5], args[6])])
+    return([args[1], GENIE3_single(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7])])
     
 
 
-def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboost2):
+def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm):
     
     ngenes = expr_data.shape[1]
     
@@ -239,7 +272,8 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboo
     output = expr_data[:,output_idx]
     
     # Normalize output data
-    output = output / std(output)
+    if not disable_norm:
+        output = output / std(output)
     
     # Remove target gene from candidate regulators
     # input_idx = input_idx[:]
@@ -288,16 +322,18 @@ if __name__ == '__main__':
     parser.add_argument('--d', type=int, default=10)
     parser.add_argument('--s0', type=int, default=40)
     parser.add_argument('--seed_X', type=int, default=1)
-    parser.add_argument('--note', type=str, default="")
+    parser.add_argument('--src_note', type=str, default="")
+    parser.add_argument('--dst_note', type=str, default="")
     parser.add_argument('--nthreads', type=int, default=1)
-    parser.add_argument('--use_grnboost2', action='store_true', default=False) 
+    parser.add_argument('--use_grnboost2', action='store_true', default=False)
+    parser.add_argument('--disable_norm', action='store_true', default=False) 
     args = parser.parse_args()
 
     utils.set_random_seed(0)
     
     n, d = 2000, args.d
     s0 = args.s0
-    version = f"v11/v{d}_{s0}" + args.note
+    version = f"v11/v{d}_{s0}" + args.src_note
     root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
     data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
 
@@ -306,7 +342,7 @@ if __name__ == '__main__':
     X, W_true = data['X'], data['W_true']
     B_true = (W_true != 0)
 
-    W_est = GENIE3(X, nthreads=args.nthreads, use_grnboost2=args.use_grnboost2)
+    W_est = GENIE3(X, nthreads=args.nthreads, use_grnboost2=args.use_grnboost2, disable_norm=args.disable_norm)
 
     prec, rec, threshold = precision_recall_curve(B_true.flatten(), np.abs(W_est).flatten())
     auprc = auc(rec, prec)
@@ -317,10 +353,7 @@ if __name__ == '__main__':
     data_dir = os.path.join(root_dir, "v48", f"{d}_{s0}")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
-    if args.use_grnboost2:
-        data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.note}_grnboost2.pkl")
-    else:
-        data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.note}.pkl")
+    data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.dst_note}.pkl")
     if os.path.exists(data_path):
         raise Exception(f"{data_path} already exists")
     with open(data_path, 'wb') as f:

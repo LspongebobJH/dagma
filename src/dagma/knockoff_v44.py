@@ -1,3 +1,8 @@
+"""
+General knockoff generation, considering the whole X (n*p) as a design matrix, and 
+generating X_tilde (n*p) for the whole X.
+"""
+
 import utils, utils_dagma, pickle, os, yaml
 import numpy as np
 import networkx as nx

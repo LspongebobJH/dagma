@@ -77,12 +77,13 @@
                 "--d=100",
                 "--s0=600",
                 "--root_path=simulated_data/v49",
-                "--version=100_600_normX_sym1_option_10_PLS_topo_sort_new_grnboost2",
+                "--version=100_600_normX_sym1_option_10_PLS_grnboost2",
                 // "--norm_data_gen=B_1_col", 
                 "--force_save",
                 "--seed_X=1",
                 "--seed_knockoff=1",
-                "--use_genie3"
+                "--knock_genie3_type=unified",
+                "--disable_remove_self"
                 // "--device=cuda:7"
             ]
         },
