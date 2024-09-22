@@ -213,7 +213,7 @@ d1_list=(10 40 80)
 n_nodes=100
 n_edges=600
 
-seedsX=( {1..10..1} )
+seedsX=( {1..3..1} )
 for d1 in "${d1_list[@]}"; do
     for seedX in "${seedsX[@]}"; do
         d2=$(( n_nodes - d1 ))
