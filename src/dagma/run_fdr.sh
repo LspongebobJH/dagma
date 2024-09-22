@@ -92,33 +92,86 @@
 ####################################################################
 
 run() {
-    data_version=46
-    log_file_global=98
-    options=(5)
-    norms=(col row)
+    # data_version=44
+    data_version=49
+    log_file_global=100
+    # options=( 7 9 1 2 10 11 )
+    # options=(1 2 7 9 10 11 12 )
+    # options=( 5 )
+    suffixs=(_normX_sym1_option_5_PLS_disable_norm_grnboost2
+         _normX_sym1_option_10_PLS_disable_norm_grnboost2
+         _normX_sym1_option_10_PLS_topo_sort_disable_norm_grnboost2
+         _normX_sym1_option_5_OLS_disable_norm_grnboost2
+         _normX_sym1_option_10_OLS_disable_norm_grnboost2
+         _normX_sym1_option_10_OLS_topo_sort_disable_norm_grnboost2)
+    control_options=(col global)
+    # option=5
     n=2000
-    nodes=(60)
-    for option in "${options[@]}"; do
-        for d in "${nodes[@]}"; do
-            for norm in "${norms[@]}"; do
+    # nComps=( 3 4 )
+    
+    nodes=(100)
+    for d in "${nodes[@]}"; do
+        # for option in "${options[@]}"; do
+        for suffix in "${suffixs[@]}"; do
+            for control in "${control_options[@]}"; do
                 s0=$(( d * 6 ))
-                version=${d}_${s0}_option_${option}_OLS_${norm}
 
-                python multi_main.py \
-                --n $n --s0 $s0 --d $d \
-                --control_type=type_3_global \
-                --seed_X_list=86,85,52,40,18,26,74,63,2,1 \
-                --seed_knockoff_list=1 \
-                --seed_model_list=0 \
-                --version=$version \
-                --root_path simulated_data/v${data_version} \
-                --n_jobs=4 \
-                --log_file=log_${log_file_global}/log_${data_version}_${version} &
+                # version=${d}_${s0}_condX_5e4_option_5_OLS
+                # python multi_main.py \
+                # --n $n --s0 $s0 --d $d \
+                # --control_type=type_3_global \
+                # --seed_X_list=3,4,5,6,11,12,13,15,17,18 \
+                # --seed_knockoff_list=1 \
+                # --seed_model_list=0 \
+                # --version=$version \
+                # --root_path simulated_data/v${data_version} \
+                # --n_jobs=4 \
+                # --log_file=log_${log_file_global}/log_${data_version}_${version} &
                 # wait
+
+                # version=${d}_${s0}_normX_sym1_option_${option}_PLS
+                version=${d}_${s0}${suffix}
+                if [ $control == 'col' ]; then
+                    python multi_main.py \
+                    --n $n --s0 $s0 --d $d \
+                    --control_type=type_3 \
+                    --seed_X_list=1,10,-1 \
+                    --seed_knockoff_list=1 \
+                    --seed_model_list=0 \
+                    --version=$version \
+                    --root_path simulated_data/v${data_version} \
+                    --n_jobs=4 \
+                    --log_file=log_${log_file_global}/log_${data_version}_${version}_col_1-10 &
+                elif [ $control == 'global' ]; then
+                    python multi_main.py \
+                    --n $n --s0 $s0 --d $d \
+                    --control_type=type_3_global \
+                    --seed_X_list=1,10,-1 \
+                    --seed_knockoff_list=1 \
+                    --seed_model_list=0 \
+                    --version=$version \
+                    --root_path simulated_data/v${data_version} \
+                    --n_jobs=4 \
+                    --log_file=log_${log_file_global}/log_${data_version}_${version}_1-10 &
+                fi
+                
+
+                # version=${d}_${s0}_normX_B1Col_option_5_OLS
+                # python multi_main.py \
+                # --n $n --s0 $s0 --d $d \
+                # --control_type=type_3_global \
+                # --seed_X_list=1,2,7,8,9,10,14,16,19,23 \
+                # --seed_knockoff_list=1 \
+                # --seed_model_list=0 \
+                # --version=$version \
+                # --root_path simulated_data/v${data_version} \
+                # --n_jobs=4 \
+                # --log_file=log_${log_file_global}/log_${data_version}_${version} &
+                # # wait
             done
         done
-        # wait
     done
+
 }
 
 run

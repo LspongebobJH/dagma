@@ -27,9 +27,13 @@ parser.add_argument('--device', type=str, default=None)
 parser.add_argument('--root_path', type=str, default=None)
 
 parser.add_argument('--knock_type', type=str, default=None, 
-                    choices=['permutation', 'knockoff_gan', 'deep_knockoff', 
+                    choices=['permutation', 'deep_knockoff', 
                              'knockoff_diagn'])
-parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W', 'W_torch'])
+parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'X_bi', 'knockoff', 'W', 'W_torch', 'W_genie3', 'W_grnboost2'])
+parser.add_argument('--d1', type=int, default=None, help="available only when X_bi")
+parser.add_argument('--d2', type=int, default=None, help="available only when X_bi")
+parser.add_argument('--noise_scale_X', type=float, default=1., help="available only when gen_type == X")
+parser.add_argument('--norm_data_gen', type=str, default=None, choices=['topo_col', 'B_1_col', 'sym_1'])
 
 # Note that type_3_global has the same knockoff statistics as type_3, only the FDR estimate different
 parser.add_argument('--dagma_type', type=str, default=None, 
@@ -51,7 +55,7 @@ parser.add_argument('--lasso_alpha', type=str, default=None, choices=['knockoff_
 
 # parameters of damga
 parser.add_argument('--norm_DAGMA', action='store_true', default=None) # deprecated
-parser.add_argument('--norm', type=str, choices=['col', 'row'])
+parser.add_argument('--norm', type=str, default=None, choices=['col', 'row'])
 parser.add_argument('--disable_block_diag_removal', action='store_true', default=None)
 parser.add_argument('--deconv_type_dagma', type=str, default=None, 
                     choices=[None, 'deconv_1', 'deconv_2', 'deconv_4',
@@ -62,6 +66,15 @@ parser.add_argument('--warm_iter', type=int, default=None)
 parser.add_argument('--use_g_dir_loss', action='store_true', default=None)
 parser.add_argument('--T', type=int, default=None)
 
+# parameters of genie3 and grnboost2 fitting W
+parser.add_argument('--disable_remove_self', action='store_true', default=False)
+parser.add_argument('--disable_norm', action='store_true', default=False)
+parser.add_argument('--knock_genie3_type', type=str, choices=['separate', 'unified'])
+parser.add_argument('--nthreads', type=int, default=1)
+
+# deprecated
+parser.add_argument('--cond_thresh_X', type=float, default=None, help="available only when gen_type == X")
+
 args = parser.parse_args()
 
 args.gen_W = None
@@ -69,9 +82,18 @@ if args.gen_type == 'W_torch':
     args.gen_type = 'W'
     args.gen_W = 'torch'
 
+elif args.gen_type == 'W_genie3':
+    args.gen_type = 'W'
+    args.gen_W = 'genie3'
+
+elif args.gen_type == 'W_grnboost2':
+    args.gen_type = 'W'
+    args.gen_W = 'grnboost2'
+
 configs = utils.combine_configs(configs, args)
 
 assert configs['seed_model'] == 0, "no need for random model seeds now."
+
 
 print("configs")
 pprint.PrettyPrinter(width=20).pprint(configs)
@@ -85,17 +107,67 @@ if __name__ == '__main__':
         print(f"{path_config} or {path_data} already exists, jump.")
     
     else:
+        if configs['gen_type'] != 'X':
+            assert configs['cond_thresh_X'] is None
+
         if configs['gen_type'] == 'X':
             # only one X for now
             # assert configs['seed_X'] == 1
             utils.set_random_seed(configs['seed_X'])
 
             B_true = utils_dagma.simulate_dag(configs['d'], configs['s0'], configs['graph_type'])
-            W_true = utils_dagma.simulate_parameter(B_true)
-            X = utils_dagma.simulate_linear_sem(W_true, configs['n'], configs['sem_type'])
-            data_X = {'X': X, 'W_true': W_true}
+            if configs['norm_data_gen'] == 'sym_1':
+                W_true = utils_dagma.simulate_parameter(B_true, [(-1., 1.)])
+            else:  
+                W_true = utils_dagma.simulate_parameter(B_true)
+            if configs['norm_data_gen'] == 'B_1_col':
+                W_true /= (B_true.sum(axis=0, keepdims=True) + 1.)
+            X = utils_dagma.simulate_linear_sem(W_true, configs['n'], configs['sem_type'], norm_data_gen=configs['norm_data_gen'], 
+                                                noise_scale=configs['noise_scale_X'])
+            cond_X = np.linalg.cond(X).item()
+            configs['real_cond_X'] = cond_X
 
-            utils.process_simulated_data(data_X, configs, behavior='save')
+            if (configs['cond_thresh_X'] is not None and cond_X < configs['cond_thresh_X']) \
+                or configs['cond_thresh_X'] is None:
+
+                data_X = {'X': X, 'W_true': W_true}
+
+                utils.process_simulated_data(data_X, configs, behavior='save')
+            else:
+                print(f"cond_X {cond_X} > {configs['cond_thresh_X']}")
+
+        elif configs['gen_type'] == 'X_bi': # Bipartite graph
+            assert configs['d'] is None and configs['d1'] is not None and configs['d2'] is not None
+
+            # simulate bipartite graph
+            utils.set_random_seed(configs['seed_X'])
+            G_true = nx.bipartite.gnmk_random_graph(n=configs['d1'], m=configs['d2'], k=s0)
+            B_true = nx.to_numpy_array(G_true, nodelist=list(range(configs['d1'])) + list(range(configs['d1'], configs['d1']+configs['d2'])))
+            B_true = np.triu(B_true)
+            
+            # simulate W_true
+            if configs['norm_data_gen'] == 'sym_1':
+                W_true = utils_dagma.simulate_parameter(B_true, [(-1., 1.)])
+            else:  
+                W_true = utils_dagma.simulate_parameter(B_true)
+            if configs['norm_data_gen'] == 'B_1_col':
+                W_true /= (B_true.sum(axis=0, keepdims=True) + 1.)
+
+            breakpoint()
+            # simulated X
+            X = utils_dagma.simulate_linear_sem(W_true, configs['n'], configs['sem_type'], norm_data_gen=configs['norm_data_gen'], 
+            cond_X = np.linalg.cond(X).item()
+            configs['real_cond_X'] = cond_X
+
+            # save data
+            if (configs['cond_thresh_X'] is not None and cond_X < configs['cond_thresh_X']) \
+                or configs['cond_thresh_X'] is None:
+
+                data_X = {'X': X, 'W_true': W_true}
+
+                utils.process_simulated_data(data_X, configs, behavior='save')
+            else:
+                print(f"cond_X {cond_X} > {configs['cond_thresh_X']}")
 
         elif configs['gen_type'] == 'knockoff':
             
@@ -126,15 +198,22 @@ if __name__ == '__main__':
 
             utils.set_random_seed(configs['seed_model'])
 
-            if configs['norm'] == 'col':
-                X_mean = X.mean(axis=0, keepdims=True)
-                X_std = X.std(axis=0, keepdims=True)
-            elif configs['norm'] == 'row':
-                X_mean = X.mean(axis=1, keepdims=True)
-                X_std = X.std(axis=1, keepdims=True)
-            X = (X - X_mean) / (X_std + 1e-8)
+            if configs['norm'] is not None:
+                if configs['norm'] == 'col':
+                    X_mean = X.mean(axis=0, keepdims=True)
+                    X_std = X.std(axis=0, keepdims=True)
+                elif configs['norm'] == 'row':
+                    X_mean = X.mean(axis=1, keepdims=True)
+                    X_std = X.std(axis=1, keepdims=True)
+                X = (X - X_mean) / (X_std + 1e-8)
 
-            X_all = np.concatenate([X, X_tilde], axis=-1)
+            if configs['gen_W'] in ['genie3', 'grnboost2'] and configs['knock_genie3_type'] == 'separate':
+                X_all = {
+                    'X': X,
+                    'X_tilde': X_tilde
+                }
+            else:
+                X_all = np.concatenate([X, X_tilde], axis=-1)
 
             W_est_no_filter, Z_true, Z_knock = utils.fit(X_all, configs)
             data_W = {

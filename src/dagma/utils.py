@@ -10,6 +10,7 @@ import yaml
 import logging
 from argparse import ArgumentParser
 from numpy.linalg import eigh, inv
+from genie3 import GENIE3
 
 
 import utils_dagma
@@ -27,6 +28,8 @@ def set_random_seed(seed):
 
 def process_simulated_data(data, configs, behavior):
     assert behavior in ['save', 'load']
+    if behavior == 'save':
+        force_save = configs.get('force_save', False)
     if behavior == 'load':
         assert data is None
 
@@ -39,13 +42,13 @@ def process_simulated_data(data, configs, behavior):
     if behavior == 'save':
         logger.debug(f"save {gen_type} with seed {_seed} in {data_dir}")
 
-        if os.path.exists(path_config):
+        if os.path.exists(path_config) and not force_save:
             logger.debug(f"{path_config} already exists.")
             return
         with open(path_config, 'w') as f:
             yaml.dump(configs, f)
 
-        if os.path.exists(path_data):
+        if os.path.exists(path_data) and not force_save:
             logger.debug(f"{path_config} already exists.")
             return
         with open(path_data, 'wb') as f:
@@ -86,7 +89,7 @@ def fit(X_all, configs, original=False):
     warm_iter = configs['warm_iter']
 
     # assert gen_W in [None, 'torch']
-    assert gen_W == 'torch'
+    assert gen_W in ['torch', 'genie3', 'grnboost2']
     assert dagma_type == 'dagma_1'
 
     W_est_no_filter, Z_true, Z_knock = \
@@ -96,7 +99,7 @@ def fit(X_all, configs, original=False):
         from linear import DagmaLinear
         model = DagmaLinear(loss_type='l2', verbose=True)
         W_est_no_filter, _ = model.fit(dagma_type, X_all, lambda1=0.02, return_no_filter=True)
-    else: # gen_W == torch
+    elif gen_W == 'torch':
         d = configs['d']
         device = configs['device']
         deconv_type_dagma = configs['deconv_type_dagma']
@@ -123,6 +126,23 @@ def fit(X_all, configs, original=False):
         W_est_no_filter, _  = model.fit(X_all, lambda1=0.02, lambda2=0.005, warm_iter=warm_iter, 
                                         T=T,
                                         return_no_filter=True)
+
+    elif gen_W == 'genie3':
+        W_est_no_filter = GENIE3(X_all, 
+                                 knock_genie3_type=configs['knock_genie3_type'], 
+                                 nthreads=configs['nthreads'], 
+                                 use_knockoff=True,
+                                 disable_remove_self=configs['disable_remove_self'],
+                                 disable_norm=configs['disable_norm'])
+
+    elif gen_W == 'grnboost2':
+        W_est_no_filter = GENIE3(X_all, 
+                                 knock_genie3_type=configs['knock_genie3_type'], 
+                                 nthreads=configs['nthreads'], 
+                                 use_knockoff=True, 
+                                 use_grnboost2=True,
+                                 disable_remove_self=configs['disable_remove_self'],
+                                 disable_norm=configs['disable_norm'])
     
     return W_est_no_filter, Z_true, Z_knock
 

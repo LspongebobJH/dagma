@@ -1,20 +1,9 @@
+* log_97: test different options and knockoff fitting models (OLS, XGB, etc)
+* log_98: based on option 5 all variants
+* log_99: based on W_true in [-1, 1] (workable simulations), try different options of knockoff fitting
+* log_100: similar to log_99, but for genie3 and grnboost2
+* * col: column-wise fdr control
 
-
-* log_77 (data version v34)(baseline, normal): 
-sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_3_global (no dag control), knockoffDiagnosis
-name is the n_nodes.
-
-* log_79 ~ log_87: trick experiments
-W_torch, type_#_global, (no dag control), knockoffDiagnosis, with adjust marg
-* * 79: trick_1
-* * 80: trick_2
-* * 81: trick_3 (works)
-* * 82: trick_4
-* * 83: trick_5
-* * 84: trick_6
-* * 85: trick_3_1 (works, same as trick_3 by simplify the formula)
-* * 86: trick_7 (works but quite low power, a part of trick_3)
-* * 87: trick_8
 
 
 
@@ -294,6 +283,23 @@ name is the n_nodes.
 * log_78 (data version v36)
 sweep, 2000 samples, [n * 4] edges, W_torch, type_3_global (no dag control) and type_4_global (dag_7), knockoffDiagnosis, no adjust_marg
 name is the n_nodes.
+
+* log_77 (data version v34)(baseline, normal): 
+sweep, 2000 samples, [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200] nodes, [n * 4] edges, W_torch, type_3_global (no dag control), knockoffDiagnosis
+name is the n_nodes.
+
+* log_79 ~ log_87: trick experiments
+W_torch, type_#_global, (no dag control), knockoffDiagnosis, with adjust marg
+* * 79: trick_1
+* * 80: trick_2
+* * 81: trick_3 (works)
+* * 82: trick_4
+* * 83: trick_5
+* * 84: trick_6
+* * 85: trick_3_1 (works, same as trick_3 by simplify the formula)
+* * 86: trick_7 (works but quite low power, a part of trick_3)
+* * 87: trick_8
+
 
 ==================
 === deprecated ===

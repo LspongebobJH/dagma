@@ -441,19 +441,19 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--d', type=int, default=None)
     parser.add_argument('--s0', type=int, default=None)
-    parser.add_argument('--seed', type=int, default=1)
+    parser.add_argument('--seed_X', type=int, default=1)
+    parser.add_argument('--note', type=str, default="")
     parser.add_argument('--device', type=str, default='cuda:7') 
     args = parser.parse_args()
 
-    
-    utils.set_random_seed(args.seed)
+    utils.set_random_seed(0)
     
     n, d = 2000, args.d
     s0 = args.s0
-    version = f"v11/v{d}_{s0}"
+    version = f"v11/v{d}_{s0}" + args.note
     device = args.device
-    data_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
-    data_path = os.path.join(data_dir, version, 'X', 'X_1.pkl')
+    root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
 
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
@@ -467,7 +467,10 @@ if __name__ == '__main__':
     acc = utils_dagma.count_accuracy(B_true, W_est != 0, use_logger=False)
     print(acc)
 
-    data_path = os.path.join(data_dir, "v39", f"W_{d}_{s0}_{args.seed}.pkl")
+    data_dir = os.path.join(root_dir, "v39", f"{d}_{s0}")
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.note}.pkl")
     with open(data_path, 'wb') as f:
         pickle.dump(W_est_no_filter, f)
     print("DONE")

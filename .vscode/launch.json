@@ -5,7 +5,43 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "test.py",
+            "name": "knockoff_genie3.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "knockoff_genie3.py",
+            "console": "integratedTerminal",
+            "cwd": "/home/jiahang/dagma/src/dagma",
+            "args": [
+                "--option=10",
+                "--data_version=v49",
+                "--dst_version=v100_600_normX_sym1_option_10_PLS_topo_sort_grnboost2",
+                "--fit_W_version=v48",
+                "--d=100",
+                "--s0=600",
+                "--W_type=W_est",
+                "--method_diagn_gen=PLS",
+                "--device=cuda:7",
+                "--seed_X=1",
+                "--seed_knockoff=1",
+                "--note=_normX_sym1",
+                "--dedup",
+                "--force_save",
+                "--topo_sort"
+            ]
+        },
+        {
+            "name": "genie3.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "genie3.py",
+            "console": "integratedTerminal",
+            "cwd": "/home/jiahang/dagma/src/dagma",
+            "args": [
+                "--use_grnboost2"
+            ]
+        },
+        {
+            "name": "knockoff_v44.py",
             "type": "debugpy",
             "request": "launch",
             "program": "knockoff_v44.py",
@@ -13,11 +49,20 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--option=10",
-                "--d=60", "--s0=360", "--W_type=W_est", "--seed_model=1"
+                "--option=13",
+                "--data_version=v47",
+                "--dst_version=v20_120_normX_sym1_option_1_OLS_new",
+                "--d=20",
+                "--s0=120",
+                "--W_type=W_est",
+                "--method_diagn_gen=OLS_cuda",
+                "--device=cuda:7",
+                "--seed_X=1",
+                "--seed_knockoff=1",
+                "--note=_normX_sym1",
+                "--dedup"
             ]
         },
-        
         {
             "name": "gen_copies.py",
             "type": "debugpy",
@@ -27,14 +72,19 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--gen_type=X",
+                "--gen_type=W_grnboost2",
                 "--n=2000",
-                "--d=60",
-                "--s0=360",
+                "--d=100",
+                "--s0=600",
+                "--root_path=simulated_data/v49",
+                "--version=100_600_normX_sym1_option_10_PLS_grnboost2",
+                // "--norm_data_gen=B_1_col", 
+                "--force_save",
+                "--seed_X=1",
                 "--seed_knockoff=1",
-                "--root_path=simulated_data/v11",
-                "--version=601",
-                "--device=cuda:7",
+                "--knock_genie3_type=unified",
+                "--disable_remove_self"
+                // "--device=cuda:7"
             ]
         },
         {

@@ -1,5 +1,5 @@
 import numpy as np
-from knockoff_gan import KnockoffGAN
+# from knockoff_gan import KnockoffGAN
 from deep_knockoff.machine import KnockoffMachine
 from deep_knockoff.parameters import GetTrainingHyperParams, SetFullHyperParams
 from deep_knockoff.gaussian import GaussianKnockoffs
@@ -21,12 +21,12 @@ def knockoff(X : np.ndarray, configs):
             rng = np.random.default_rng(seed=seed)
             X_tilde[:, col] = rng.permutation(X[:, col])
 
-    elif knock_type == 'knockoff_gan':
-        # TODO: tensorflow fail running on GPU, but not slow now.
-        niter = configs['niter']
-        norm_tag = configs['norm_knockoffGAN']
-        X = utils.norm(X) if norm_tag else X
-        X_tilde = KnockoffGAN(x_train = X, x_name = 'Normal', niter = niter)
+    # elif knock_type == 'knockoff_gan':
+    #     # TODO: tensorflow fail running on GPU, but not slow now.
+    #     niter = configs['niter']
+    #     norm_tag = configs['norm_knockoffGAN']
+    #     X = utils.norm(X) if norm_tag else X
+    #     X_tilde = KnockoffGAN(x_train = X, x_name = 'Normal', niter = niter)
 
     elif knock_type == 'knockoff_diagn':
         X_tilde = get_knockoffs_stats(X, configs)
