@@ -70,10 +70,10 @@ v46: only focus on option_5_OLS.
 v47: based on W_true in [-1, 1] (workable simulations), try different options of knockoff fitting
 v48: original genie3 and grnboost2 fitting W of simulated data
 v49: based on W_true in [-1, 1] (workable simulations), fit [X, X_tilde] with genie3 and grnboost2
+- note that some PLS results have problems
 
 === common used options ===
-5: all other nodes / j fit j_tilde
-10: all other nodes / j + existing knockoff fit j_tilde
+
 topo_sort: only available to 10, affecting generation order of existing knockoff according to topological sort
     of DAG version of the latent graph.
 Wdagma: use W obtained from DAGMA rather than genie3 (grnboost2) for topological sort
@@ -81,3 +81,9 @@ new: original knockoff generation is, considering X (n*p) as a whole design matr
     Since genie3 models causal graph modeling as p separate regression task, then each task has its own design
     matrix. The new knockoff generation is to generate X_tilde (n*(p-1)) for each task, thus have p*n*(p-1) X_tilde.
 nComp: n_component of PLS
+OLS, PLS: which model to fit j_tilde
+disable_norm: disable normalization of genie3 and grnboost2 for target values
+disable_remove_self: after the old style knockoff generation, model fitting will remove X_self and X'_self to fit X_self. Now we don't remove self. Instead, we use ALL to fit X_self and remove them in resulted W.
+options:
+- 5: all other nodes / j fit j_tilde
+- 10: all other nodes / j + existing knockoff fit j_tilde

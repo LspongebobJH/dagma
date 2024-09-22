@@ -327,6 +327,7 @@ if __name__ == '__main__':
     parser.add_argument('--nthreads', type=int, default=1)
     parser.add_argument('--use_grnboost2', action='store_true', default=False)
     parser.add_argument('--disable_norm', action='store_true', default=False) 
+    parser.add_argument('--force_save', action='store_true', default=False) 
     args = parser.parse_args()
 
     utils.set_random_seed(0)
@@ -344,9 +345,9 @@ if __name__ == '__main__':
 
     W_est = GENIE3(X, nthreads=args.nthreads, use_grnboost2=args.use_grnboost2, disable_norm=args.disable_norm)
 
-    prec, rec, threshold = precision_recall_curve(B_true.flatten(), np.abs(W_est).flatten())
+    prec, rec, threshold = precision_recall_curve(B_true.astype(int).flatten(), np.abs(W_est).flatten())
     auprc = auc(rec, prec)
-    auroc = roc_auc_score(B_true.flatten(), np.abs(W_est).flatten())
+    auroc = roc_auc_score(B_true.astype(int).flatten(), np.abs(W_est).flatten())
 
     print(f"auprc: {auprc:.2f} | auroc: {auroc:.2f}")
 
@@ -354,7 +355,7 @@ if __name__ == '__main__':
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
     data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.dst_note}.pkl")
-    if os.path.exists(data_path):
+    if os.path.exists(data_path) and not args.force_save:
         raise Exception(f"{data_path} already exists")
     with open(data_path, 'wb') as f:
         pickle.dump(W_est, f)
