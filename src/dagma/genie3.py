@@ -7,7 +7,6 @@ from multiprocessing import Pool
 import numpy as np
 
 from sklearn.metrics import auc, precision_recall_curve, roc_auc_score
-from cuml.ensemble import RandomForestRegressor as RandomForestRegressor_cuda 
 from copy import deepcopy
 
 EARLY_STOP_WINDOW_LENGTH = 25
@@ -143,7 +142,7 @@ def GENIE3(expr_data,
     An array in which the element (i,j) is the score of the edge directed from the i-th gene to the j-th gene. All diagonal elements are set to zero (auto-regulations are not considered). When a list of candidate regulators is provided, the scores of all the edges directed from a gene that is not a candidate regulator are set to zero.
         
     '''
-    
+    assert use_knockoff == False, "use_knockoff is not supported for bipartite graph yet"
     time_start = time.time()
     if use_knockoff:
         assert knock_genie3_type is not None and knock_genie3_type in ['separate', 'unified']
@@ -155,13 +154,16 @@ def GENIE3(expr_data,
     if use_knockoff:
         if knock_genie3_type == 'separate':
             target_ngenes = expr_data['X'].shape[1]
-            input_ngenes = expr_data['X'].shape[1] * 2
+            all_ngenes = expr_data['X'].shape[1] * 2
         elif knock_genie3_type == 'unified':
             target_ngenes = expr_data.shape[1] // 2
-            input_ngenes = expr_data.shape[1]
+            all_ngenes = expr_data.shape[1]
     else:
-        target_ngenes = expr_data.shape[1]
-        input_ngenes = target_ngenes
+        # TODO: bipartite graph don't remove TF from target genes for now
+        # because there could be TF as target genes in real data
+        # though in this simulation, no.
+        target_ngenes = expr_data.shape[1] 
+        all_ngenes = target_ngenes
     
     if gene_names is not None: # default not in
         if not isinstance(gene_names,(list,tuple)):
@@ -207,15 +209,16 @@ def GENIE3(expr_data,
     
     # Get the indices of the candidate regulators
     if regulators == 'all':
-        input_idx = list(range(input_ngenes))
+        input_idx = list(range(all_ngenes))
     else:
         input_idx = [i for i, gene in enumerate(gene_names) if gene in regulators]
+    input_ngenes = len(input_idx)
 
     
     # Learn an ensemble of trees for each target gene, and compute scores for candidate regulators
 
     # actual only the [:, :target_ngenes] being used.
-    VIM = zeros((input_ngenes,input_ngenes))
+    VIM = zeros((all_ngenes,all_ngenes))
     
     if nthreads > 1:
         print('running jobs on %d threads' % nthreads)
@@ -320,6 +323,8 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument('--d', type=int, default=10)
+    parser.add_argument('--d1', type=int, default=None)
+    parser.add_argument('--d2', type=int, default=None)
     parser.add_argument('--s0', type=int, default=40)
     parser.add_argument('--seed_X', type=int, default=1)
     parser.add_argument('--src_note', type=str, default="")
@@ -333,23 +338,45 @@ if __name__ == '__main__':
     utils.set_random_seed(0)
     
     n, d = 2000, args.d
+    d1, d2 = args.d1, args.d2
     s0 = args.s0
     version = f"v11/v{d}_{s0}" + args.src_note
-    root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    # root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
+
     data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
 
-    with open(data_path, 'rb') as f:
-        data = pickle.load(f)
-    X, W_true = data['X'], data['W_true']
-    B_true = (W_true != 0)
+    # with open(data_path, 'rb') as f:
+    #     data = pickle.load(f)
+    # X, W_true = data['X'], data['W_true']
+    # B_true = (W_true != 0)
 
-    W_est = GENIE3(X, nthreads=args.nthreads, use_grnboost2=args.use_grnboost2, disable_norm=args.disable_norm)
+
+    X = np.random.normal(size=(2000, 100))
+    B_true = np.ones((100, 100))
+    if d1 is None and d2 is None:
+        W_est = GENIE3(X, nthreads=args.nthreads, use_grnboost2=args.use_grnboost2, disable_norm=args.disable_norm)
+    else:
+        W_est = GENIE3(X, 
+                       gene_names=list(range(d)),
+                       regulators=list(range(d1)),
+                       nthreads=args.nthreads, 
+                       use_grnboost2=args.use_grnboost2, 
+                       disable_norm=args.disable_norm)
 
     prec, rec, threshold = precision_recall_curve(B_true.astype(int).flatten(), np.abs(W_est).flatten())
     auprc = auc(rec, prec)
     auroc = roc_auc_score(B_true.astype(int).flatten(), np.abs(W_est).flatten())
 
+    prec_trunc, rec_trunc, threshold_trunc = \
+        precision_recall_curve(B_true[:d1, :].astype(int).flatten(), 
+                               np.abs(W_est[:d1, :]).flatten())
+    auprc_trunc = auc(rec_trunc, prec_trunc)
+    auroc_trunc = roc_auc_score(B_true[:d1, :].astype(int).flatten(), 
+                                np.abs(W_est[:d1, :]).flatten())
+
     print(f"auprc: {auprc:.2f} | auroc: {auroc:.2f}")
+    print(f"auprc_trunc: {auprc_trunc:.2f} | auroc_trunc: {auroc_trunc:.2f}")
 
     data_dir = os.path.join(root_dir, "v48", f"{d}_{s0}")
     if not os.path.exists(data_dir):

@@ -20,20 +20,23 @@
 echo "Start generating X from 1 to 10..." > /home/jiahang/dagma/src/dagma/pipe_log.log
 
 n=2000
-nodes=(60)
-seedsX=( {1..10..1} )
-for d in "${nodes[@]}"; do
+d=100
+s0=600
+
+d1_list=(10 40 80)
+seedsX=( {1..3..1} )
+for d1 in "${d1_list[@]}"; do
     for seedX in "${seedsX[@]}"; do
         # s0=$(( d * 2 ))
-        s0=100
-
-        python gen_copies.py --gen_type X \
-        --n $n --d $d --s0 $s0 \
+        
+        d2=$(( d - d1 ))
+        
+        python gen_copies.py --gen_type X_bi \
+        --n $n --d $d --d1 $d1 --d2 $d2 --s0 $s0 \
         --norm_data_gen sym_1 \
         --seed_X $seedX \
         --root_path simulated_data/v11 \
-        --force_save \
-        --version ${d}_${s0}_normX_sym1 &
+        --version ${d}_${s0}_bipartite_${d1}_${d2}_normX_sym1 &
 
         # _seedX=$(( seedX % 20 ))
 
@@ -206,27 +209,30 @@ wait
 
 echo "Start fitting grnboost2 from 1 to 10..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
 
-n_nodes=60
-n_edges=100
+d1_list=(10 40 80)
+n_nodes=100
+n_edges=600
 
 seedsX=( {1..10..1} )
-for seedX in "${seedsX[@]}"; do
+for d1 in "${d1_list[@]}"; do
+    for seedX in "${seedsX[@]}"; do
+        d2=$(( n_nodes - d1 ))
+        src_note="_bipartite_${d1}_${d2}_normX_sym1"
+        dst_note="_bipartite_${d1}_${d2}_normX_sym1_disable_norm_grnboost2"
 
-    src_note="_normX_sym1"
-    dst_note="_normX_sym1_disable_norm_grnboost2"
-
-    python genie3.py \
-        --d=${n_nodes} --s0=${n_edges} --seed_X=${seedX} \
-        --src_note=${src_note} \
-        --dst_note=${dst_note} \
-        --disable_norm \
-        --force_save \
-        --nthreads=4 --use_grnboost2 \
-        >/home/jiahang/dagma/src/dagma/simulated_data/v48/${n_nodes}_${n_edges}/log_${seedX}_0_${dst_note} 2>&1 &
-    # _cnt=$(( seedsX % 10 ))
-    # if [ ${_cnt} -eq 9 ]; then
-    #     wait
-    # fi
+        python genie3.py \
+            --d=${n_nodes} --d1=$d1 --d2=$d2 --s0=${n_edges} --seed_X=${seedX} \
+            --src_note=${src_note} \
+            --dst_note=${dst_note} \
+            --disable_norm \
+            --force_save \
+            --nthreads=4 --use_grnboost2 \
+            >/home/jiahang/dagma/src/dagma/simulated_data/v48/${n_nodes}_${n_edges}/log_${seedX}_0_${dst_note} 2>&1 &
+        # _cnt=$(( seedsX % 10 ))
+        # if [ ${_cnt} -eq 9 ]; then
+        #     wait
+        # fi
+    done
 done
 
 echo "End fitting grnboost2 from 1 to 10..." >> /home/jiahang/dagma/src/dagma/pipe_log.log

@@ -8,7 +8,7 @@ import utils_dagma as utils_dagma
 from argparse import ArgumentParser
 import pprint
 import yaml
-
+import networkx as nx
 """
 n: number of samples
 d: number of nodes
@@ -77,6 +77,10 @@ parser.add_argument('--cond_thresh_X', type=float, default=None, help="available
 
 args = parser.parse_args()
 
+if args.d is None:
+    assert args.d1 is not None and args.d2 is not None
+    args.d = args.d1 + args.d2
+
 args.gen_W = None
 if args.gen_type == 'W_torch':
     args.gen_type = 'W'
@@ -137,11 +141,11 @@ if __name__ == '__main__':
                 print(f"cond_X {cond_X} > {configs['cond_thresh_X']}")
 
         elif configs['gen_type'] == 'X_bi': # Bipartite graph
-            assert configs['d'] is None and configs['d1'] is not None and configs['d2'] is not None
+            assert configs['d1'] is not None and configs['d2'] is not None
 
             # simulate bipartite graph
             utils.set_random_seed(configs['seed_X'])
-            G_true = nx.bipartite.gnmk_random_graph(n=configs['d1'], m=configs['d2'], k=s0)
+            G_true = nx.bipartite.gnmk_random_graph(n=configs['d1'], m=configs['d2'], k=configs['s0'])
             B_true = nx.to_numpy_array(G_true, nodelist=list(range(configs['d1'])) + list(range(configs['d1'], configs['d1']+configs['d2'])))
             B_true = np.triu(B_true)
             
@@ -153,9 +157,9 @@ if __name__ == '__main__':
             if configs['norm_data_gen'] == 'B_1_col':
                 W_true /= (B_true.sum(axis=0, keepdims=True) + 1.)
 
-            breakpoint()
             # simulated X
             X = utils_dagma.simulate_linear_sem(W_true, configs['n'], configs['sem_type'], norm_data_gen=configs['norm_data_gen'], 
+                                                noise_scale=configs['noise_scale_X'])
             cond_X = np.linalg.cond(X).item()
             configs['real_cond_X'] = cond_X
 
