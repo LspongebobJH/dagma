@@ -98,7 +98,8 @@ def GENIE3(expr_data,
            use_knockoff=False,
            use_grnboost2=False,
            disable_remove_self=False,
-           disable_norm=False
+           disable_norm=False,
+           tune_params=None
            ):
     
     '''Computation of tree-based scores for all putative regulatory links.
@@ -230,7 +231,7 @@ def GENIE3(expr_data,
                 preprocess_input_idx_expr_data(expr_data, knock_genie3_type, input_idx, use_knockoff, 
                                                not disable_remove_self, 
                                                i, target_ngenes, input_ngenes)
-            input_data.append( [_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm] )
+            input_data.append( [_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params] )
 
         pool = Pool(nthreads)
         alloutput = pool.map(wr_GENIE3_single, input_data)
@@ -246,7 +247,7 @@ def GENIE3(expr_data,
                 preprocess_input_idx_expr_data(expr_data, knock_genie3_type, input_idx, use_knockoff, 
                                                not disable_remove_self, 
                                                i, target_ngenes, input_ngenes)
-            vi = GENIE3_single(_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm)
+            vi = GENIE3_single(_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params)
             VIM[i,:] = vi
 
    
@@ -264,11 +265,11 @@ def GENIE3(expr_data,
     
     
 def wr_GENIE3_single(args):
-    return([args[1], GENIE3_single(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7])])
+    return([args[1], GENIE3_single(*args)])
     
 
 
-def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm):
+def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params):
     
     ngenes = expr_data.shape[1]
     
@@ -292,18 +293,28 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboo
     else:
         max_features = K
     if use_grnboost2:
+        n_estimators = tune_params['ntrees'] if tune_params['ntrees'] is not None else 5000
+        max_features = tune_params['max_feat'] if tune_params['ntrees'] is not None else 0.1
+        subsample = tune_params['max_sample'] if tune_params['ntrees'] is not None else 0.9
         treeEstimator = GradientBoostingRegressor(
             learning_rate=0.01,
-            n_estimators=5000,
-            max_features=0.1,
-            subsample=0.9
+            n_estimators=n_estimators,
+            max_features=max_features,
+            subsample=subsample
         )
     else:
+        n_estimators = tune_params['ntrees'] if tune_params['ntrees'] is not None else 1000
+        max_features = tune_params['max_feat'] if tune_params['ntrees'] is not None else 'sqrt'
+        max_samples = tune_params['max_sample'] if tune_params['ntrees'] is not None else None
         if tree_method == 'RF':
-            treeEstimator = RandomForestRegressor(n_estimators=ntrees,max_features=max_features)
+            treeEstimator = RandomForestRegressor(n_estimators=n_estimators,
+                                                  max_features=max_features,
+                                                  max_samples=max_samples)
             
         elif tree_method == 'ET':
-            treeEstimator = ExtraTreesRegressor(n_estimators=ntrees,max_features=max_features)
+            treeEstimator = ExtraTreesRegressor(n_estimators=n_estimators,
+                                                max_features=max_features,
+                                                max_samples=max_samples)
 
     # Learn ensemble of trees
     if use_grnboost2:
@@ -334,6 +345,12 @@ if __name__ == '__main__':
     parser.add_argument('--use_grnboost2', action='store_true', default=False)
     parser.add_argument('--disable_norm', action='store_true', default=False) 
     parser.add_argument('--force_save', action='store_true', default=False) 
+
+    # tune hyperparameters
+    parser.add_argument('--ntrees', type=int, default=None)
+    parser.add_argument('--max_feat', type=float, default=None)
+    parser.add_argument('--max_sample', type=float, default=None)
+    
     args = parser.parse_args()
 
     utils.set_random_seed(0)
@@ -344,6 +361,11 @@ if __name__ == '__main__':
     version = f"v11/v{d}_{s0}" + args.src_note
     root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
     # root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
+    tune_params = {
+        'ntrees': args.ntrees,
+        'max_feat': args.max_feat,
+        'max_sample': args.max_feat,
+    }
 
     data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
 
@@ -356,7 +378,11 @@ if __name__ == '__main__':
     # X = np.random.normal(size=(2000, 100))
     # B_true = np.ones((100, 100))
     if d1 is None and d2 is None:
-        W_est = GENIE3(X, nthreads=args.nthreads, use_grnboost2=args.use_grnboost2, disable_norm=args.disable_norm)
+        W_est = GENIE3(X, 
+                       nthreads=args.nthreads, 
+                       use_grnboost2=args.use_grnboost2, 
+                       disable_norm=args.disable_norm,
+                       tune_params=tune_params)
     else:
         W_est = GENIE3(X, 
                        gene_names=list(range(d)),
