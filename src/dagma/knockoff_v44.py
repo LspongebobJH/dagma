@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_jobs', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda:7')
     parser.add_argument('--note', type=str, default='')
+    parser.add_argument('--force_save', action='store_true', default=False)
 
     # normalization to mitigate ill-condition of X
     parser.add_argument('--norm', type=str, choices=['col', 'row'])
@@ -62,7 +63,7 @@ if __name__ == '__main__':
     output_data_path = os.path.join(output_data_dir, f'knockoff_{configs["seed_X"]}_{configs["seed_knockoff"]}.pkl')
     output_config_path = os.path.join(output_data_dir, f'knockoff_{configs["seed_X"]}_{configs["seed_knockoff"]}_configs.yaml')
 
-    if os.path.exists(output_data_path) or os.path.exists(output_data_path):
+    if (os.path.exists(output_data_path) or os.path.exists(output_data_path)) and not configs['force_save']:
         raise Exception(f"{output_data_dir} already exists.")
 
     # load X
@@ -84,7 +85,7 @@ if __name__ == '__main__':
         X = (X - X_mean) / (X_std + 1e-8)
 
     # load W
-    if configs['option'] != 5:
+    if configs['option'] not in [5, 10] or (configs['option'] == 10 and configs['topo_sort']):
         if configs['W_type'] == 'W_est':
             # version = f"v39/{configs['d']}_{configs['s0']}/W_{configs['d']}_{configs['s0']}_{configs['seed_X']}_{configs['seed_model']}{configs['note']}.pkl"
             version = f"{configs['fit_W_version']}/{configs['d']}_{configs['s0']}/W_{configs['d']}_{configs['s0']}_{configs['seed_X']}_{configs['seed_model']}{configs['note']}.pkl"

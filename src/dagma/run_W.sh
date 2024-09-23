@@ -43,13 +43,10 @@ run() {
 
     n=2000
     s0=$(( d * 6 ))
-    suffixs=(_normX_sym1_option_5_PLS_disable_norm_grnboost2
-         _normX_sym1_option_10_PLS_disable_norm_grnboost2
-         _normX_sym1_option_10_PLS_topo_sort_disable_norm_grnboost2
-         _normX_sym1_option_5_OLS_disable_norm_grnboost2
-         _normX_sym1_option_10_OLS_disable_norm_grnboost2
-         _normX_sym1_option_10_OLS_topo_sort_disable_norm_grnboost2)
-    seedsX=( {1..10..1} )
+    suffixs=(_option_5_PLS_normX_sym1_grnboost2
+         _option_10_PLS_normX_sym1_grnboost2
+         )
+    seedsX=( {1..3..1} )
     seedsKnockoff=( 1 )
     # options=( 5 )
     # nComps=( 3 4 )
@@ -80,7 +77,7 @@ run() {
                     --root_path simulated_data/v${dst_data_version} \
                     --version ${version} \
                     --knock_genie3_type unified \
-                    --disable_norm \
+                    --force_save \
                     --device cuda:${cuda_idx} > simulated_data/v${dst_data_version}/v${version}/W/log_${seedX}_${seedKnockoff}_0 2>&1 &
 
                     cuda_idx=$(( cuda_idx + 1))
@@ -131,8 +128,13 @@ data_version=49
 # cuda_idx=5
 # run $data_version $d $cuda_idx
 
+echo "Start fitting W of [X, X'] from 1 to 3..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
 
 d=100
 cuda_idx=7
 run $data_version $d $cuda_idx
+
+wait
+
+echo "End fitting W of [X, X'] from 1 to 3..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
 

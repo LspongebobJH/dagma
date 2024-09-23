@@ -98,13 +98,10 @@ run() {
     # options=( 7 9 1 2 10 11 )
     # options=(1 2 7 9 10 11 12 )
     # options=( 5 )
-    suffixs=(_normX_sym1_option_5_PLS_disable_norm_grnboost2
-         _normX_sym1_option_10_PLS_disable_norm_grnboost2
-         _normX_sym1_option_10_PLS_topo_sort_disable_norm_grnboost2
-         _normX_sym1_option_5_OLS_disable_norm_grnboost2
-         _normX_sym1_option_10_OLS_disable_norm_grnboost2
-         _normX_sym1_option_10_OLS_topo_sort_disable_norm_grnboost2)
-    control_options=(col global)
+    suffixs=(_option_5_PLS_normX_sym1_grnboost2
+         _option_10_PLS_normX_sym1_grnboost2
+         )
+    control_options=(global)
     # option=5
     n=2000
     # nComps=( 3 4 )
@@ -131,22 +128,11 @@ run() {
 
                 # version=${d}_${s0}_normX_sym1_option_${option}_PLS
                 version=${d}_${s0}${suffix}
-                if [ $control == 'col' ]; then
-                    python multi_main.py \
-                    --n $n --s0 $s0 --d $d \
-                    --control_type=type_3 \
-                    --seed_X_list=1,10,-1 \
-                    --seed_knockoff_list=1 \
-                    --seed_model_list=0 \
-                    --version=$version \
-                    --root_path simulated_data/v${data_version} \
-                    --n_jobs=4 \
-                    --log_file=log_${log_file_global}/log_${data_version}_${version}_col_1-10 &
-                elif [ $control == 'global' ]; then
+                if [ $control == 'global' ]; then
                     python multi_main.py \
                     --n $n --s0 $s0 --d $d \
                     --control_type=type_3_global \
-                    --seed_X_list=1,10,-1 \
+                    --seed_X_list=1,3,-1 \
                     --seed_knockoff_list=1 \
                     --seed_model_list=0 \
                     --version=$version \
@@ -174,4 +160,7 @@ run() {
 
 }
 
+echo "Start fdr control from 1 to 3..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
 run
+wait
+echo "End fdr control of [X, X'] from 1 to 3..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
