@@ -7,23 +7,28 @@ from multiprocessing import Pool
 import numpy as np
 
 from sklearn.metrics import auc, precision_recall_curve, roc_auc_score
+from sklearn.inspection import permutation_importance
 from copy import deepcopy
 
 EARLY_STOP_WINDOW_LENGTH = 25
 
-def compute_feature_importances(estimator):
-    if isinstance(estimator, RandomForestRegressor) or isinstance(estimator, ExtraTreesRegressor) :
-        return estimator.tree_.compute_feature_importances(normalize=False)
-    elif isinstance(estimator, GradientBoostingRegressor):
-        n_estimators = len(estimator.estimators_)
-        denormalized_importances = estimator.feature_importances_ * n_estimators
-        return denormalized_importances
-    else:
-        importances = [e.tree_.compute_feature_importances(normalize=False)
-                       for e in estimator.estimators_]
-        importances = array(importances)
-        return sum(importances,axis=0) / len(estimator)
+def compute_feature_importances(estimator, importance='original'):
+    if importance == 'original':
+        if isinstance(estimator, RandomForestRegressor) or isinstance(estimator, ExtraTreesRegressor) :
+            return estimator.tree_.compute_feature_importances(normalize=False)
+        elif isinstance(estimator, GradientBoostingRegressor):
+            n_estimators = len(estimator.estimators_)
+            denormalized_importances = estimator.feature_importances_ * n_estimators
+            return denormalized_importances
+        else:
+            importances = [e.tree_.compute_feature_importances(normalize=False)
+                        for e in estimator.estimators_]
+            importances = array(importances)
+            return sum(importances,axis=0) / len(estimator)
 
+    elif importance == 'permutation':
+        permutation_importance()
+    
 class EarlyStopMonitor:
 
     def __init__(self, window_length=EARLY_STOP_WINDOW_LENGTH):
