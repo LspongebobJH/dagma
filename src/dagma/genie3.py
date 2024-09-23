@@ -142,7 +142,8 @@ def GENIE3(expr_data,
     An array in which the element (i,j) is the score of the edge directed from the i-th gene to the j-th gene. All diagonal elements are set to zero (auto-regulations are not considered). When a list of candidate regulators is provided, the scores of all the edges directed from a gene that is not a candidate regulator are set to zero.
         
     '''
-    assert use_knockoff == False, "use_knockoff is not supported for bipartite graph yet"
+    if gene_names is not None or regulators != 'all':
+        assert use_knockoff == False, "use_knockoff is not supported for bipartite graph yet"
     time_start = time.time()
     if use_knockoff:
         assert knock_genie3_type is not None and knock_genie3_type in ['separate', 'unified']
@@ -341,19 +342,19 @@ if __name__ == '__main__':
     d1, d2 = args.d1, args.d2
     s0 = args.s0
     version = f"v11/v{d}_{s0}" + args.src_note
-    # root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
-    root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
+    root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    # root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
 
     data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
 
-    # with open(data_path, 'rb') as f:
-    #     data = pickle.load(f)
-    # X, W_true = data['X'], data['W_true']
-    # B_true = (W_true != 0)
+    with open(data_path, 'rb') as f:
+        data = pickle.load(f)
+    X, W_true = data['X'], data['W_true']
+    B_true = (W_true != 0)
 
 
-    X = np.random.normal(size=(2000, 100))
-    B_true = np.ones((100, 100))
+    # X = np.random.normal(size=(2000, 100))
+    # B_true = np.ones((100, 100))
     if d1 is None and d2 is None:
         W_est = GENIE3(X, nthreads=args.nthreads, use_grnboost2=args.use_grnboost2, disable_norm=args.disable_norm)
     else:
