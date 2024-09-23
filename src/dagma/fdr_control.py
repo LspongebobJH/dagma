@@ -274,7 +274,8 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
             perf = utils_dagma.count_accuracy_simplify(T_T_true, T_T)
             fdr_true, power = perf['fdr'], perf['tpr']
 
-            logger.debug(f"thresh {t:.4f} | est fdr {fdr_est:.4f} | true fdr {fdr_true:.4f} | true power {power:.4f}")
+            # logger.debug(f"thresh {t:.4f} | est fdr {fdr_est:.4f} | true fdr {fdr_true:.4f} | true power {power:.4f}")
+            print(f"DEBUG: thresh {t:.4f} | est fdr {fdr_est:.4f} | true fdr {fdr_true:.4f} | true power {power:.4f}")
 
             if fdr_est <= fdr:
                 t_last = t
