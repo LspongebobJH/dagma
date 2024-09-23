@@ -12,7 +12,7 @@ from copy import deepcopy
 
 EARLY_STOP_WINDOW_LENGTH = 25
 
-def compute_feature_importances(estimator, importance='original'):
+def compute_feature_importances(estimator, importance='original', X=None, y=None):
     if importance == 'original':
         if isinstance(estimator, RandomForestRegressor) or isinstance(estimator, ExtraTreesRegressor) :
             return estimator.tree_.compute_feature_importances(normalize=False)
@@ -27,7 +27,7 @@ def compute_feature_importances(estimator, importance='original'):
             return sum(importances,axis=0) / len(estimator)
 
     elif importance == 'permutation':
-        permutation_importance()
+        return permutation_importance(estimator, X, y)['importances_mean']
     
 class EarlyStopMonitor:
 
@@ -93,6 +93,7 @@ def preprocess_input_idx_expr_data(expr_data, knock_genie3_type, input_idx: list
 
 
 def GENIE3(expr_data, 
+           importance='original',
            knock_genie3_type=None,
            gene_names=None,
            regulators='all',
@@ -236,7 +237,7 @@ def GENIE3(expr_data,
                 preprocess_input_idx_expr_data(expr_data, knock_genie3_type, input_idx, use_knockoff, 
                                                not disable_remove_self, 
                                                i, target_ngenes, input_ngenes)
-            input_data.append( [_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params] )
+            input_data.append( [_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params,importance] )
 
         pool = Pool(nthreads)
         alloutput = pool.map(wr_GENIE3_single, input_data)
@@ -252,7 +253,7 @@ def GENIE3(expr_data,
                 preprocess_input_idx_expr_data(expr_data, knock_genie3_type, input_idx, use_knockoff, 
                                                not disable_remove_self, 
                                                i, target_ngenes, input_ngenes)
-            vi = GENIE3_single(_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params)
+            vi = GENIE3_single(_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params,importance)
             VIM[i,:] = vi
 
    
@@ -274,7 +275,7 @@ def wr_GENIE3_single(args):
     
 
 
-def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params):
+def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params,importance):
     
     ngenes = expr_data.shape[1]
     
@@ -328,7 +329,10 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboo
         treeEstimator.fit(expr_data_input,output)
     
     # Compute importance scores
-    feature_importances = compute_feature_importances(treeEstimator)
+    feature_importances = compute_feature_importances(treeEstimator, 
+                                                      importance, 
+                                                      expr_data_input,
+                                                      output)
     vi = zeros(ngenes)
     vi[input_idx] = feature_importances
        
@@ -355,17 +359,19 @@ if __name__ == '__main__':
     parser.add_argument('--ntrees', type=int, default=None)
     parser.add_argument('--max_feat', type=float, default=None)
     parser.add_argument('--max_sample', type=float, default=None)
+    parser.add_argument('--importance', type=str, default='original', choices=['original', 'permutation'])
     
     args = parser.parse_args()
 
+    assert args['d1'] is None and args['d2'] is None
     utils.set_random_seed(0)
     
     n, d = 2000, args.d
     d1, d2 = args.d1, args.d2
     s0 = args.s0
     version = f"v11/v{d}_{s0}" + args.src_note
-    root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
-    # root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
+    # root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
     tune_params = {
         'ntrees': args.ntrees,
         'max_feat': args.max_feat,
@@ -387,7 +393,8 @@ if __name__ == '__main__':
                        nthreads=args.nthreads, 
                        use_grnboost2=args.use_grnboost2, 
                        disable_norm=args.disable_norm,
-                       tune_params=tune_params)
+                       tune_params=tune_params,
+                       importance=args.importance)
     else:
         W_est = GENIE3(X, 
                        gene_names=list(range(d)),
