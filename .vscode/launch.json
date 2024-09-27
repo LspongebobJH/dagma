@@ -37,6 +37,7 @@
             "console": "integratedTerminal",
             "cwd": "/home/jiahang/dagma/src/dagma",
             "args": [
+                "--src_note=_normX_sym1",
                 "--use_grnboost2"
             ]
         },

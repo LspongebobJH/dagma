@@ -275,7 +275,8 @@ def wr_GENIE3_single(args):
     
 
 
-def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params,importance):
+def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params,importance,
+                  model_type):
     
     ngenes = expr_data.shape[1]
     
@@ -298,41 +299,51 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboo
         max_features = "auto"
     else:
         max_features = K
-    if use_grnboost2:
-        n_estimators = tune_params['ntrees'] if tune_params['ntrees'] is not None else 5000
-        max_features = tune_params['max_feat'] if tune_params['ntrees'] is not None else 0.1
-        subsample = tune_params['max_sample'] if tune_params['ntrees'] is not None else 0.9
-        treeEstimator = GradientBoostingRegressor(
-            learning_rate=0.01,
-            n_estimators=n_estimators,
-            max_features=max_features,
-            subsample=subsample
-        )
-    else:
-        n_estimators = tune_params['ntrees'] if tune_params['ntrees'] is not None else 1000
-        max_features = tune_params['max_feat'] if tune_params['ntrees'] is not None else 'sqrt'
-        max_samples = tune_params['max_sample'] if tune_params['ntrees'] is not None else None
-        if tree_method == 'RF':
-            treeEstimator = RandomForestRegressor(n_estimators=n_estimators,
-                                                  max_features=max_features,
-                                                  max_samples=max_samples)
-            
-        elif tree_method == 'ET':
-            treeEstimator = ExtraTreesRegressor(n_estimators=n_estimators,
-                                                max_features=max_features,
-                                                max_samples=max_samples)
-
-    # Learn ensemble of trees
-    if use_grnboost2:
-        treeEstimator.fit(expr_data_input,output,monitor=EarlyStopMonitor(EARLY_STOP_WINDOW_LENGTH))
-    else:
-        treeEstimator.fit(expr_data_input,output)
+    if model_type == 'tree':
+        if use_grnboost2:
+            n_estimators = tune_params['ntrees'] if tune_params['ntrees'] is not None else 5000
+            max_features = tune_params['max_feat'] if tune_params['ntrees'] is not None else 0.1
+            subsample = tune_params['max_sample'] if tune_params['ntrees'] is not None else 0.9
+            treeEstimator = GradientBoostingRegressor(
+                learning_rate=0.01,
+                n_estimators=n_estimators,
+                max_features=max_features,
+                subsample=subsample
+            )
+        else:
+            n_estimators = tune_params['ntrees'] if tune_params['ntrees'] is not None else 1000
+            max_features = tune_params['max_feat'] if tune_params['ntrees'] is not None else 'sqrt'
+            max_samples = tune_params['max_sample'] if tune_params['ntrees'] is not None else None
+            if tree_method == 'RF':
+                treeEstimator = RandomForestRegressor(n_estimators=n_estimators,
+                                                    max_features=max_features,
+                                                    max_samples=max_samples)
+                
+            elif tree_method == 'ET':
+                treeEstimator = ExtraTreesRegressor(n_estimators=n_estimators,
+                                                    max_features=max_features,
+                                                    max_samples=max_samples)
     
-    # Compute importance scores
-    feature_importances = compute_feature_importances(treeEstimator, 
-                                                      importance, 
-                                                      expr_data_input,
-                                                      output)
+
+        # Learn ensemble of trees
+        if use_grnboost2:
+            treeEstimator.fit(expr_data_input,output,monitor=EarlyStopMonitor(EARLY_STOP_WINDOW_LENGTH))
+        else:
+            treeEstimator.fit(expr_data_input,output)
+        
+        # Compute importance scores
+        feature_importances = compute_feature_importances(treeEstimator, 
+                                                        importance, 
+                                                        expr_data_input,
+                                                        output)
+
+    elif model_type == 'OLS_cuda':
+        from cuml import LinearRegression
+        clf = LinearRegression()
+
+        clf.fit(expr_data_input, output)
+        feature_importances = clf.
+        
     vi = zeros(ngenes)
     vi[input_idx] = feature_importances
        
@@ -343,10 +354,10 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument('--d', type=int, default=10)
+    parser.add_argument('--d', type=int, default=20)
     parser.add_argument('--d1', type=int, default=None)
     parser.add_argument('--d2', type=int, default=None)
-    parser.add_argument('--s0', type=int, default=40)
+    parser.add_argument('--s0', type=int, default=120)
     parser.add_argument('--seed_X', type=int, default=1)
     parser.add_argument('--src_note', type=str, default="")
     parser.add_argument('--dst_note', type=str, default="")
@@ -363,15 +374,15 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    assert args['d1'] is None and args['d2'] is None
+    assert args.d1 is None and args.d2 is None
     utils.set_random_seed(0)
     
     n, d = 2000, args.d
     d1, d2 = args.d1, args.d2
     s0 = args.s0
     version = f"v11/v{d}_{s0}" + args.src_note
-    # root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
-    root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
+    root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    # root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
     tune_params = {
         'ntrees': args.ntrees,
         'max_feat': args.max_feat,

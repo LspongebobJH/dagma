@@ -71,6 +71,7 @@ parser.add_argument('--disable_remove_self', action='store_true', default=False)
 parser.add_argument('--disable_norm', action='store_true', default=False)
 parser.add_argument('--knock_genie3_type', type=str, choices=['separate', 'unified'])
 parser.add_argument('--nthreads', type=int, default=1)
+parser.add_argument('--importance', type=str, default='original', choices=['original', 'permutation'])
 
 # deprecated
 parser.add_argument('--cond_thresh_X', type=float, default=None, help="available only when gen_type == X")
@@ -115,7 +116,7 @@ if __name__ == '__main__':
             assert configs['cond_thresh_X'] is None
 
         if configs['gen_type'] == 'X':
-            if args.d1 is not None and args.d2 is not None:
+            if args.d1 is None or args.d2 is None:
                 # only one X for now
                 # assert configs['seed_X'] == 1
                 utils.set_random_seed(configs['seed_X'])
