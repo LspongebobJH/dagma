@@ -94,7 +94,11 @@ def fit(X_all, configs, original=False):
 
     W_est_no_filter, Z_true, Z_knock = \
         None, None, None
-
+    genie3_tune_params = {
+            'ntrees': None,
+            'max_feat': None,
+            'max_sample': None,
+        }
     if gen_W is None:
         from linear import DagmaLinear
         model = DagmaLinear(loss_type='l2', verbose=True)
@@ -133,7 +137,9 @@ def fit(X_all, configs, original=False):
                                  nthreads=configs['nthreads'], 
                                  use_knockoff=True,
                                  disable_remove_self=configs['disable_remove_self'],
-                                 disable_norm=configs['disable_norm'])
+                                 disable_norm=configs['disable_norm'],
+                                 importance=configs['importance'],
+                                 tune_params=genie3_tune_params)
 
     elif gen_W == 'grnboost2':
         W_est_no_filter = GENIE3(X_all, 
@@ -142,7 +148,9 @@ def fit(X_all, configs, original=False):
                                  use_knockoff=True, 
                                  use_grnboost2=True,
                                  disable_remove_self=configs['disable_remove_self'],
-                                 disable_norm=configs['disable_norm'])
+                                 disable_norm=configs['disable_norm'],
+                                 importance=configs['importance'],
+                                 tune_params=genie3_tune_params)
     
     return W_est_no_filter, Z_true, Z_knock
 

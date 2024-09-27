@@ -42,10 +42,10 @@ run() {
     # src_data_version=11
 
     n=2000
-    s0=$(( d * 6 ))
-    suffixs=(_option_5_PLS_normX_sym1_grnboost2
-         _option_10_PLS_normX_sym1_grnboost2
-         )
+    s0=$(( d * 2 ))
+    suffixs=(_option_5_PLS_normX=sym1_grnboost2
+             _option_10_PLS_normX=sym1_grnboost2
+            )
     seedsX=( {1..3..1} )
     seedsKnockoff=( 1 )
     # options=( 5 )
@@ -130,7 +130,7 @@ data_version=49
 
 echo "Start fitting W of [X, X'] from 1 to 3..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
 
-d=100
+d=20
 cuda_idx=7
 run $data_version $d $cuda_idx
 

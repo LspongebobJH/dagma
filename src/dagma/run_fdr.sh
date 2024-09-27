@@ -98,20 +98,20 @@ run() {
     # options=( 7 9 1 2 10 11 )
     # options=(1 2 7 9 10 11 12 )
     # options=( 5 )
-    suffixs=(_option_5_PLS_normX_sym1_grnboost2
-         _option_10_PLS_normX_sym1_grnboost2
+    suffixs=(_option_5_PLS_normX=sym1_grnboost2
+         _option_10_PLS_normX=sym1_grnboost2
          )
     control_options=(global)
     # option=5
     n=2000
     # nComps=( 3 4 )
     
-    nodes=(100)
+    nodes=(20)
     for d in "${nodes[@]}"; do
         # for option in "${options[@]}"; do
         for suffix in "${suffixs[@]}"; do
             for control in "${control_options[@]}"; do
-                s0=$(( d * 6 ))
+                s0=$(( d * 2 ))
 
                 # version=${d}_${s0}_condX_5e4_option_5_OLS
                 # python multi_main.py \
@@ -138,7 +138,7 @@ run() {
                     --version=$version \
                     --root_path simulated_data/v${data_version} \
                     --n_jobs=4 \
-                    --log_file=log_${log_file_global}/log_${data_version}_${version}_1-10 &
+                    --log_file=log_${log_file_global}/log_${data_version}_${version}_1-3 &
                 fi
                 
 
