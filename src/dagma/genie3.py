@@ -105,7 +105,8 @@ def GENIE3(expr_data,
            use_grnboost2=False,
            disable_remove_self=False,
            disable_norm=False,
-           tune_params=None
+           tune_params=None,
+           model_type='tree'
            ):
     
     '''Computation of tree-based scores for all putative regulatory links.
@@ -237,7 +238,7 @@ def GENIE3(expr_data,
                 preprocess_input_idx_expr_data(expr_data, knock_genie3_type, input_idx, use_knockoff, 
                                                not disable_remove_self, 
                                                i, target_ngenes, input_ngenes)
-            input_data.append( [_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params,importance] )
+            input_data.append( [_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params,importance,model_type] )
 
         pool = Pool(nthreads)
         alloutput = pool.map(wr_GENIE3_single, input_data)
@@ -253,7 +254,7 @@ def GENIE3(expr_data,
                 preprocess_input_idx_expr_data(expr_data, knock_genie3_type, input_idx, use_knockoff, 
                                                not disable_remove_self, 
                                                i, target_ngenes, input_ngenes)
-            vi = GENIE3_single(_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params,importance)
+            vi = GENIE3_single(_expr_data,i,_input_idx,tree_method,K,ntrees,use_grnboost2,disable_norm,tune_params,importance,model_type)
             VIM[i,:] = vi
 
    
@@ -337,12 +338,12 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboo
                                                         expr_data_input,
                                                         output)
 
-    elif model_type == 'OLS_cuda':
-        from cuml import LinearRegression
+    elif model_type == 'OLS':
+        from sklearn.linear_model import LinearRegression
         clf = LinearRegression()
 
         clf.fit(expr_data_input, output)
-        feature_importances = clf.
+        feature_importances = clf.coef_
         
     vi = zeros(ngenes)
     vi[input_idx] = feature_importances
@@ -354,14 +355,15 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument('--d', type=int, default=20)
+    parser.add_argument('--d', type=int, default=80)
     parser.add_argument('--d1', type=int, default=None)
     parser.add_argument('--d2', type=int, default=None)
-    parser.add_argument('--s0', type=int, default=120)
+    parser.add_argument('--s0', type=int, default=480)
     parser.add_argument('--seed_X', type=int, default=1)
     parser.add_argument('--src_note', type=str, default="")
     parser.add_argument('--dst_note', type=str, default="")
     parser.add_argument('--nthreads', type=int, default=1)
+    parser.add_argument('--model_type', type=str, default="tree")
     parser.add_argument('--use_grnboost2', action='store_true', default=False)
     parser.add_argument('--disable_norm', action='store_true', default=False) 
     parser.add_argument('--force_save', action='store_true', default=False) 
@@ -381,8 +383,8 @@ if __name__ == '__main__':
     d1, d2 = args.d1, args.d2
     s0 = args.s0
     version = f"v11/v{d}_{s0}" + args.src_note
-    root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
-    # root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
+    # root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
     tune_params = {
         'ntrees': args.ntrees,
         'max_feat': args.max_feat,
@@ -405,14 +407,16 @@ if __name__ == '__main__':
                        use_grnboost2=args.use_grnboost2, 
                        disable_norm=args.disable_norm,
                        tune_params=tune_params,
-                       importance=args.importance)
+                       importance=args.importance,
+                       model_type=args.model_type)
     else:
         W_est = GENIE3(X, 
                        gene_names=list(range(d)),
                        regulators=list(range(d1)),
                        nthreads=args.nthreads, 
                        use_grnboost2=args.use_grnboost2, 
-                       disable_norm=args.disable_norm)
+                       disable_norm=args.disable_norm,
+                       model_type=args.model_type)
 
     prec, rec, threshold = precision_recall_curve(B_true.astype(int).flatten(), np.abs(W_est).flatten())
     auprc = auc(rec, prec)
