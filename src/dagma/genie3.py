@@ -355,11 +355,11 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument('--d', type=int, default=80)
+    parser.add_argument('--d', type=int, default=100)
     parser.add_argument('--d1', type=int, default=None)
     parser.add_argument('--d2', type=int, default=None)
-    parser.add_argument('--s0', type=int, default=480)
-    parser.add_argument('--seed_X', type=int, default=1)
+    parser.add_argument('--s0', type=int, default=600)
+    parser.add_argument('--seed_X', type=int, default=2)
     parser.add_argument('--src_note', type=str, default="")
     parser.add_argument('--dst_note', type=str, default="")
     parser.add_argument('--nthreads', type=int, default=1)
