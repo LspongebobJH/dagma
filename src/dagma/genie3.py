@@ -337,14 +337,26 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboo
                                                         importance, 
                                                         expr_data_input,
                                                         output)
+    elif model_type in ['OLS', 'L1', 'L2', 'L1+L2']:
+        if model_type == 'OLS':
+            from sklearn.linear_model import LinearRegression
+            clf = LinearRegression()
 
-    elif model_type == 'OLS':
-        from sklearn.linear_model import LinearRegression
-        clf = LinearRegression()
+        elif model_type == 'L1':
+            from sklearn.linear_model import Lasso
+            clf = Lasso()
+
+        elif model_type == 'L2':
+            from sklearn.linear_model import Ridge
+            clf = Ridge()
+
+        elif model_type == 'L1+L2': 
+            from sklearn.linear_model import ElasticNet
+            clf = ElasticNet()
 
         clf.fit(expr_data_input, output)
         feature_importances = clf.coef_
-        
+
     vi = zeros(ngenes)
     vi[input_idx] = feature_importances
        
