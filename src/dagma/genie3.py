@@ -380,7 +380,7 @@ if __name__ == '__main__':
     parser.add_argument('--disable_norm', action='store_true', default=False) 
     parser.add_argument('--force_save', action='store_true', default=False) 
 
-    # tune hyperparameters
+    # tune hyperparameters of tree models
     parser.add_argument('--ntrees', type=int, default=None)
     parser.add_argument('--max_feat', type=float, default=None)
     parser.add_argument('--max_sample', type=float, default=None)

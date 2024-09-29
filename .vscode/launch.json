@@ -40,7 +40,7 @@
             "args": [
                 // "--d=100",
                 // "--s0=600",
-                "--model_type=OLS",
+                "--model_type=L1+L2",
                 "--src_note=_normX_sym1",
                 // "--use_grnboost2"
                 

@@ -17,34 +17,34 @@
 # seeds
 ########################################
 
-echo "Start generating X from 1 to 10..." > /home/jiahang/dagma/src/dagma/pipe_log.log
+# echo "Start generating X from 1 to 10..." > /home/jiahang/dagma/src/dagma/pipe_log.log
 
-n=2000
-d=20
-s0=40
+# n=2000
+# d=20
+# s0=40
 
-seedsX=( {1..3..1} )
-for seedX in "${seedsX[@]}"; do
-    # s0=$(( d * 2 ))
+# seedsX=( {1..3..1} )
+# for seedX in "${seedsX[@]}"; do
+#     # s0=$(( d * 2 ))
     
-    python gen_copies.py --gen_type X \
-    --n $n --d $d --s0 $s0 \
-    --norm_data_gen sym_1 \
-    --seed_X $seedX \
-    --root_path simulated_data/v11 \
-    --force_save \
-    --version ${d}_${s0}_normX_sym1 &
+#     python gen_copies.py --gen_type X \
+#     --n $n --d $d --s0 $s0 \
+#     --norm_data_gen sym_1 \
+#     --seed_X $seedX \
+#     --root_path simulated_data/v11 \
+#     --force_save \
+#     --version ${d}_${s0}_normX_sym1 &
 
-    # _seedX=$(( seedX % 20 ))
+#     # _seedX=$(( seedX % 20 ))
 
-    # if [ ${_seedX} -eq 19 ]; then
-    #     wait
-    # fi
-done
+#     # if [ ${_seedX} -eq 19 ]; then
+#     #     wait
+#     # fi
+# done
 
-wait
+# wait
 
-echo "End generating X from 1 to 10." >> /home/jiahang/dagma/src/dagma/pipe_log.log
+# echo "End generating X from 1 to 10." >> /home/jiahang/dagma/src/dagma/pipe_log.log
 
 # wait
 
@@ -75,100 +75,101 @@ echo "End generating X from 1 to 10." >> /home/jiahang/dagma/src/dagma/pipe_log.
 # Generating Knockoff, sweep over n_nodes
 #########################################
 
-echo "Start generating knockoff from 1 to 3..." > /home/jiahang/dagma/src/dagma/pipe_log.log
+# echo "Start generating knockoff from 1 to 3..." > /home/jiahang/dagma/src/dagma/pipe_log.log
 
-data_option=X
-dst_data_version=49
-src_data_version=11
-# fit_W_version=39
-fit_W_version=48
-n=2000
-cuda_idx=5
-nodes=(20)
-seedsX=( {1..3..1} )
-seedsKnockoff=( 1 )
-suffixs=(_option_5_PLS_normX=sym1_grnboost2
-         _option_10_PLS_normX=sym1_grnboost2
-         )
-cnt=0
 
-for d in "${nodes[@]}"; do
-    for suffix in "${suffixs[@]}"; do
-        for seedKnockoff in "${seedsKnockoff[@]}"; do
-            s0=$(( d * 2 ))
+# data_option=X
+# dst_data_version=49
+# src_data_version=11
+# # fit_W_version=39
+# fit_W_version=48
+# n=2000
+# cuda_idx=5
+# nodes=(20)
+# seedsX=( {1..3..1} )
+# seedsKnockoff=( 1 )
+# suffixs=(_option_5_PLS_normX=sym1_grnboost2
+#          _option_10_PLS_normX=sym1_grnboost2
+#          )
+# cnt=0
+
+# for d in "${nodes[@]}"; do
+#     for suffix in "${suffixs[@]}"; do
+#         for seedKnockoff in "${seedsKnockoff[@]}"; do
+#             s0=$(( d * 2 ))
             
-            dst_version=${d}_${s0}${suffix}
-            src_version=${d}_${s0}_normX_sym1
+#             dst_version=${d}_${s0}${suffix}
+#             src_version=${d}_${s0}_normX_sym1
             
-            ./create_data_dir.sh $data_option $dst_data_version $dst_version $src_data_version $src_version
+#             ./create_data_dir.sh $data_option $dst_data_version $dst_version $src_data_version $src_version
 
-            target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff
-            if [ ! -d "$target_dir$" ]; then
-                mkdir -p ${target_dir}
-            fi
+#             target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff
+#             if [ ! -d "$target_dir$" ]; then
+#                 mkdir -p ${target_dir}
+#             fi
 
-            for seedX in "${seedsX[@]}"; do
-                # PLS
-                if [ $suffix = '_option_5_PLS_normX=sym1_grnboost2' ]; then
-                    CUDA_VISIBLE_DEVICES=${cuda_idx} \
-                    python knockoff_v44.py \
-                    --W_type=W_est \
-                    --data_version=v${dst_data_version} \
-                    --dst_version=v${dst_version} \
-                    --fit_W_version=v${fit_W_version} \
-                    --option=5 \
-                    --d=${d} --s0=${s0} \
-                    --method_diagn_gen=PLS \
-                    --dedup \
-                    --device=cuda:${cuda_idx} \
-                    --seed_X=${seedX} \
-                    --seed_knockoff=${seedKnockoff} \
-                    --force_save \
-                    >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
+#             for seedX in "${seedsX[@]}"; do
+#                 # PLS
+#                 if [ $suffix = '_option_5_PLS_normX=sym1_grnboost2' ]; then
+#                     CUDA_VISIBLE_DEVICES=${cuda_idx} \
+#                     python knockoff_v44.py \
+#                     --W_type=W_est \
+#                     --data_version=v${dst_data_version} \
+#                     --dst_version=v${dst_version} \
+#                     --fit_W_version=v${fit_W_version} \
+#                     --option=5 \
+#                     --d=${d} --s0=${s0} \
+#                     --method_diagn_gen=PLS \
+#                     --dedup \
+#                     --device=cuda:${cuda_idx} \
+#                     --seed_X=${seedX} \
+#                     --seed_knockoff=${seedKnockoff} \
+#                     --force_save \
+#                     >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
 
-                    # --note="_grnboost2" \
+#                     # --note="_grnboost2" \
 
-                elif [ $suffix = '_option_10_PLS_normX=sym1_grnboost2' ]; then
-                    CUDA_VISIBLE_DEVICES=${cuda_idx} \
-                    python knockoff_v44.py \
-                    --W_type=W_est \
-                    --data_version=v${dst_data_version} \
-                    --dst_version=v${dst_version} \
-                    --fit_W_version=v${fit_W_version} \
-                    --option=10 \
-                    --d=${d} --s0=${s0} \
-                    --method_diagn_gen=PLS \
-                    --dedup \
-                    --device=cuda:${cuda_idx} \
-                    --seed_X=${seedX} \
-                    --seed_knockoff=${seedKnockoff} \
-                    --force_save \
-                    >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
+#                 elif [ $suffix = '_option_10_PLS_normX=sym1_grnboost2' ]; then
+#                     CUDA_VISIBLE_DEVICES=${cuda_idx} \
+#                     python knockoff_v44.py \
+#                     --W_type=W_est \
+#                     --data_version=v${dst_data_version} \
+#                     --dst_version=v${dst_version} \
+#                     --fit_W_version=v${fit_W_version} \
+#                     --option=10 \
+#                     --d=${d} --s0=${s0} \
+#                     --method_diagn_gen=PLS \
+#                     --dedup \
+#                     --device=cuda:${cuda_idx} \
+#                     --seed_X=${seedX} \
+#                     --seed_knockoff=${seedKnockoff} \
+#                     --force_save \
+#                     >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
 
-                    # --note="_grnboost2" \
-                fi
+#                     # --note="_grnboost2" \
+#                 fi
 
-                # control cuda device
-                cuda_idx=$(( cuda_idx + 1))
-                if [ $cuda_idx -eq 8 ]; then
-                    cuda_idx=5
-                fi
+#                 # control cuda device
+#                 cuda_idx=$(( cuda_idx + 1))
+#                 if [ $cuda_idx -eq 8 ]; then
+#                     cuda_idx=5
+#                 fi
                 
-                # control parallel process number
-                cnt=$(( cnt + 1 ))
-                _cnt=$(( cnt % 20 ))
+#                 # control parallel process number
+#                 cnt=$(( cnt + 1 ))
+#                 _cnt=$(( cnt % 20 ))
                 
-                if [ ${_cnt} -eq 19 ]; then
-                    wait
-                fi
-            done
-        done
-    done
-done
+#                 if [ ${_cnt} -eq 19 ]; then
+#                     wait
+#                 fi
+#             done
+#         done
+#     done
+# done
 
-wait
+# wait
 
-echo "End generating knockoff from 1 to 3." > /home/jiahang/dagma/src/dagma/pipe_log.log
+# echo "End generating knockoff from 1 to 3." > /home/jiahang/dagma/src/dagma/pipe_log.log
 
 #########################################
 # vanilla dagma, dagma_torch.py
@@ -210,33 +211,39 @@ echo "End generating knockoff from 1 to 3." > /home/jiahang/dagma/src/dagma/pipe
 
 # echo "Start fitting grnboost2 from 1 to 10..." > /home/jiahang/dagma/src/dagma/pipe_log.log
 
-# n_nodes=100
-# n_edges=200
+n_nodes=100
+n_edges=600
 
 # ntrees_list=(5000 500)
 # max_feat_list=(0.1 0.9)
 # max_sample_list=(0.9 0.1)
-# seedsX=( {1..3..1} )
+seedsX=( {1..3..1} )
+model_types=(OLS L1 L2 L1+L2)
 
-# for seedX in "${seedsX[@]}"; do
+for seedX in "${seedsX[@]}"; do
+    for model_type in "${model_types[@]}"; do
     
-#     src_note="_normX_sym1"
-#     dst_note="_normX=sym1_importance=permutation_grnboost2"
+        src_note="_normX_sym1"
+        dst_note="_normX=sym1_${model_type}"
+        python genie3.py \
+            --d=${n_nodes} --s0=${n_edges} --seed_X=${seedX} \
+            --src_note=${src_note} \
+            --dst_note=${dst_note} \
+            --force_save \
+            --model_type=${model_type} \
+            --nthreads=2 \
+            >/Users/jiahang/Documents/dagma/src/dagma/simulated_data/v48/${n_nodes}_${n_edges}/log_${seedX}_0_${dst_note} 2>&1 &
+            # >/home/jiahang/dagma/src/dagma/simulated_data/v48/${n_nodes}_${n_edges}/log_${seedX}_0_${dst_note} 2>&1 &
+            # --nthreads=4 --use_grnboost2 \
 
-#     python genie3.py \
-#         --d=${n_nodes} --s0=${n_edges} --seed_X=${seedX} \
-#         --src_note=${src_note} \
-#         --dst_note=${dst_note} \
-#         --force_save \
-#         --importance=permutation \
-#         --nthreads=4 --use_grnboost2 \
-#         >/home/jiahang/dagma/src/dagma/simulated_data/v48/${n_nodes}_${n_edges}/log_${seedX}_0_${dst_note} 2>&1 &
-#     # _cnt=$(( seedsX % 10 ))
-#     # if [ ${_cnt} -eq 9 ]; then
-#     #     wait
-#     # fi
-            
-# done
+        
+        # _cnt=$(( seedsX % 10 ))
+        # if [ ${_cnt} -eq 9 ]; then
+        #     wait
+        # fi
+    done
+    wait
+done
 
 # echo "End fitting grnboost2 from 1 to 10..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
 
