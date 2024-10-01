@@ -395,8 +395,8 @@ if __name__ == '__main__':
     d1, d2 = args.d1, args.d2
     s0 = args.s0
     version = f"v11/v{d}_{s0}" + args.src_note
-    # root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
-    root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
+    root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    # root_dir = '/Users/jiahang/Documents/dagma/src/dagma/simulated_data'
     tune_params = {
         'ntrees': args.ntrees,
         'max_feat': args.max_feat,

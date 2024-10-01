@@ -93,25 +93,25 @@
 
 run() {
     # data_version=44
-    data_version=49
+    data_version=47
     log_file_global=100
     # options=( 7 9 1 2 10 11 )
     # options=(1 2 7 9 10 11 12 )
     # options=( 5 )
-    suffixs=(_option_5_PLS_normX=sym1_grnboost2
-         _option_10_PLS_normX=sym1_grnboost2
-         )
+    suffixs=(_option_16_normX=sym1
+             _option_17_normX=sym1
+            )
     control_options=(global)
     # option=5
     n=2000
     # nComps=( 3 4 )
     
-    nodes=(20)
+    nodes=(100)
     for d in "${nodes[@]}"; do
         # for option in "${options[@]}"; do
         for suffix in "${suffixs[@]}"; do
             for control in "${control_options[@]}"; do
-                s0=$(( d * 2 ))
+                s0=$(( d * 6 ))
 
                 # version=${d}_${s0}_condX_5e4_option_5_OLS
                 # python multi_main.py \

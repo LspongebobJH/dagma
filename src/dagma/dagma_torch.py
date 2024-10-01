@@ -15,6 +15,10 @@ import torch.nn.init as init
 from torch.nn.parameter import Parameter
 from torch.optim import Adam, lr_scheduler
 
+from sklearn.metrics import auc, precision_recall_curve, roc_auc_score
+from sklearn.inspection import permutation_importance
+from copy import deepcopy
+
 __all__ = ["DagmaTorch"]
 
 # TODO: rescaling W_pred to make itself converge [ deconv_1 X , deconv_2 Y ]
@@ -260,7 +264,8 @@ class DagmaTorch:
                  mu: float, 
                  s: float,
                  lr_decay: float = False, 
-                 tol: float = 1e-6, 
+                 tol: float = 1e-6,
+                 disable_dag: bool = False
         ) -> bool:
         r"""
         Solves the optimization problem: 
@@ -303,13 +308,16 @@ class DagmaTorch:
         for i in range(max_iter):
             X_hat, regressor = self.model(self.X)
             h_val = self.model.h_func(regressor, s)
-            if h_val.item() < 0:
+            if not disable_dag and h_val.item() < 0:
                 self.vprint(f'Found h negative {h_val.item()} at iter {i}')
                 return False
             score = self.model.log_mse_loss(X_hat, self.X)
             g_dir_loss = self.model.g_dir_loss(self.X)
             l1_reg = lambda1 * self.model.l1_reg(regressor)
-            obj = mu * (score + l1_reg + g_dir_loss) + h_val
+            if disable_dag:
+                obj = score + l1_reg + g_dir_loss
+            else:
+                obj = mu * (score + l1_reg + g_dir_loss) + h_val
             optimizer.zero_grad()
             obj.backward()
             # print(f"score {score.item():.4f}")
@@ -345,7 +353,8 @@ class DagmaTorch:
             lr: float = .0002, 
             w_threshold: float = 0.3, 
             checkpoint: int = 1000,
-            return_no_filter : bool = False
+            return_no_filter : bool = False,
+            disable_dag : bool = False
         ) -> np.ndarray:
         r"""
         Runs the DAGMA algorithm and fits the model to the dataset.
@@ -416,7 +425,7 @@ class DagmaTorch:
             lr_decay = False
             while success is False:
                 success = self.minimize(inner_iter, lr, lambda1, lambda2, mu, s_cur, 
-                                    lr_decay)
+                                    lr_decay, disable_dag=disable_dag)
                 if success is False:
                     self.model.load_state_dict(model_copy.state_dict().copy())
                     lr *= 0.5 
@@ -442,15 +451,21 @@ if __name__ == '__main__':
     parser.add_argument('--d', type=int, default=None)
     parser.add_argument('--s0', type=int, default=None)
     parser.add_argument('--seed_X', type=int, default=1)
-    parser.add_argument('--note', type=str, default="")
+    parser.add_argument('--src_note', type=str, default="")
+    parser.add_argument('--dst_note', type=str, default="")
     parser.add_argument('--device', type=str, default='cuda:7') 
+
+    # experimentally testing hyperparameters
+    parser.add_argument('--disable_l1', action='store_true', default=False)
+    parser.add_argument('--disable_l2', action='store_true', default=False)
+    parser.add_argument('--disable_dag', action='store_true', default=False)
     args = parser.parse_args()
 
     utils.set_random_seed(0)
     
     n, d = 2000, args.d
     s0 = args.s0
-    version = f"v11/v{d}_{s0}" + args.note
+    version = f"v11/v{d}_{s0}" + args.src_note
     device = args.device
     root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
     data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
@@ -463,14 +478,39 @@ if __name__ == '__main__':
     eq_model = DagmaLinear(d=d, dagma_type='dagma_1', device=device, original=True).to(device)
     model = DagmaTorch(eq_model, device=device, verbose=True)
     print("fit dagma")
-    W_est_no_filter, W_est = model.fit(X, lambda1=0.02, lambda2=0.005, return_no_filter=True)
+    if args.disable_l1:
+        lambda1=0.
+    else:
+        lambda1=0.02 # default DAGMA
+    
+    if args.disable_l2:
+        lambda2=0.
+    else:
+        lambda2=0.005 # default DAGMA
+
+    W_est_no_filter, W_est = model.fit(X, lambda1=lambda1, lambda2=lambda2, return_no_filter=True,
+                                       disable_dag=args.disable_dag)
     acc = utils_dagma.count_accuracy(B_true, W_est != 0, use_logger=False)
     print(acc)
+
+    prec, rec, threshold = precision_recall_curve(B_true.astype(int).flatten(), np.abs(W_est).flatten())
+    auprc = auc(rec, prec)
+    auroc = roc_auc_score(B_true.astype(int).flatten(), np.abs(W_est).flatten())
+
+    prec_trunc, rec_trunc, threshold_trunc = \
+        precision_recall_curve(B_true.astype(int).flatten(), 
+                               np.abs(W_est).flatten())
+    auprc_trunc = auc(rec_trunc, prec_trunc)
+    auroc_trunc = roc_auc_score(B_true.astype(int).flatten(), 
+                                np.abs(W_est).flatten())
+
+    print(f"auprc: {auprc:.2f} | auroc: {auroc:.2f}")
+    print(f"auprc_trunc: {auprc_trunc:.2f} | auroc_trunc: {auroc_trunc:.2f}")
 
     data_dir = os.path.join(root_dir, "v39", f"{d}_{s0}")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
-    data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.note}.pkl")
+    data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.dst_note}.pkl")
     with open(data_path, 'wb') as f:
         pickle.dump(W_est_no_filter, f)
     print("DONE")

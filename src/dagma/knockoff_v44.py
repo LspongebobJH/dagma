@@ -16,8 +16,8 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data_version', type=str, required=True)
     parser.add_argument('--dst_version', type=str, required=True)
-    parser.add_argument('--fit_W_version', type=str, required=True)
-    parser.add_argument('--option', type=int, default=None, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+    parser.add_argument('--fit_W_version', type=str)
+    parser.add_argument('--option', type=int, default=None, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
     parser.add_argument('--method_diagn_gen', type=str, default='OLS_cuda', choices=['lasso', 'xgb', 'elastic', 'OLS_cuda', "PLS"])
     parser.add_argument('--lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
     parser.add_argument('--PLS_n_comp', type=int, default=2, choices=[2, 3, 4])
@@ -47,6 +47,7 @@ if __name__ == '__main__':
     assert configs['seed_model'] == 0
     n_jobs = configs['n_jobs']
     utils.set_random_seed(configs['seed_knockoff'])
+    rng = np.random.default_rng(seed=configs['seed_knockoff'])
 
     assert configs['dedup'] is True
     
@@ -85,7 +86,7 @@ if __name__ == '__main__':
         X = (X - X_mean) / (X_std + 1e-8)
 
     # load W
-    if configs['option'] not in [5, 10] or (configs['option'] == 10 and configs['topo_sort']):
+    if configs['option'] not in [5, 10, 16, 17] or (configs['option'] == 10 and configs['topo_sort']):
         if configs['W_type'] == 'W_est':
             # version = f"v39/{configs['d']}_{configs['s0']}/W_{configs['d']}_{configs['s0']}_{configs['seed_X']}_{configs['seed_model']}{configs['note']}.pkl"
             version = f"{configs['fit_W_version']}/{configs['d']}_{configs['s0']}/W_{configs['d']}_{configs['s0']}_{configs['seed_X']}_{configs['seed_model']}{configs['note']}.pkl"
@@ -389,28 +390,35 @@ if __name__ == '__main__':
                             [X_input, X_tilde[:, n_knockoff]],
                             axis=1
                         )
+        
+        elif configs['option'] == 16: # permutation
+            no_need_pred = False
+            no_input = True
 
+        elif configs['option'] == 17: # gaussian noise
+            sample = rng.normal(X[:, j].mean(), X[:, j].std(), size=X[:, j].shape)
 
-        if not no_need_pred: # need to fit model for X_pred
-            if not no_input: # has no X_input for model fitting
-                if isinstance(X_input, list):
-                    X_input = [val for val in X_input if val is not None]
-                    X_input = np.concatenate(X_input, axis=1)
-                _configs = deepcopy(configs)
-                if _configs['method_diagn_gen'] == 'PLS' and X_input.shape[1] < configs['PLS_n_comp']:
-                    _configs['method_diagn_gen'] = 'OLS_cuda'
-                    print("use OLS_cuda rather than PLS")
-                preds = _get_single_clf(X_input, X[:, j], 
-                                        method=_configs['method_diagn_gen'], 
-                                        alpha=_configs['lasso_alpha'],
-                                        n_comp=_configs['PLS_n_comp'],
-                                        device=_configs['device'])
-            else:
-                preds = 0.
-        residuals = X[:, j] - preds
-        indices_ = np.arange(residuals.shape[0])
-        np.random.shuffle(indices_)
-        sample = preds + residuals[indices_]
+        if configs['option'] != 17:
+            if not no_need_pred: # need to fit model for X_pred
+                if not no_input: # has no X_input for model fitting
+                    if isinstance(X_input, list):
+                        X_input = [val for val in X_input if val is not None]
+                        X_input = np.concatenate(X_input, axis=1)
+                    _configs = deepcopy(configs)
+                    if _configs['method_diagn_gen'] == 'PLS' and X_input.shape[1] < configs['PLS_n_comp']:
+                        _configs['method_diagn_gen'] = 'OLS_cuda'
+                        print("use OLS_cuda rather than PLS")
+                    preds = _get_single_clf(X_input, X[:, j], 
+                                            method=_configs['method_diagn_gen'], 
+                                            alpha=_configs['lasso_alpha'],
+                                            n_comp=_configs['PLS_n_comp'],
+                                            device=_configs['device'])
+                else:
+                    preds = 0.
+            residuals = X[:, j] - preds
+            indices_ = np.arange(residuals.shape[0])
+            np.random.shuffle(indices_)
+            sample = preds + residuals[indices_]
         sample = _adjust_marginal(sample, X[:, j], discrete=False)
         X_tilde[:, j] = sample
     

@@ -55,7 +55,7 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--option=13",
+                "--option=17",
                 "--data_version=v47",
                 "--dst_version=v20_120_normX_sym1_option_1_OLS_new",
                 "--d=20",
@@ -66,7 +66,8 @@
                 "--seed_X=1",
                 "--seed_knockoff=1",
                 "--note=_normX_sym1",
-                "--dedup"
+                "--dedup",
+                "--force_save"
             ]
         },
         {
@@ -99,7 +100,16 @@
             "request": "launch",
             "program": "dagma_torch.py",
             "console": "integratedTerminal",
-            "cwd": "/home/jiahang/dagma/src/dagma"
+            "cwd": "/home/jiahang/dagma/src/dagma",
+            "args": [
+                "--d=100",
+                "--s0=600",
+                "--src_note=_normX_sym1",
+                "--seed_X=1",
+                "--disable_l1",
+                "--disable_l2",
+                "--disable_dag"
+            ]
         },
         {
             "name": "linear.py",

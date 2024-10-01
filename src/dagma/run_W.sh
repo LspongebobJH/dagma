@@ -42,9 +42,9 @@ run() {
     # src_data_version=11
 
     n=2000
-    s0=$(( d * 2 ))
-    suffixs=(_option_5_PLS_normX=sym1_grnboost2
-             _option_10_PLS_normX=sym1_grnboost2
+    s0=$(( d * 6 ))
+    suffixs=(_option_16_normX=sym1
+             _option_17_normX=sym1
             )
     seedsX=( {1..3..1} )
     seedsKnockoff=( 1 )
@@ -70,14 +70,13 @@ run() {
                 for seedX in "${seedsX[@]}"; do
                     stdbuf -o0 -e0 \
                     python gen_copies.py \
-                    --gen_type W_grnboost2 \
+                    --gen_type W_torch \
                     --n $n --s0 $s0 --d $d \
                     --seed_X $seedX \
                     --seed_knockoff $seedKnockoff \
                     --root_path simulated_data/v${dst_data_version} \
                     --version ${version} \
                     --knock_genie3_type unified \
-                    --force_save \
                     --device cuda:${cuda_idx} > simulated_data/v${dst_data_version}/v${version}/W/log_${seedX}_${seedKnockoff}_0 2>&1 &
 
                     cuda_idx=$(( cuda_idx + 1))
@@ -103,7 +102,8 @@ run() {
     
 }
 
-data_version=49
+# data_version=49
+data_version=47
 
 
 # d=20
@@ -130,8 +130,8 @@ data_version=49
 
 echo "Start fitting W of [X, X'] from 1 to 3..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
 
-d=20
-cuda_idx=7
+d=100
+cuda_idx=5
 run $data_version $d $cuda_idx
 
 wait
