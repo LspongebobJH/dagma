@@ -93,13 +93,12 @@
 
 run() {
     # data_version=44
-    data_version=47
+    data_version=49
     log_file_global=100
     # options=( 7 9 1 2 10 11 )
     # options=(1 2 7 9 10 11 12 )
     # options=( 5 )
-    suffixs=(_option_16_normX=sym1
-             _option_17_normX=sym1
+    suffixs=(_option_5_PLS_normX_sym1_grnboost2
             )
     control_options=(global)
     # option=5
@@ -135,10 +134,11 @@ run() {
                     --seed_X_list=1,3,-1 \
                     --seed_knockoff_list=1 \
                     --seed_model_list=0 \
+                    --dag_control=dag_8 \
                     --version=$version \
                     --root_path simulated_data/v${data_version} \
                     --n_jobs=4 \
-                    --log_file=log_${log_file_global}/log_${data_version}_${version}_1-3 &
+                    --log_file=log_${log_file_global}/log_${data_version}_${version}_1-3_dag_8 &
                 fi
                 
 

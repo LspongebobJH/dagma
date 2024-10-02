@@ -8,6 +8,7 @@ import logging
 from utils import extract_dag_mask
 from joblib import Parallel, delayed
 from tqdm import tqdm
+from copy import deepcopy
 
 logger = logging.getLogger(__name__)
 
@@ -173,28 +174,66 @@ def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : fl
     logger.info(f"==============================")
     return fdr_true, power
 
-def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : float, W_full: np.ndarray = None):
-    num_feat = configs['d']
-    est_type = configs['est_type']
-    numeric = configs['numeric']
-    numeric_precision = eval(configs['numeric_precision'])
-    abs_t_list = configs['abs_t_list']
-    abs_selection = configs['abs_selection']
-    trick = configs['trick']
-    n_jobs = configs['n_jobs']
+def dag_control_proc(configs: dict, W_full: np.ndarray = None, Z: np.ndarray = None, Q: np.ndarray = None, pre_mask: np.ndarray = None):
+    # dag control on Q is deprecated
+    dag_control, d = configs['dag_control'], configs['d']
+    if dag_control == 'dag_7': # before W -> Z
+        W_full = np.abs(W_full)
+        mask = extract_dag_mask(W_full, 0)
+        W_full[~mask] = 0
+        W = W_full[:, :d]
+        return W
 
-    logger.info(f"==============================")
-    logger.info(f"expected FDR {fdr}")
 
-    if not (np.diag(W[:num_feat, :]) == 0.).all():
-        logger.warning("W11 has non-zero diagonals, now forcibly remove self-loops.")
-        W[:num_feat, :] = W[:num_feat, :] - np.diag(np.diag(W[:num_feat, :]))
-    if not (np.diag(W[num_feat:, :]) == 0.).all():
-        logger.warning("W21 has non-zero diagonals, now forcibly remove self-loops.")
-        W[num_feat:, :] = W[num_feat:, :] - np.diag(np.diag(W[num_feat:, :]))
-    Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])
-        
+    # after W -> Z and before fdr control
+    if dag_control == 'dag_1':
+        Z_min = Z.min()
+        mask = extract_dag_mask(Z, 0)
+        Z[~mask] = Z_min
+        return Z
+    elif dag_control == 'dag_2':
+        Z_min = Z.min()
+        mask = extract_dag_mask(Z, 1)
+        Z[~mask] = Z_min
+        return Z
+    elif dag_control == 'dag_8':
+        _Z = Z.copy()
+        selectors = np.random.binomial(1, 0.5, [d, d])
+        for i in range(d):
+            for j in range(i, d):
+                if _Z[i, j] > _Z[j, i]:
+                    _Z[j, i] = 0.
+                elif _Z[i, j] < _Z[j, i]:
+                    _Z[i, j] = 0.
+                else:
+                    if selectors[i, j] == 1:
+                        _Z[j, i] = 0.
+                    else:
+                        _Z[i, j] = 0.
+                
+        return _Z
+    
+    # after fdr control, mask is given by fdr control
+    if dag_control == 'dag_3':
+        _Z = Z.copy()
+        dag_mask = extract_dag_mask(_Z, 0, pre_mask = pre_mask)
+        return dag_mask
+    elif dag_control == 'dag_4':
+        _Z = Z.copy()
+        dag_mask = extract_dag_mask(_Z, 1, pre_mask = pre_mask)
+        return dag_mask
+    elif dag_control == 'dag_5':
+        _Q = Q.copy()
+        dag_mask = extract_dag_mask(_Q, 2, pre_mask = pre_mask)
+        return dag_mask
+    elif dag_control == 'dag_6':
+        _Q = Q.copy()
+        dag_mask = extract_dag_mask(_Q, 3, pre_mask = pre_mask)
+        return dag_mask
+    
 
+def trick_proc(W_full: np.ndarray, configs: dict):
+    trick, num_feat = configs['trick'], configs['d']
     if trick == 'trick_1':
         Z1 = np.abs(W_full[:num_feat, num_feat:]) - np.abs(W_full[num_feat:, num_feat:])
         Z = Z - Z1
@@ -241,21 +280,54 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
         W11_1 = np.abs(W11) - coef * np.abs(W11_pow)
         W21_1 = np.abs(W21) - np.abs(W21_pow)
         Z = W11_1 - W21_1
+    
+    return Z
+
+def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : float, W_full: np.ndarray = None):
+    num_feat = configs['d']
+    est_type = configs['est_type']
+    numeric = configs['numeric']
+    numeric_precision = eval(configs['numeric_precision'])
+    abs_t_list = configs['abs_t_list']
+    abs_selection = configs['abs_selection']
+    n_jobs = configs['n_jobs']
+    dag_control = configs['dag_control']
+    trick = configs['trick']
+
+    logger.info(f"==============================")
+    logger.info(f"expected FDR {fdr}")
+
+    if not (np.diag(W[:num_feat, :]) == 0.).all():
+        logger.warning("W11 has non-zero diagonals, now forcibly remove self-loops.")
+        W[:num_feat, :] = W[:num_feat, :] - np.diag(np.diag(W[:num_feat, :]))
+    if not (np.diag(W[num_feat:, :]) == 0.).all():
+        logger.warning("W21 has non-zero diagonals, now forcibly remove self-loops.")
+        W[num_feat:, :] = W[num_feat:, :] - np.diag(np.diag(W[num_feat:, :]))
+
+    if dag_control == 'dag_7':
+        W = dag_control_proc(configs, W_full=W_full)
+
+    Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])
+
+    if dag_control in ['dag_1', 'dag_2', 'dag_8']:
+        Z = dag_control_proc(configs, Z=Z)
+    if trick is not None:
+        Z = trick_proc(W_full, configs)
 
     if numeric:
         Z[(Z <= numeric_precision) & (Z >= -numeric_precision)] = 0.
     
+    if abs_t_list:
+        t_list = np.concatenate(([0], np.sort(np.unique(np.abs(Z)))))
+    else:
+        t_list = np.sort(np.concatenate(([0], np.unique(Z))))
+
     T_T_true = np.abs(W_true)
     mask = (T_T_true > 0.)
     T_T_true[mask], T_T_true[~mask] = 1, 0
 
     fdr_est_last = 1.
     t_last = np.inf
-
-    if abs_t_list:
-        t_list = np.concatenate(([0], np.sort(np.unique(np.abs(Z)))))
-    else:
-        t_list = np.sort(np.concatenate(([0], np.unique(Z))))
 
     def _get_t(t_list: list):
         t_last = np.inf
@@ -304,7 +376,16 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
         mask = (np.abs(Z >= t_last))
     else:
         mask = (Z >= t_last)
-    Z[mask], Z[~mask] = 1, 0
+    _Z = deepcopy(Z)
+    _Z[mask], _Z[~mask] = 1, 0
+
+    dag_mask = np.full(mask.shape, fill_value=True)
+    if dag_control is None or utils_dagma.is_dag(Z):
+        T_T = _Z
+    elif dag_control in ['dag_3', 'dag_4']:
+        _Z = deepcopy(Z)
+        dag_mask = dag_control_proc(configs, Z=_Z, pre_mask=mask)
+    Z[mask * dag_mask], Z[~(mask * dag_mask)] = 1, 0
     T_T = Z
     
     perf = utils_dagma.count_accuracy_simplify(T_T_true, T_T)
@@ -321,6 +402,7 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
 
 def type_4_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : int, W_full: np.ndarray = None):
     """
+    deprecated, merged with type_3_control_global
     TODO: tiem profiling, especially extract_dag_mask, where topo sort is time-consuming. can try binary search.
     W_full: dag_7 is applied to the whole W11, W12, W21, W22, then W = [W11 || W21], rather than the input one.
     """

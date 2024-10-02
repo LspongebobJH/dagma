@@ -54,7 +54,7 @@ parser.add_argument('--trick', type=str, default=None,
                              'trick_4', 'trick_5', 'trick_6', 'trick_7', 'trick_8',
                              'trick_9', 'trick_10'])
 
-# network deconvolution
+# network deconvolution, deprecated
 parser.add_argument('--deconv_type', type=str, default=None, choices=[None, 'deconv_1', 'deconv_2'])
 ## valid only when deconv_1
 parser.add_argument('--beta', type=float, default=None)
