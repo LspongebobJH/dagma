@@ -176,11 +176,32 @@ def type_3_control(configs : dict, W : np.ndarray, W_true : np.ndarray, fdr : fl
 
 def dag_control_proc(configs: dict, W_full: np.ndarray = None, Z: np.ndarray = None, Q: np.ndarray = None, pre_mask: np.ndarray = None):
     # dag control on Q is deprecated
+    rng = np.random.default_rng(0)
     dag_control, d = configs['dag_control'], configs['d']
     if dag_control == 'dag_7': # before W -> Z
         W_full = np.abs(W_full)
         mask = extract_dag_mask(W_full, 0)
         W_full[~mask] = 0
+        W = W_full[:, :d]
+        return W
+    elif dag_control == 'dag_9':
+        W = np.abs(W_full[:d, :d])
+        selectors = rng.binomial(1, 0.5, [d, d])
+        for i in range(d):
+            for j in range(i, d):
+                if W[i, j] > W[j, i]:
+                    W_full[j, i] = 0.
+                    W_full[j+d, i] = 0.
+                elif W[i, j] < W[j, i]:
+                    W_full[i, j] = 0.
+                    W_full[i+d, j] = 0.
+                else:
+                    if selectors[i, j] == 1:
+                        W_full[j, i] = 0.
+                        W_full[j+d, i] = 0.
+                    else:
+                        W_full[i, j] = 0.
+                        W_full[i+d, j] = 0.
         W = W_full[:, :d]
         return W
 
@@ -198,7 +219,7 @@ def dag_control_proc(configs: dict, W_full: np.ndarray = None, Z: np.ndarray = N
         return Z
     elif dag_control == 'dag_8':
         _Z = Z.copy()
-        selectors = np.random.binomial(1, 0.5, [d, d])
+        selectors = rng.binomial(1, 0.5, [d, d])
         for i in range(d):
             for j in range(i, d):
                 if _Z[i, j] > _Z[j, i]:
@@ -210,8 +231,8 @@ def dag_control_proc(configs: dict, W_full: np.ndarray = None, Z: np.ndarray = N
                         _Z[j, i] = 0.
                     else:
                         _Z[i, j] = 0.
-                
         return _Z
+
     
     # after fdr control, mask is given by fdr control
     if dag_control == 'dag_3':
@@ -304,7 +325,7 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
         logger.warning("W21 has non-zero diagonals, now forcibly remove self-loops.")
         W[num_feat:, :] = W[num_feat:, :] - np.diag(np.diag(W[num_feat:, :]))
 
-    if dag_control == 'dag_7':
+    if dag_control in ['dag_7', 'dag_9']:
         W = dag_control_proc(configs, W_full=W_full)
 
     Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])

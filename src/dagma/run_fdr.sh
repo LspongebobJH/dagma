@@ -103,6 +103,7 @@ run() {
     control_options=(global)
     # option=5
     n=2000
+    dag_control=dag_8
     # nComps=( 3 4 )
     
     nodes=(100)
@@ -134,11 +135,11 @@ run() {
                     --seed_X_list=1,3,-1 \
                     --seed_knockoff_list=1 \
                     --seed_model_list=0 \
-                    --dag_control=dag_8 \
+                    --dag_control=${dag_control} \
                     --version=$version \
                     --root_path simulated_data/v${data_version} \
                     --n_jobs=4 \
-                    --log_file=log_${log_file_global}/log_${data_version}_${version}_1-3_dag_8 &
+                    --log_file=log_${log_file_global}/log_${data_version}_${version}_1-3_${dag_control} &
                 fi
                 
 
