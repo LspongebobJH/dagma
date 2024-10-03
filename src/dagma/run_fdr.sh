@@ -100,64 +100,62 @@ run() {
     # options=( 5 )
     suffixs=(_option_5_PLS_normX_sym1_grnboost2
             )
-    control_options=(global)
+    control=global
     # option=5
     n=2000
-    dag_control=dag_8
+    dag_control_list=(dag_10_0 dag_10_Z_min)
     # nComps=( 3 4 )
     
-    nodes=(100)
-    for d in "${nodes[@]}"; do
-        # for option in "${options[@]}"; do
-        for suffix in "${suffixs[@]}"; do
-            for control in "${control_options[@]}"; do
-                s0=$(( d * 6 ))
+    d=100
+    for suffix in "${suffixs[@]}"; do
+        for dag_control in "${dag_control_list[@]}"; do
+            s0=$(( d * 6 ))
 
-                # version=${d}_${s0}_condX_5e4_option_5_OLS
-                # python multi_main.py \
-                # --n $n --s0 $s0 --d $d \
-                # --control_type=type_3_global \
-                # --seed_X_list=3,4,5,6,11,12,13,15,17,18 \
-                # --seed_knockoff_list=1 \
-                # --seed_model_list=0 \
-                # --version=$version \
-                # --root_path simulated_data/v${data_version} \
-                # --n_jobs=4 \
-                # --log_file=log_${log_file_global}/log_${data_version}_${version} &
-                # wait
+            # version=${d}_${s0}_condX_5e4_option_5_OLS
+            # python multi_main.py \
+            # --n $n --s0 $s0 --d $d \
+            # --control_type=type_3_global \
+            # --seed_X_list=3,4,5,6,11,12,13,15,17,18 \
+            # --seed_knockoff_list=1 \
+            # --seed_model_list=0 \
+            # --version=$version \
+            # --root_path simulated_data/v${data_version} \
+            # --n_jobs=4 \
+            # --log_file=log_${log_file_global}/log_${data_version}_${version} &
+            # wait
 
-                # version=${d}_${s0}_normX_sym1_option_${option}_PLS
-                version=${d}_${s0}${suffix}
-                if [ $control == 'global' ]; then
-                    python multi_main.py \
-                    --n $n --s0 $s0 --d $d \
-                    --control_type=type_3_global \
-                    --seed_X_list=1,3,-1 \
-                    --seed_knockoff_list=1 \
-                    --seed_model_list=0 \
-                    --dag_control=${dag_control} \
-                    --version=$version \
-                    --root_path simulated_data/v${data_version} \
-                    --n_jobs=4 \
-                    --log_file=log_${log_file_global}/log_${data_version}_${version}_1-3_${dag_control} &
-                fi
-                
+            # version=${d}_${s0}_normX_sym1_option_${option}_PLS
+            version=${d}_${s0}${suffix}
+            if [ $control == 'global' ]; then
+                python multi_main.py \
+                --n $n --s0 $s0 --d $d \
+                --control_type=type_3_global \
+                --seed_X_list=1,3,-1 \
+                --seed_knockoff_list=1 \
+                --seed_model_list=0 \
+                --dag_control=${dag_control} \
+                --version=$version \
+                --root_path simulated_data/v${data_version} \
+                --n_jobs=4 \
+                --log_file=log_${log_file_global}/log_${data_version}_${version}_1-3_${dag_control} &
+            fi
+            
 
-                # version=${d}_${s0}_normX_B1Col_option_5_OLS
-                # python multi_main.py \
-                # --n $n --s0 $s0 --d $d \
-                # --control_type=type_3_global \
-                # --seed_X_list=1,2,7,8,9,10,14,16,19,23 \
-                # --seed_knockoff_list=1 \
-                # --seed_model_list=0 \
-                # --version=$version \
-                # --root_path simulated_data/v${data_version} \
-                # --n_jobs=4 \
-                # --log_file=log_${log_file_global}/log_${data_version}_${version} &
-                # # wait
-            done
+            # version=${d}_${s0}_normX_B1Col_option_5_OLS
+            # python multi_main.py \
+            # --n $n --s0 $s0 --d $d \
+            # --control_type=type_3_global \
+            # --seed_X_list=1,2,7,8,9,10,14,16,19,23 \
+            # --seed_knockoff_list=1 \
+            # --seed_model_list=0 \
+            # --version=$version \
+            # --root_path simulated_data/v${data_version} \
+            # --n_jobs=4 \
+            # --log_file=log_${log_file_global}/log_${data_version}_${version} &
+            # # wait
         done
     done
+    
 
 }
 

@@ -227,11 +227,14 @@ def extract_dag_mask(A : np.ndarray, extract_type : int, pre_mask : np.ndarray =
     1: the inclusion is from the largest to the smallest until DAG is not satisfied
     2: the removal is from the largest to the smallest until DAG is satisfied
     3: the inclusion is from the smallest to the largest until DAG is not satisfied
+    4: specialized to Z before fdr control - 
+        inclusion from the largest to the smallest (only positive part),
+        if an edge violates DAG, dont include it.
 
     hypothesis: if A == Z, extract_type == 0 / 1 (or 2 / 3) are the same results. but
     if A == Q, 0 / 1 (or 2 / 3) are different since q-value is not completely monotonic with number of edges
     """
-    assert extract_type in [0, 1, 2, 3]
+    assert extract_type in [0, 1, 2, 3, 4]
     a_list = np.sort(np.unique(A.flatten()))
     if pre_mask is None:
         pre_mask = np.full(A.shape, fill_value = True)
@@ -278,6 +281,25 @@ def extract_dag_mask(A : np.ndarray, extract_type : int, pre_mask : np.ndarray =
             if not utils_dagma.is_dag(_A):
                 break
             mask_last = mask
+        mask = mask_last
+
+    elif extract_type == 4:
+        a_list = np.flip(a_list)
+        mask_last = np.full(A.shape, fill_value = True)
+        for a in a_list:
+            if a <= 0:
+                break
+            _A = A.copy()
+            mask = (_A >= a)
+            _A[mask * pre_mask], _A[~(mask * pre_mask)] = 1, 0 
+
+            if not utils_dagma.is_dag(_A):
+                mask_last[A == a] = False
+        
+        _A = np.zeros(A.shape)
+        _A[mask_last & (A > 0.)] = 1.
+
+        assert utils_dagma.is_dag(_A)
         mask = mask_last
 
     return mask

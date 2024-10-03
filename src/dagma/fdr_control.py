@@ -232,6 +232,18 @@ def dag_control_proc(configs: dict, W_full: np.ndarray = None, Z: np.ndarray = N
                     else:
                         _Z[i, j] = 0.
         return _Z
+    elif dag_control == 'dag_10_0':
+        mask = extract_dag_mask(Z, 4)
+        _Z = Z.copy()
+        Z[~mask] = 0.
+        assert (_Z[_Z < 0.] == Z[Z < 0.]).all()
+        return Z
+
+    elif dag_control == 'dag_10_Z_min':
+        Z_min = Z.min()
+        mask = extract_dag_mask(Z, 4)
+        Z[~mask] = Z_min
+        return Z
 
     
     # after fdr control, mask is given by fdr control
@@ -330,7 +342,7 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
 
     Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])
 
-    if dag_control in ['dag_1', 'dag_2', 'dag_8']:
+    if dag_control in ['dag_1', 'dag_2', 'dag_8', 'dag_10_0', 'dag_10_Z_min']:
         Z = dag_control_proc(configs, Z=Z)
     if trick is not None:
         Z = trick_proc(W_full, configs)
