@@ -291,7 +291,7 @@ def extract_dag_mask(A : np.ndarray, extract_type : int, pre_mask : np.ndarray =
                 break
             _A = A.copy()
             mask = (_A >= a)
-            _A[mask * pre_mask], _A[~(mask * pre_mask)] = 1, 0 
+            _A[mask_last * mask * pre_mask], _A[~(mask_last * mask * pre_mask)] = 1, 0 
 
             if not utils_dagma.is_dag(_A):
                 mask_last[A == a] = False
