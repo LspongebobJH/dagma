@@ -205,6 +205,21 @@ def dag_control_proc(configs: dict, W_full: np.ndarray = None, Z: np.ndarray = N
         W = W_full[:, :d]
         return W
 
+    elif dag_control == 'dag_12':
+        W = np.abs(W_full[:d, :d])
+        mask = extract_dag_mask(W, 4)
+        mask = np.concatenate([mask, mask], axis=0)
+        W = W_full[:, :d]
+        W[~mask] = 0.
+        return W
+
+    elif dag_control == 'dag_13':
+        W = np.abs(W_full[:d, :d])
+        mask = extract_dag_mask(W, 5)
+        mask = np.concatenate([mask, mask], axis=0)
+        W = W_full[:, :d]
+        W[~mask] = 0.
+        return W
 
     # after W -> Z and before fdr control
     if dag_control == 'dag_1':
@@ -233,7 +248,7 @@ def dag_control_proc(configs: dict, W_full: np.ndarray = None, Z: np.ndarray = N
                         _Z[i, j] = 0.
         return _Z
     elif dag_control == 'dag_10_0':
-        mask = extract_dag_mask(Z, 4)
+        mask = extract_dag_mask(Z, 4, only_positive=True)
         _Z = Z.copy()
         Z[~mask] = 0.
         assert (_Z[_Z < 0.] == Z[Z < 0.]).all()
@@ -241,9 +256,24 @@ def dag_control_proc(configs: dict, W_full: np.ndarray = None, Z: np.ndarray = N
 
     elif dag_control == 'dag_10_Z_min':
         Z_min = Z.min()
-        mask = extract_dag_mask(Z, 4)
+        mask = extract_dag_mask(Z, 4, only_positive=True)
         Z[~mask] = Z_min
         return Z
+
+    elif dag_control == 'dag_11_0':
+        mask = extract_dag_mask(Z, 5, only_positive=True)
+        _Z = Z.copy()
+        Z[~mask] = 0.
+        assert (_Z[_Z < 0.] == Z[Z < 0.]).all()
+        return Z
+
+    elif dag_control == 'dag_11_Z_min':
+        Z_min = Z.min()
+        mask = extract_dag_mask(Z, 5, only_positive=True)
+        Z[~mask] = Z_min
+        return Z
+
+    
 
     
     # after fdr control, mask is given by fdr control
@@ -337,12 +367,12 @@ def type_3_control_global(configs : dict, W : np.ndarray, W_true : np.ndarray, f
         logger.warning("W21 has non-zero diagonals, now forcibly remove self-loops.")
         W[num_feat:, :] = W[num_feat:, :] - np.diag(np.diag(W[num_feat:, :]))
 
-    if dag_control in ['dag_7', 'dag_9']:
+    if dag_control in ['dag_7', 'dag_9', 'dag_12', 'dag_13']:
         W = dag_control_proc(configs, W_full=W_full)
 
     Z = np.abs(W[:num_feat, :]) - np.abs(W[num_feat:, :])
 
-    if dag_control in ['dag_1', 'dag_2', 'dag_8', 'dag_10_0', 'dag_10_Z_min']:
+    if dag_control in ['dag_1', 'dag_2', 'dag_8', 'dag_10_0', 'dag_10_Z_min', 'dag_11_0', 'dag_11_Z_min']:
         Z = dag_control_proc(configs, Z=Z)
     if trick is not None:
         Z = trick_proc(W_full, configs)

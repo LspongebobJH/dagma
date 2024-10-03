@@ -103,7 +103,7 @@ run() {
     control=global
     # option=5
     n=2000
-    dag_control_list=(dag_10_0 dag_10_Z_min)
+    dag_control_list=(dag_13)
     # nComps=( 3 4 )
     
     d=100
