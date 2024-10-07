@@ -35,13 +35,15 @@
             "request": "launch",
             "program": "genie3.py",
             "console": "integratedTerminal",
-            // "cwd": "/home/jiahang/dagma/src/dagma",
-            "cwd": "/Users/jiahang/Documents/dagma/src/dagma",
+            "cwd": "/home/jiahang/dagma/src/dagma",
+            // "cwd": "/Users/jiahang/Documents/dagma/src/dagma",
             "args": [
                 // "--d=100",
                 // "--s0=600",
-                "--model_type=L1+L2",
+                "--model_type=tree",
                 "--src_note=_normX_sym1",
+                "--importance=tree-shap",
+                "--use_grnboost2"
                 // "--use_grnboost2"
                 
             ]
@@ -79,18 +81,21 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             "justMyCode": true,
             "args": [
-                "--gen_type=W_grnboost2",
+                "--gen_type=W_L1+L2",
                 "--n=2000",
                 "--d=100",
                 "--s0=600",
                 "--root_path=simulated_data/v49",
-                "--version=100_600_normX_sym1_option_10_PLS_grnboost2",
+                "--version=100_600_option_5_PLS_normX_sym1_grnboost2",
                 // "--norm_data_gen=B_1_col", 
                 "--force_save",
                 "--seed_X=1",
                 "--seed_knockoff=1",
-                "--knock_genie3_type=unified",
-                "--disable_remove_self"
+                "--seed_model=0",
+
+                "--elastic_alpha=10",
+                "--elastic_l1_ratio=0.9"
+                
                 // "--device=cuda:7"
             ]
         },

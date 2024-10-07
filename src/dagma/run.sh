@@ -78,86 +78,75 @@
 echo "Start generating knockoff from 1 to 3..." > /home/jiahang/dagma/src/dagma/pipe_log.log
 
 data_option=X
-dst_data_version=47
-# dst_data_version=49
+# dst_data_version=47
+dst_data_version=49
 src_data_version=11
-fit_W_version=39
-# fit_W_version=48
+# fit_W_version=39
+fit_W_version=48
 n=2000
 cuda_idx=5
 nodes=(100)
 seedsX=( {1..3..1} )
 seedsKnockoff=( 1 )
-suffixs=(_option_16_normX=sym1
-         _option_17_normX=sym1
+suffixs=(_normX=sym1_option=5_knock=PLS_model=L1+L2
          )
+alpha_list=(0.1 0.05 0.01)
+l1_ratio_list=(0.1 0.5 0.9)
 cnt=0
 
 for d in "${nodes[@]}"; do
     for suffix in "${suffixs[@]}"; do
-        for seedKnockoff in "${seedsKnockoff[@]}"; do
-            s0=$(( d * 6 ))
-            
-            dst_version=${d}_${s0}${suffix}
-            src_version=${d}_${s0}_normX_sym1
-            
-            ./create_data_dir.sh $data_option $dst_data_version $dst_version $src_data_version $src_version
-
-            target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff
-            if [ ! -d "$target_dir$" ]; then
-                mkdir -p ${target_dir}
-            fi
-
-            for seedX in "${seedsX[@]}"; do
-                # PLS
-                if [ $suffix = '_option_16_normX=sym1' ]; then
-                    CUDA_VISIBLE_DEVICES=${cuda_idx} \
-                    python knockoff_v44.py \
-                    --W_type=W_est \
-                    --data_version=v${dst_data_version} \
-                    --dst_version=v${dst_version} \
-                    --fit_W_version=v${fit_W_version} \
-                    --option=16 \
-                    --d=${d} --s0=${s0} \
-                    --dedup \
-                    --device=cuda:${cuda_idx} \
-                    --seed_X=${seedX} \
-                    --seed_knockoff=${seedKnockoff} \
-                    >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
-
-                    # --note="_grnboost2" \
-
-                elif [ $suffix = '_option_17_normX=sym1' ]; then
-                    CUDA_VISIBLE_DEVICES=${cuda_idx} \
-                    python knockoff_v44.py \
-                    --W_type=W_est \
-                    --data_version=v${dst_data_version} \
-                    --dst_version=v${dst_version} \
-                    --fit_W_version=v${fit_W_version} \
-                    --option=17 \
-                    --d=${d} --s0=${s0} \
-                    --dedup \
-                    --device=cuda:${cuda_idx} \
-                    --seed_X=${seedX} \
-                    --seed_knockoff=${seedKnockoff} \
-                    >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
-
-                    # --note="_grnboost2" \
-                fi
-
-                # control cuda device
-                cuda_idx=$(( cuda_idx + 1))
-                if [ $cuda_idx -eq 8 ]; then
-                    cuda_idx=5
-                fi
+        for alpha in "${alpha_list[@]}"; do
+            for l1_ratio in "${l1_ratio_list[@]}"; do
+        
+                s0=$(( d * 6 ))
                 
-                # control parallel process number
-                cnt=$(( cnt + 1 ))
-                _cnt=$(( cnt % 20 ))
+                dst_version=${d}_${s0}${suffix}_alpha=${alpha}_l1_ratio=${l1_ratio}
+                src_version=${d}_${s0}_normX_sym1
                 
-                if [ ${_cnt} -eq 19 ]; then
-                    wait
+                ./create_data_dir.sh $data_option $dst_data_version $dst_version $src_data_version $src_version
+
+                target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff
+                if [ ! -d "$target_dir$" ]; then
+                    mkdir -p ${target_dir}
                 fi
+
+                for seedKnockoff in "${seedsKnockoff[@]}"; do
+                    for seedX in "${seedsX[@]}"; do
+                        
+                        if [ $suffix = '_normX=sym1_option=5_knock=PLS_model=L1+L2' ]; then
+                            CUDA_VISIBLE_DEVICES=${cuda_idx} \
+                            python knockoff_v44.py \
+                            --W_type=W_est \
+                            --data_version=v${dst_data_version} \
+                            --dst_version=v${dst_version} \
+                            --fit_W_version=v${fit_W_version} \
+                            --option=5 \
+                            --d=${d} --s0=${s0} \
+                            --dedup \
+                            --device=cuda:${cuda_idx} \
+                            --seed_X=${seedX} \
+                            --seed_knockoff=${seedKnockoff} \
+                            >/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$dst_version/knockoff/log_${seedX}_${seedKnockoff} 2>&1 &
+                        fi
+
+                            # --note="_grnboost2" \
+
+                        # control cuda device
+                        cuda_idx=$(( cuda_idx + 1))
+                        if [ $cuda_idx -eq 8 ]; then
+                            cuda_idx=5
+                        fi
+                        
+                        # control parallel process number
+                        cnt=$(( cnt + 1 ))
+                        _cnt=$(( cnt % 20 ))
+                        
+                        if [ ${_cnt} -eq 19 ]; then
+                            wait
+                        fi
+                    done
+                done
             done
         done
     done
