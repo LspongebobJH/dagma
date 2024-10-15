@@ -92,68 +92,34 @@
 ####################################################################
 
 run() {
-    # data_version=44
     data_version=49
     log_file_global=100
-    # options=( 7 9 1 2 10 11 )
-    # options=(1 2 7 9 10 11 12 )
-    # options=( 5 )
-    suffixs=(_option_5_PLS_normX_sym1_grnboost2
-            )
+    # suffixs=(_normX=sym1_option=5_knock=PLS_model=grnboost2_imp=shap
+    #         )
+    suffixs=(
+        _option_5_PLS_normX_sym1_grnboost2
+    )
     control=global
-    # option=5
     n=2000
-    dag_control_list=(dag_13)
-    # nComps=( 3 4 )
-    
     d=100
+
     for suffix in "${suffixs[@]}"; do
-        for dag_control in "${dag_control_list[@]}"; do
-            s0=$(( d * 6 ))
 
-            # version=${d}_${s0}_condX_5e4_option_5_OLS
-            # python multi_main.py \
-            # --n $n --s0 $s0 --d $d \
-            # --control_type=type_3_global \
-            # --seed_X_list=3,4,5,6,11,12,13,15,17,18 \
-            # --seed_knockoff_list=1 \
-            # --seed_model_list=0 \
-            # --version=$version \
-            # --root_path simulated_data/v${data_version} \
-            # --n_jobs=4 \
-            # --log_file=log_${log_file_global}/log_${data_version}_${version} &
-            # wait
+        s0=$(( d * 6 ))
 
-            # version=${d}_${s0}_normX_sym1_option_${option}_PLS
-            version=${d}_${s0}${suffix}
-            if [ $control == 'global' ]; then
-                python multi_main.py \
-                --n $n --s0 $s0 --d $d \
-                --control_type=type_3_global \
-                --seed_X_list=1,3,-1 \
-                --seed_knockoff_list=1 \
-                --seed_model_list=0 \
-                --dag_control=${dag_control} \
-                --version=$version \
-                --root_path simulated_data/v${data_version} \
-                --n_jobs=4 \
-                --log_file=log_${log_file_global}/log_${data_version}_${version}_1-3_${dag_control} &
-            fi
-            
-
-            # version=${d}_${s0}_normX_B1Col_option_5_OLS
-            # python multi_main.py \
-            # --n $n --s0 $s0 --d $d \
-            # --control_type=type_3_global \
-            # --seed_X_list=1,2,7,8,9,10,14,16,19,23 \
-            # --seed_knockoff_list=1 \
-            # --seed_model_list=0 \
-            # --version=$version \
-            # --root_path simulated_data/v${data_version} \
-            # --n_jobs=4 \
-            # --log_file=log_${log_file_global}/log_${data_version}_${version} &
-            # # wait
-        done
+        # version=${d}_${s0}${suffix}
+        version=${d}_${s0}${suffix}
+        
+        python multi_main.py \
+        --n $n --s0 $s0 --d $d \
+        --control_type=type_3_global \
+        --seed_X_list=1 \
+        --seed_knockoff_list=1 \
+        --seed_model_list=1,10,-1 \
+        --version=$version \
+        --root_path simulated_data/v${data_version} \
+        --n_jobs=4 \
+        --log_file=log_${log_file_global}/log_${data_version}_${version}_model_1-10 &
     done
     
 

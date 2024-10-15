@@ -129,7 +129,7 @@ order: 5
 ## only valid when deconv_type_dagma == deconv_1 or deconv_4_1
 ## when used in deconv after dagma
 ## only valid when deconv_type == deconv_2
-alpha: 1. # high order decay
+alpha: 1. # high order decay, deprecated
 # alpha
 ## when used in deconv in dagma
 ## only valid when deconv_type_dagma == deconv_4_1 and deconv_4_2

@@ -5,6 +5,7 @@ import time
 from operator import itemgetter
 from multiprocessing import Pool
 import numpy as np
+import shap
 
 from sklearn.metrics import auc, precision_recall_curve, roc_auc_score
 from sklearn.inspection import permutation_importance
@@ -28,6 +29,10 @@ def compute_feature_importances(estimator, importance='original', X=None, y=None
 
     elif importance == 'permutation':
         return permutation_importance(estimator, X, y)['importances_mean']
+    elif importance == 'tree-shap':
+        explainer = shap.TreeExplainer(estimator)
+        shap_values = explainer(X, y).values
+        return np.abs(shap_values).mean(0)
     
 class EarlyStopMonitor:
 
@@ -303,8 +308,8 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboo
     if model_type == 'tree':
         if use_grnboost2:
             n_estimators = tune_params['ntrees'] if tune_params['ntrees'] is not None else 5000
-            max_features = tune_params['max_feat'] if tune_params['ntrees'] is not None else 0.1
-            subsample = tune_params['max_sample'] if tune_params['ntrees'] is not None else 0.9
+            max_features = tune_params['max_feat'] if tune_params['max_feat'] is not None else 0.1
+            subsample = tune_params['max_sample'] if tune_params['max_sample'] is not None else 0.9
             treeEstimator = GradientBoostingRegressor(
                 learning_rate=0.01,
                 n_estimators=n_estimators,
@@ -313,8 +318,8 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboo
             )
         else:
             n_estimators = tune_params['ntrees'] if tune_params['ntrees'] is not None else 1000
-            max_features = tune_params['max_feat'] if tune_params['ntrees'] is not None else 'sqrt'
-            max_samples = tune_params['max_sample'] if tune_params['ntrees'] is not None else None
+            max_features = tune_params['max_feat'] if tune_params['max_feat'] is not None else 'sqrt'
+            max_samples = tune_params['max_sample'] if tune_params['max_sample'] is not None else None
             if tree_method == 'RF':
                 treeEstimator = RandomForestRegressor(n_estimators=n_estimators,
                                                     max_features=max_features,
@@ -352,7 +357,9 @@ def GENIE3_single(expr_data,output_idx,input_idx,tree_method,K,ntrees,use_grnboo
 
         elif model_type == 'L1+L2': 
             from sklearn.linear_model import ElasticNet
-            clf = ElasticNet()
+            alpha = tune_params['alpha'] if tune_params['alpha'] is not None else 1.0
+            l1_ratio = tune_params['l1_ratio'] if tune_params['l1_ratio'] is not None else 0.5
+            clf = ElasticNet(alpha=alpha, l1_ratio=l1_ratio)
 
         clf.fit(expr_data_input, output)
         feature_importances = clf.coef_
@@ -384,7 +391,12 @@ if __name__ == '__main__':
     parser.add_argument('--ntrees', type=int, default=None)
     parser.add_argument('--max_feat', type=float, default=None)
     parser.add_argument('--max_sample', type=float, default=None)
-    parser.add_argument('--importance', type=str, default='original', choices=['original', 'permutation'])
+    parser.add_argument('--importance', type=str, default='original', 
+                        choices=['original', 'permutation', 'tree-shap'])
+
+    # tune hyperparameters of elatiscnet
+    parser.add_argument('--alpha', type=float, default=None)
+    parser.add_argument('--l1_ratio', type=float, default=None)
     
     args = parser.parse_args()
 
@@ -401,6 +413,9 @@ if __name__ == '__main__':
         'ntrees': args.ntrees,
         'max_feat': args.max_feat,
         'max_sample': args.max_feat,
+
+        'alpha': args.alpha,
+        'l1_ratio': args.l1_ratio
     }
 
     data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')

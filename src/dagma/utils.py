@@ -87,18 +87,14 @@ def fit(X_all, configs, original=False):
     gen_W = configs['gen_W']
     dagma_type = configs['dagma_type']
     warm_iter = configs['warm_iter']
+    tune_params = configs['tune_params']
 
     # assert gen_W in [None, 'torch']
-    assert gen_W in ['torch', 'genie3', 'grnboost2']
+    assert gen_W in ['torch', 'genie3', 'grnboost2', 'L1+L2']
     assert dagma_type == 'dagma_1'
 
     W_est_no_filter, Z_true, Z_knock = \
         None, None, None
-    genie3_tune_params = {
-            'ntrees': None,
-            'max_feat': None,
-            'max_sample': None,
-        }
     if gen_W is None:
         from linear import DagmaLinear
         model = DagmaLinear(loss_type='l2', verbose=True)
@@ -131,26 +127,20 @@ def fit(X_all, configs, original=False):
                                         T=T,
                                         return_no_filter=True)
 
-    elif gen_W == 'genie3':
-        W_est_no_filter = GENIE3(X_all, 
-                                 knock_genie3_type=configs['knock_genie3_type'], 
-                                 nthreads=configs['nthreads'], 
-                                 use_knockoff=True,
-                                 disable_remove_self=configs['disable_remove_self'],
-                                 disable_norm=configs['disable_norm'],
-                                 importance=configs['importance'],
-                                 tune_params=genie3_tune_params)
-
-    elif gen_W == 'grnboost2':
+    elif gen_W in ['grnboost2', 'geni3', 'L1+L2']:
         W_est_no_filter = GENIE3(X_all, 
                                  knock_genie3_type=configs['knock_genie3_type'], 
                                  nthreads=configs['nthreads'], 
                                  use_knockoff=True, 
-                                 use_grnboost2=True,
+                                 use_grnboost2=True if gen_W == 'grnboost2' else False,
                                  disable_remove_self=configs['disable_remove_self'],
                                  disable_norm=configs['disable_norm'],
                                  importance=configs['importance'],
-                                 tune_params=genie3_tune_params)
+                                 tune_params=tune_params,
+                                 model_type='tree' if gen_W in ['genie3', 'grnboost2'] else gen_W)
+
+
+    
     
     return W_est_no_filter, Z_true, Z_knock
 

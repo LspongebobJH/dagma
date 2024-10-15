@@ -29,7 +29,9 @@ parser.add_argument('--root_path', type=str, default=None)
 parser.add_argument('--knock_type', type=str, default=None, 
                     choices=['permutation', 'deep_knockoff', 
                              'knockoff_diagn'])
-parser.add_argument('--gen_type', type=str, required=True, choices=['X', 'knockoff', 'W', 'W_torch', 'W_genie3', 'W_grnboost2'])
+parser.add_argument('--gen_type', type=str, required=True, 
+                    choices=['X', 'knockoff', 'W', 'W_torch', 'W_genie3', 'W_grnboost2',
+                             'W_L1+L2'])
 parser.add_argument('--d1', type=int, default=None, help="lead to bipartite graph")
 parser.add_argument('--d2', type=int, default=None, help="lead to bipartite graph")
 parser.add_argument('--noise_scale_X', type=float, default=1., help="available only when gen_type == X")
@@ -69,9 +71,20 @@ parser.add_argument('--T', type=int, default=None)
 # parameters of genie3 and grnboost2 fitting W
 parser.add_argument('--disable_remove_self', action='store_true', default=False)
 parser.add_argument('--disable_norm', action='store_true', default=False)
-parser.add_argument('--knock_genie3_type', type=str, choices=['separate', 'unified'])
+parser.add_argument('--knock_genie3_type', type=str, default='unified', choices=['separate', 'unified'])
 parser.add_argument('--nthreads', type=int, default=1)
-parser.add_argument('--importance', type=str, default='original', choices=['original', 'permutation'])
+parser.add_argument('--importance', type=str, default='original', 
+                    choices=['original', 'permutation', 'tree-shap'])
+
+# tune hyperparameters of genie3 and grnboost2 when fitting W
+# tune hyperparameters of tree models
+parser.add_argument('--ntrees', type=int, default=None)
+parser.add_argument('--max_feat', type=float, default=None)
+parser.add_argument('--max_sample', type=float, default=None)
+
+# tune hyperparameters of elatiscnet
+parser.add_argument('--elastic_alpha', type=float, default=None)
+parser.add_argument('--elastic_l1_ratio', type=float, default=None)
 
 # deprecated
 parser.add_argument('--cond_thresh_X', type=float, default=None, help="available only when gen_type == X")
@@ -95,9 +108,13 @@ elif args.gen_type == 'W_grnboost2':
     args.gen_type = 'W'
     args.gen_W = 'grnboost2'
 
+elif args.gen_type == 'W_L1+L2':
+    args.gen_type = 'W'
+    args.gen_W = 'L1+L2'
+
 configs = utils.combine_configs(configs, args)
 
-assert configs['seed_model'] == 0, "no need for random model seeds now."
+# assert configs['seed_model'] == 0, "no need for random model seeds now."
 
 
 print("configs")
@@ -142,7 +159,7 @@ if __name__ == '__main__':
                 else:
                     print(f"cond_X {cond_X} > {configs['cond_thresh_X']}")
 
-            else: # Bipartite graph
+            else: # Bipartite graph, deprecated
                 assert configs['d1'] is not None and configs['d2'] is not None
 
                 # simulate bipartite graph
@@ -175,7 +192,7 @@ if __name__ == '__main__':
                 else:
                     print(f"cond_X {cond_X} > {configs['cond_thresh_X']}")
 
-        elif configs['gen_type'] == 'knockoff':
+        elif configs['gen_type'] == 'knockoff': # deprecated
             
             assert configs['seed_knockoff'] is not None
 
@@ -212,6 +229,15 @@ if __name__ == '__main__':
                     X_mean = X.mean(axis=1, keepdims=True)
                     X_std = X.std(axis=1, keepdims=True)
                 X = (X - X_mean) / (X_std + 1e-8)
+
+            configs['tune_params'] = {
+                'ntrees': args.ntrees,
+                'max_feat': args.max_feat,
+                'max_sample': args.max_feat,
+
+                'alpha': args.elastic_alpha,
+                'l1_ratio': args.elastic_l1_ratio
+            }
 
             if configs['gen_W'] in ['genie3', 'grnboost2'] and configs['knock_genie3_type'] == 'separate':
                 X_all = {
