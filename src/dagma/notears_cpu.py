@@ -105,18 +105,23 @@ if __name__ == '__main__':
     args = parser.parse_args()
     utils.set_random_seed(0)
     
-    n, d = 2000, args.d
-    s0 = args.s0
-    version = f"v11/v{d}_{s0}" + args.src_note
-    device = args.device
-    root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
-    data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
+    # n, d = 2000, args.d
+    # s0 = args.s0
+    # version = f"v11/v{d}_{s0}" + args.src_note
+    # device = args.device
+    # root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    # data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
 
-    with open(data_path, 'rb') as f:
-        data = pickle.load(f)
-    X, W_true = data['X'], data['W_true']
-    B_true = (W_true != 0)
-    print("fit notears")
+    # with open(data_path, 'rb') as f:
+    #     data = pickle.load(f)
+    # X, W_true = data['X'], data['W_true']
+    # B_true = (W_true != 0)
+    # print("fit notears")
+
+    n, d, s0, graph_type, sem_type = 1000, 40, 80, 'ER', 'gauss'
+    B_true = utils_dagma.simulate_dag(d, s0, graph_type)
+    W_true = utils_dagma.simulate_parameter(B_true)
+    X = utils_dagma.simulate_linear_sem(W_true, n, sem_type)
 
     W_est_no_filter, W_est = notears_linear(X, lambda1=0.1, loss_type='l2')
     acc = utils_dagma.count_accuracy(B_true, W_est != 0, use_logger=False)
