@@ -46,7 +46,7 @@ run() {
     seedsX=( {1..3..1} )
     seedsKnockoff=( 1 )
     seedsW=( 0 )
-    alpha_list=(0.1 0.05 0.01)
+    alpha_list=(5 10 20)
     l1_ratio_list=(0.1 0.5 0.9)
     cnt=0
 
@@ -138,4 +138,3 @@ run $data_version $d $cuda_idx
 wait
 
 echo "End fitting W of [X, X'] from 1 to 3..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
-

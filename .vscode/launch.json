@@ -38,13 +38,13 @@
             "cwd": "/home/jiahang/dagma/src/dagma",
             // "cwd": "/Users/jiahang/Documents/dagma/src/dagma",
             "args": [
-                // "--d=100",
-                // "--s0=600",
+                "--d=100",
+                "--s0=600",
                 "--model_type=tree",
                 "--src_note=_normX_sym1",
-                "--importance=tree-shap",
+                "--seed_X=1",
+                "--nthreads=4",
                 "--use_grnboost2"
-                // "--use_grnboost2"
                 
             ]
         },

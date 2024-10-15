@@ -4,6 +4,6 @@ wait
 
 ./run_W.sh
 
-wait
+# wait
 
-./run_fdr.sh
+# ./run_fdr.sh

@@ -73,7 +73,8 @@ parser.add_argument('--disable_remove_self', action='store_true', default=False)
 parser.add_argument('--disable_norm', action='store_true', default=False)
 parser.add_argument('--knock_genie3_type', type=str, default='unified', choices=['separate', 'unified'])
 parser.add_argument('--nthreads', type=int, default=1)
-parser.add_argument('--importance', type=str, default='original', choices=['original', 'permutation'])
+parser.add_argument('--importance', type=str, default='original', 
+                    choices=['original', 'permutation', 'tree-shap'])
 
 # tune hyperparameters of genie3 and grnboost2 when fitting W
 # tune hyperparameters of tree models

@@ -1,17 +1,11 @@
 #!/bin/bash
 
-n_list=(20 40 60 80 100)
-options=(9)
-for n in "${n_list[@]}"; do
-    for option in "${options[@]}"; do
-        s0=$(( n * 6 ))
-        mv /home/jiahang/dagma/src/dagma/simulated_data/v47/v${n}_${s0}_normX_sym1_option_13_PLS_dedup /home/jiahang/dagma/src/dagma/simulated_data/v47/deprecated
-        mv /home/jiahang/dagma/src/dagma/simulated_data/v47/v${n}_${s0}_normX_sym1_option_13_PLS_dedup_topo_sort /home/jiahang/dagma/src/dagma/simulated_data/v47/deprecated
+alpha_list=(10 1 0.1 0.05 0.01 0)
+l1_ratio_list=(0.1 0.5 0.9)
 
-        mv /home/jiahang/dagma/src/dagma/logs/log_99/log_47_${n}_${s0}_normX_sym1_option_13_PLS_dedup_1-10.brief /home/jiahang/dagma/src/dagma/logs/log_99/deprecated
-        mv /home/jiahang/dagma/src/dagma/logs/log_99/log_47_${n}_${s0}_normX_sym1_option_13_PLS_dedup_1-10 /home/jiahang/dagma/src/dagma/logs/log_99/deprecated
-        mv /home/jiahang/dagma/src/dagma/logs/log_99/log_47_${n}_${s0}_normX_sym1_option_13_PLS_dedup_topo_sort_1-10.brief /home/jiahang/dagma/src/dagma/logs/log_99/deprecated
-        mv /home/jiahang/dagma/src/dagma/logs/log_99/log_47_${n}_${s0}_normX_sym1_option_13_PLS_dedup_topo_sort_1-10 /home/jiahang/dagma/src/dagma/logs/log_99/deprecated
-            
+for alpha in "${alpha_list[@]}"; do
+    for l1_ratio in "${l1_ratio_list[@]}"; do
+        mv /home/jiahang/dagma/src/dagma/simulated_data/v49/v100_600_normX=sym1_option=5_knock=PLS_model=L1+L2_alpha=${alpha}_l1_ratio=${l1_ratio} \
+            /home/jiahang/dagma/src/dagma/simulated_data/v49/v100_600_normX=sym1_option=5_knock=OLS_cuda_model=L1+L2_alpha=${alpha}_l1_ratio=${l1_ratio}
     done
 done

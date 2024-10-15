@@ -94,35 +94,32 @@
 run() {
     data_version=49
     log_file_global=100
-    suffixs=(_normX=sym1_option=5_knock=PLS_model=L1+L2
-            )
+    # suffixs=(_normX=sym1_option=5_knock=PLS_model=grnboost2_imp=shap
+    #         )
+    suffixs=(
+        _option_5_PLS_normX_sym1_grnboost2
+    )
     control=global
     n=2000
     d=100
-    alpha_list=(0.1 0.05 0.01)
-    l1_ratio_list=(0.1 0.5 0.9)
 
     for suffix in "${suffixs[@]}"; do
-        for alpha in "${alpha_list[@]}"; do
-            for l1_ratio in "${l1_ratio_list[@]}"; do
 
-                s0=$(( d * 6 ))
+        s0=$(( d * 6 ))
 
-                # version=${d}_${s0}${suffix}
-                version=${d}_${s0}${suffix}_alpha=${alpha}_l1_ratio=${l1_ratio}
-                
-                python multi_main.py \
-                --n $n --s0 $s0 --d $d \
-                --control_type=type_3_global \
-                --seed_X_list=1,3,-1 \
-                --seed_knockoff_list=1 \
-                --seed_model_list=0 \
-                --version=$version \
-                --root_path simulated_data/v${data_version} \
-                --n_jobs=4 \
-                --log_file=log_${log_file_global}/log_${data_version}_${version}_1-3 &
-            done
-        done
+        # version=${d}_${s0}${suffix}
+        version=${d}_${s0}${suffix}
+        
+        python multi_main.py \
+        --n $n --s0 $s0 --d $d \
+        --control_type=type_3_global \
+        --seed_X_list=1 \
+        --seed_knockoff_list=1 \
+        --seed_model_list=1,10,-1 \
+        --version=$version \
+        --root_path simulated_data/v${data_version} \
+        --n_jobs=4 \
+        --log_file=log_${log_file_global}/log_${data_version}_${version}_model_1-10 &
     done
     
 

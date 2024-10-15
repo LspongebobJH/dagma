@@ -90,7 +90,7 @@ seedsX=( {1..3..1} )
 seedsKnockoff=( 1 )
 suffixs=(_normX=sym1_option=5_knock=PLS_model=L1+L2
          )
-alpha_list=(0.1 0.05 0.01)
+alpha_list=(5 10 20)
 l1_ratio_list=(0.1 0.5 0.9)
 cnt=0
 
@@ -121,6 +121,7 @@ for d in "${nodes[@]}"; do
                             --data_version=v${dst_data_version} \
                             --dst_version=v${dst_version} \
                             --fit_W_version=v${fit_W_version} \
+                            --method_diagn_gen=PLS \
                             --option=5 \
                             --d=${d} --s0=${s0} \
                             --dedup \
@@ -286,7 +287,6 @@ echo "End generating knockoff from 1 to 3." > /home/jiahang/dagma/src/dagma/pipe
 # python test.py --exp_group_idx=v43 --d=100 --v43_method='elastic' --v43_disable_dag_control --device=cuda:7 &
 # python test.py --exp_group_idx=v44 --v44_option=1 --lasso_alpha=OLS --W_type=W_true \
 #     --d=20 --device=cuda:5 &
-
 
 
 
