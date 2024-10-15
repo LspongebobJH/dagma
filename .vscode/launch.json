@@ -5,6 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "notears_cpu.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "notears_cpu.py",
+            "console": "integratedTerminal",
+            "cwd": "/home/jiahang/dagma/src/dagma",
+            "args": [
+                "--d=40",
+                "--s0=160",
+                // "--src_note=_normX_sym1",
+                "--seed_X=1"
+            ]
+        },
+
+        {
             "name": "knockoff_genie3.py",
             "type": "debugpy",
             "request": "launch",
@@ -45,7 +60,6 @@
                 "--seed_X=1",
                 "--nthreads=4",
                 "--use_grnboost2"
-                
             ]
         },
         {
@@ -92,10 +106,8 @@
                 "--seed_X=1",
                 "--seed_knockoff=1",
                 "--seed_model=0",
-
                 "--elastic_alpha=10",
                 "--elastic_l1_ratio=0.9"
-                
                 // "--device=cuda:7"
             ]
         },
