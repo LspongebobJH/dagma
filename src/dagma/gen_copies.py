@@ -9,6 +9,8 @@ from argparse import ArgumentParser
 import pprint
 import yaml
 import networkx as nx
+from time import time
+
 """
 n: number of samples
 d: number of nodes
@@ -25,13 +27,14 @@ parser.add_argument('--d', type=int, default=None)
 parser.add_argument('--s0', type=int, default=None)
 parser.add_argument('--device', type=str, default=None)
 parser.add_argument('--root_path', type=str, default=None)
-
+parser.add_argument('--graph_type', type=str, default='ER', 
+                    choices=['ER', 'SF'])
 parser.add_argument('--knock_type', type=str, default=None, 
                     choices=['permutation', 'deep_knockoff', 
                              'knockoff_diagn'])
 parser.add_argument('--gen_type', type=str, required=True, 
                     choices=['X', 'knockoff', 'W', 'W_torch', 'W_genie3', 'W_grnboost2',
-                             'W_L1+L2'])
+                             'W_L1+L2', 'W_notears', 'W_golem'])
 parser.add_argument('--d1', type=int, default=None, help="lead to bipartite graph")
 parser.add_argument('--d2', type=int, default=None, help="lead to bipartite graph")
 parser.add_argument('--noise_scale_X', type=float, default=1., help="available only when gen_type == X")
@@ -96,21 +99,9 @@ if args.d is None:
     args.d = args.d1 + args.d2
 
 args.gen_W = None
-if args.gen_type == 'W_torch':
-    args.gen_type = 'W'
-    args.gen_W = 'torch'
 
-elif args.gen_type == 'W_genie3':
-    args.gen_type = 'W'
-    args.gen_W = 'genie3'
-
-elif args.gen_type == 'W_grnboost2':
-    args.gen_type = 'W'
-    args.gen_W = 'grnboost2'
-
-elif args.gen_type == 'W_L1+L2':
-    args.gen_type = 'W'
-    args.gen_W = 'L1+L2'
+if args.gen_type not in ['X', 'knockoff', 'W']:
+    args.gen_type, args.gen_W = args.gen_type.split('_', 1)
 
 configs = utils.combine_configs(configs, args)
 
@@ -208,6 +199,7 @@ if __name__ == '__main__':
 
         else: # [W, W_torch]
 
+            time_st = time()
             assert configs['seed_knockoff'] is not None and configs['seed_model'] is not None
 
             _configs = configs.copy()
@@ -253,4 +245,4 @@ if __name__ == '__main__':
             }
             
             utils.process_simulated_data(data_W, configs, behavior='save')
-        
+            print(f"time: {time() - time_st:.2f}s")

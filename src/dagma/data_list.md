@@ -72,7 +72,10 @@ v48: original genie3 and grnboost2 fitting W of simulated data
 v49: based on W_true in [-1, 1] (workable simulations), fit [X, X_tilde] with genie3 and grnboost2
 
 v50: original NOTEARS on W_true in [-1, 1] of simulated data
+v51: with knockoff fitting NOTEARS on W_true in [-1, 1] of simulated data
 
+v52: original golem on W_true in [-1, 1] of simulated data
+v53: with knockoff fitting golem on W_true in [-1, 1] of simulated data
 - note that some PLS results have problems
 
 === common used options ===

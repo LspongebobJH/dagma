@@ -92,34 +92,32 @@
 ####################################################################
 
 run() {
-    data_version=49
-    log_file_global=100
-    # suffixs=(_normX=sym1_option=5_knock=PLS_model=grnboost2_imp=shap
-    #         )
+    data_version=51
+    log_file_global=101
     suffixs=(
-        _option_5_PLS_normX_sym1_grnboost2
+        _normX=sym1_option=5_knock=PLS
     )
     control=global
-    n=2000
-    d=100
+    n=100
+    d=20
 
     for suffix in "${suffixs[@]}"; do
 
-        s0=$(( d * 6 ))
+        s0=$(( d * 4 ))
 
         # version=${d}_${s0}${suffix}
-        version=${d}_${s0}${suffix}
+        version=${n}_${d}_${s0}${suffix}
         
         python multi_main.py \
         --n $n --s0 $s0 --d $d \
         --control_type=type_3_global \
         --seed_X_list=1 \
         --seed_knockoff_list=1 \
-        --seed_model_list=1,10,-1 \
+        --seed_model_list=0 \
         --version=$version \
         --root_path simulated_data/v${data_version} \
         --n_jobs=4 \
-        --log_file=log_${log_file_global}/log_${data_version}_${version}_model_1-10 &
+        --log_file=log_${log_file_global}/log_${version} &
     done
     
 

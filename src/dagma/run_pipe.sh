@@ -1,4 +1,4 @@
-./run.sh
+./run_knockoff.sh
 
 wait
 
