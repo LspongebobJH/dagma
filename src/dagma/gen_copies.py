@@ -34,7 +34,7 @@ parser.add_argument('--knock_type', type=str, default=None,
                              'knockoff_diagn'])
 parser.add_argument('--gen_type', type=str, required=True, 
                     choices=['X', 'knockoff', 'W', 'W_torch', 'W_genie3', 'W_grnboost2',
-                             'W_L1+L2', 'W_notears', 'W_golem'])
+                             'W_L1+L2', 'W_notears', 'W_golem', 'W_dag-gnn'])
 parser.add_argument('--d1', type=int, default=None, help="lead to bipartite graph")
 parser.add_argument('--d2', type=int, default=None, help="lead to bipartite graph")
 parser.add_argument('--noise_scale_X', type=float, default=1., help="available only when gen_type == X")

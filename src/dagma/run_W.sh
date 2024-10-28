@@ -42,9 +42,10 @@ run() {
     cuda_idx=$5
 
     s0=$(( d * s0_factor ))
-    suffixs=(_normX=sym1_option=5_knock=PLS
+    suffixs=(_normX=sym1_option=5_knock=OLS
+             _normX=sym1_option=10_topo_knock=PLS
             )
-    seedsX=( {1..1..1} )
+    seedsX=( {1..10..1} )
     seedsKnockoff=( 1 )
     seedsW=( 0 )
     cnt=0
@@ -64,7 +65,7 @@ run() {
                 for seedW in "${seedsW[@]}"; do
                     stdbuf -o0 -e0 \
                     python gen_copies.py \
-                    --gen_type W_golem \
+                    --gen_type W_dag-gnn \
                     --n $n --s0 $s0 --d $d \
                     --seed_X $seedX \
                     --seed_knockoff $seedKnockoff \
@@ -74,7 +75,7 @@ run() {
                     --device cuda:${cuda_idx} > simulated_data/v${dst_data_version}/v${version}/W/log_${seedX}_${seedKnockoff}_${seedW} 2>&1 &
 
                     cuda_idx=$(( cuda_idx + 1))
-                    if [ $cuda_idx -eq 8 ]; then
+                    if [ $cuda_idx -eq 7 ]; then
                         cuda_idx=5
                     fi
 
@@ -91,8 +92,8 @@ run() {
     done
     
 }
-
-data_version=53 # golem
+data_version=55 # dag_gnn
+# data_version=53 # golem
 # data_version=51 # notears
 # data_version=49 # tree
 # data_version=47 # dagma
@@ -100,14 +101,14 @@ data_version=53 # golem
 echo "Start fitting W of [X, X'] from 1 to 3..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
 
 n=2000
-nodes=(60)
-s0_factors=(6)
+nodes=(20 40 60)
+s0_factors=(4 6)
 
 for d in "${nodes[@]}"; do
     for s0_factor in "${s0_factors[@]}"; do
-        cuda_idx=7
+        cuda_idx=5
         run $data_version $n $d $s0_factor $cuda_idx
-        wait
+        # wait
     done
 done
 

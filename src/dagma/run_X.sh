@@ -26,9 +26,9 @@ echo "Start generating X from 1 to 10..." > /home/jiahang/dagma/src/dagma/pipe_l
 
 cnt=0
 ns=(2000)
-nodes=(60)
+nodes=(20)
 s0_factors=(4 6)
-seedsX=( {1..1..1} )
+seedsX=( {1..10..1} )
 for n in "${ns[@]}"; do
     for d in "${nodes[@]}"; do
         for s0_factor in "${s0_factors[@]}"; do
@@ -37,22 +37,22 @@ for n in "${ns[@]}"; do
                 
                 python gen_copies.py --gen_type X \
                 --n $n --d $d --s0 $s0 \
-                --graph_type SF \
+                --graph_type ER \
                 --norm_data_gen sym_1 \
                 --force_save \
                 --seed_X $seedX \
                 --root_path simulated_data/v11 \
-                --version ${n}_${d}_${s0}_SF_normX_sym1 &
+                --version ${n}_${d}_${s0}_normX_sym1 &
 
                 # wait
 
-                # cnt=$(( cnt + 1 ))
-                # _cnt=$(( cnt % 20 ))
+                cnt=$(( cnt + 1 ))
+                _cnt=$(( cnt % 20 ))
                 
 
-                # if [ ${_cnt} -eq 19 ]; then
-                #     wait
-                # fi
+                if [ ${_cnt} -eq 19 ]; then
+                    wait
+                fi
             done
         done
     done

@@ -14,9 +14,10 @@ from copy import deepcopy
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data_version', type=str, required=True)
-    parser.add_argument('--dst_version', type=str, required=True)
+    parser.add_argument('--dst_data_version', type=str, required=True)
+    parser.add_argument('--dst_data_name', type=str, required=True)
     parser.add_argument('--fit_W_version', type=str)
+    parser.add_argument('--fit_W_name', type=str)
     parser.add_argument('--option', type=int, required=True, choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
     parser.add_argument('--method_diagn_gen', type=str, required=True, choices=['lasso', 'xgb', 'elastic', 'OLS_cuda', "PLS"])
     parser.add_argument('--lasso_alpha', type=str, default='knockoff_diagn', choices=['knockoff_diagn', 'sklearn', 'OLS'])
@@ -57,8 +58,8 @@ if __name__ == '__main__':
 
     output_data_dir = os.path.join(
         data_dir,
-        configs['data_version'],
-        configs['dst_version'],
+        configs['dst_data_version'],
+        configs['dst_data_name'],
         "knockoff"
     )
     output_data_path = os.path.join(output_data_dir, f'knockoff_{configs["seed_X"]}_{configs["seed_knockoff"]}.pkl')
@@ -69,7 +70,7 @@ if __name__ == '__main__':
 
     # load X
     # version = f"v11/v{configs['src_data_version']}"
-    version=f"{configs['data_version']}/{configs['dst_version']}"
+    version=f"{configs['dst_data_version']}/{configs['dst_data_name']}"
     data_path = os.path.join(data_dir, version, 'X', f'X_{configs["seed_X"]}.pkl')
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
@@ -88,8 +89,7 @@ if __name__ == '__main__':
     # load W
     if configs['option'] not in [5, 10, 16, 17] or (configs['option'] == 10 and configs['topo_sort']):
         if configs['W_type'] == 'W_est':
-            # version = f"v39/{configs['d']}_{configs['s0']}/W_{configs['d']}_{configs['s0']}_{configs['seed_X']}_{configs['seed_model']}{configs['note']}.pkl"
-            version = f"{configs['fit_W_version']}/{configs['d']}_{configs['s0']}/W_{configs['d']}_{configs['s0']}_{configs['seed_X']}_{configs['seed_model']}{configs['note']}.pkl"
+            version = f"{configs['fit_W_version']}/{configs['n']}_{configs['d']}_{configs['s0']}/{configs['fit_W_name']}.pkl"
             data_path = os.path.join(data_dir, version)
             with open(data_path, 'rb') as f:
                 W_est = pickle.load(f)

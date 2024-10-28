@@ -13,6 +13,7 @@ from numpy.linalg import eigh, inv
 from genie3 import GENIE3
 from notears_cpu import notears_linear
 from golem import golem
+from dag_gnn import dag_gnn
 
 
 import utils_dagma
@@ -147,6 +148,10 @@ def fit(X_all, configs, original=False):
         device = configs['device']
         W_est_no_filter = golem(X_all, lambda_1=2e-2, lambda_2=5.0,
                   equal_variances=True, device=device)
+
+    elif gen_W in ['dag-gnn']:
+        device = configs['device']
+        W_est_no_filter, W_est = dag_gnn(X_all, device)
     
     return W_est_no_filter, Z_true, Z_knock
 

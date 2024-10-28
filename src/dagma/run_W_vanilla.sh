@@ -126,13 +126,60 @@
 # vanilla NOTEARS, notears_cpu.py
 #########################################
 
+# echo "Start fitting NOTEARS from 1 to 10..." > /home/jiahang/dagma/src/dagma/pipe_log.log
+
+# cnt=0
+# fit_W_version=50
+# ns=(2000)
+# nodes=(40 60)
+# s0_factors=(4 6)
+# seedsX=( {1..10..1} )
+
+# for n in "${ns[@]}"; do
+#     for d in "${nodes[@]}"; do
+#         for s0_factor in "${s0_factors[@]}"; do
+#             for seedX in "${seedsX[@]}"; do
+
+#                 s0=$(( d * s0_factor ))
+#                 src_note="_normX_sym1"
+#                 dst_note="_normX=sym1"
+
+#                 mkdir /home/jiahang/dagma/src/dagma/simulated_data/v${fit_W_version}/${n}_${d}_${s0}/
+                
+#                 python notears_cpu.py \
+#                     --n=${n} --d=${d} --s0=${s0} \
+#                     --seed_X=${seedX} \
+#                     --src_note=${src_note} \
+#                     --dst_note=${dst_note} \
+#                     >/home/jiahang/dagma/src/dagma/simulated_data/v${fit_W_version}/${n}_${d}_${s0}/log_${seedX}_0${dst_note} 2>&1 &
+
+#                 # wait
+
+#                 cnt=$(( cnt + 1 ))
+#                 _cnt=$(( cnt % 16 ))
+#                 if [ ${_cnt} -eq 15 ]; then
+#                     wait
+#                 fi
+#             done
+#         done
+#     done
+# done
+
+# echo "End fitting NOTEARS from 1 to 10..." > /home/jiahang/dagma/src/dagma/pipe_log.log
+
+#########################################
+# vanilla golem, golem.py
+#########################################
+
 echo "Start fitting NOTEARS from 1 to 10..." > /home/jiahang/dagma/src/dagma/pipe_log.log
 
 cnt=0
+# fit_W_version=52 # golem
+fit_W_version=54 # dag_gnn
 ns=(2000)
-nodes=(60)
+nodes=(20 40 60)
 s0_factors=(4 6)
-seedsX=( {1..1..1} )
+seedsX=( {1..10..1} )
 
 for n in "${ns[@]}"; do
     for d in "${nodes[@]}"; do
@@ -140,25 +187,30 @@ for n in "${ns[@]}"; do
             for seedX in "${seedsX[@]}"; do
 
                 s0=$(( d * s0_factor ))
-                src_note="_SF_normX_sym1"
-                dst_note="_SF_normX=sym1"
+                X_name="${n}_${d}_${s0}_normX_sym1"
+                dst_name="W_${seedX}_0_normX=sym1"
 
-                mkdir /home/jiahang/dagma/src/dagma/simulated_data/v50/${n}_${d}_${s0}/
+                target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${fit_W_version}/${n}_${d}_${s0}/
+                if [ ! -d "$target_dir$" ]; then
+                    mkdir -p ${target_dir}
+                fi
                 
-                python notears_cpu.py \
+                python fit_W.py \
                     --n=${n} --d=${d} --s0=${s0} \
                     --seed_X=${seedX} \
-                    --src_note=${src_note} \
-                    --dst_note=${dst_note} \
-                    >/home/jiahang/dagma/src/dagma/simulated_data/v50/${n}_${d}_${s0}/log_${seedX}_0${dst_note} 2>&1 &
+                    --model=dag_gnn \
+                    --X_name=${X_name} \
+                    --dst_version=${fit_W_version} \
+                    --dst_name=${dst_name} \
+                    >/home/jiahang/dagma/src/dagma/simulated_data/v${fit_W_version}/${n}_${d}_${s0}/log_${seedX}_0${dst_note} 2>&1 &
 
-                wait
+                # wait
 
-                # cnt=$(( cnt + 1 ))
-                # _cnt=$(( cnt % 8 ))
-                # if [ ${_cnt} -eq 7 ]; then
-                #     wait
-                # fi
+                cnt=$(( cnt + 1 ))
+                _cnt=$(( cnt % 20 ))
+                if [ ${_cnt} -eq 19 ]; then
+                    wait
+                fi
             done
         done
     done

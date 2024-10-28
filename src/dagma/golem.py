@@ -228,24 +228,38 @@ def golem(X, lambda_1, lambda_2, equal_variances=True,
 
 
 if __name__ == '__main__':
-    import utils, os, utils_dagma
+    import utils, os, pickle, utils_dagma
+    from argparse import ArgumentParser
 
-    # Reproducibility
+    parser = ArgumentParser()
+    parser.add_argument('--n', type=int, default=None)
+    parser.add_argument('--d', type=int, default=None)
+    parser.add_argument('--s0', type=int, default=None)
+    parser.add_argument('--seed_X', type=int, default=1)
+    parser.add_argument('--src_note', type=str, default="")
+    parser.add_argument('--dst_note', type=str, default="")
+    parser.add_argument('--device', type=str, default='cuda:7')
+    parser.add_argument('--force_save', action='store_true', default=False)
+
+    # experimentally testing hyperparameters)
+    args = parser.parse_args()
     utils.set_random_seed(0)
-    torch.set_default_dtype(torch.double)
 
-    # Load dataset
-    n, d = 2000, 60
-    graph_type, s0 = 'ER', 360    # ER2 graph
-    sem_type = 'gauss'
-    device = "cuda:7"
-    # B_scale = 1.0
-    # noise_type = 'gaussian_ev'
-    # dataset = SyntheticDataset(n, d, graph_type, degree,
-    #                            noise_type, B_scale)
-    B_true = utils_dagma.simulate_dag(d, s0, graph_type)
-    W_true = utils_dagma.simulate_parameter(B_true, [(-1., 1.)])
-    X = utils_dagma.simulate_linear_sem(W_true, n, sem_type)
+    time_st = time()
+    
+    n, d = args.n, args.d
+    s0 = args.s0
+    version = f"v11/v{n}_{d}_{s0}" + args.src_note
+    device = args.device
+    root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
+
+    with open(data_path, 'rb') as f:
+        data = pickle.load(f)
+    X, W_true = data['X'], data['W_true']
+    B_true = (W_true != 0)
+    print("fit golem")
+
 
     # GOLEM-EV
     time_st = time()
@@ -270,3 +284,14 @@ if __name__ == '__main__':
     power = rec[-1:0:-1][target_fdp_thresh]
 
     print(f"Given fdp < 0.2, the maximal power is {power}")
+
+    data_dir = os.path.join(root_dir, "v52", f"{n}_{d}_{s0}")
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    data_path = os.path.join(data_dir, f"W_{args.seed_X}_0{args.dst_note}.pkl")
+    if os.path.exists(data_path) and not args.force_save:
+        raise Exception(f"{data_path} aleady exist")
+    with open(data_path, 'wb') as f:
+        pickle.dump(W_est_no_filter, f)
+    print(f"time: {time() - time_st:.2f}s")
+    print("DONE")
