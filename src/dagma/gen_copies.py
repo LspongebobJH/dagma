@@ -34,7 +34,7 @@ parser.add_argument('--knock_type', type=str, default=None,
                              'knockoff_diagn'])
 parser.add_argument('--gen_type', type=str, required=True, 
                     choices=['X', 'knockoff', 'W', 'W_torch', 'W_genie3', 'W_grnboost2',
-                             'W_L1+L2', 'W_notears', 'W_golem', 'W_dag-gnn'])
+                             'W_L1+L2', 'W_golem', 'W_dag-gnn'])
 parser.add_argument('--d1', type=int, default=None, help="lead to bipartite graph")
 parser.add_argument('--d2', type=int, default=None, help="lead to bipartite graph")
 parser.add_argument('--noise_scale_X', type=float, default=1., help="available only when gen_type == X")
@@ -70,6 +70,11 @@ parser.add_argument('--alpha', type=float, default=None)
 parser.add_argument('--warm_iter', type=int, default=None)
 parser.add_argument('--use_g_dir_loss', action='store_true', default=None)
 parser.add_argument('--T', type=int, default=None)
+
+# parameters of dagma, golem and dag-gnn
+parser.add_argument('--lambda_l1', type=float, default=None)
+parser.add_argument('--lambda_l2', type=float, default=None)
+
 
 # parameters of genie3 and grnboost2 fitting W
 parser.add_argument('--disable_remove_self', action='store_true', default=False)

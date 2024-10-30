@@ -78,6 +78,9 @@ v52: original golem on W_true in [-1, 1] of simulated data
 v53: with knockoff fitting golem on W_true in [-1, 1] of simulated data
 - note that some PLS results have problems
 
+v54: original dag_gnn
+v55: dag_gnn + knockoff
+
 === common used options ===
 
 topo_sort: only available to 10, affecting generation order of existing knockoff according to topological sort

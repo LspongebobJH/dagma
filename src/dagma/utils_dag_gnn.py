@@ -88,8 +88,15 @@ class MLPEncoder(nn.Module):
         H1 = F.relu((self.fc1(inputs)))
         x = (self.fc2(H1))
         logits = torch.matmul(adj_Aforz, x+self.Wa) -self.Wa
+        
+        l1_loss = torch.sum(
+                torch.abs(self.adj_A) + 
+                torch.abs(self.Wa) +
+                torch.abs(self.fc1.weight) +
+                torch.abs(self.fc2.weight)
+            )
 
-        return x, logits, adj_A1, adj_A, self.z, self.z_positive, self.adj_A, self.Wa
+        return l1_loss, x, logits, adj_A1, adj_A, self.z, self.z_positive, self.adj_A, self.Wa
 
 class MLPDecoder(nn.Module):
     """MLP decoder module."""
@@ -126,4 +133,9 @@ class MLPDecoder(nn.Module):
         H3 = F.relu(self.out_fc1((mat_z)))
         out = self.out_fc2(H3)
 
-        return mat_z, out, adj_A_tilt
+        l1_loss = torch.sum(
+                torch.abs(self.out_fc1.weight) +
+                torch.abs(self.out_fc2.weight)
+            )
+
+        return l1_loss, mat_z, out, adj_A_tilt

@@ -93,6 +93,8 @@ def fit(X_all, configs, original=False):
     warm_iter = configs['warm_iter']
     tune_params = configs['tune_params']
 
+    lambda_l1_new, lambda_l2_new = configs['lambda_l1'], configs['lambda_l2']
+
     assert dagma_type == 'dagma_1'
 
     W_est_no_filter, Z_true, Z_knock = \
@@ -124,8 +126,14 @@ def fit(X_all, configs, original=False):
                                original=original).to(device)
         
         model = DagmaTorch(eq_model, device=device, verbose=True, dtype=dtype)
+
+        lambda_l1, lambda_l2 = 0.02, 0.005
+        if lambda_l1_new:
+            lambda_l1 = lambda_l1_new
+        if lambda_l2_new:
+            lambda_l2 = lambda_l2_new
         
-        W_est_no_filter, _  = model.fit(X_all, lambda1=0.02, lambda2=0.005, warm_iter=warm_iter, 
+        W_est_no_filter, _  = model.fit(X_all, lambda_l1=lambda_l1, lambda_l2=lambda_l2, warm_iter=warm_iter, 
                                         T=T,
                                         return_no_filter=True)
 
@@ -145,13 +153,25 @@ def fit(X_all, configs, original=False):
         W_est_no_filter, _ = notears_linear(X_all, lambda1=0.1, loss_type='l2')
 
     elif gen_W in ['golem']: # TODO: only EV, w/o NV
+        lambda_l1, lambda_l2 = 0.02, 0.
+        if lambda_l1_new:
+            lambda_l1 = lambda_l1_new
+        if lambda_l2_new:
+            lambda_l2 = lambda_l2_new
+
         device = configs['device']
-        W_est_no_filter = golem(X_all, lambda_1=2e-2, lambda_2=5.0,
+        W_est_no_filter = golem(X_all, lambda_l1=lambda_l1, lambda_l2=lambda_l2, lambda_dag=5.0,
                   equal_variances=True, device=device)
 
     elif gen_W in ['dag-gnn']:
+        lambda_l1, lambda_l2 = 0., 0.
+        if lambda_l1_new:
+            lambda_l1 = lambda_l1_new
+        if lambda_l2_new:
+            lambda_l2 = lambda_l2_new
+
         device = configs['device']
-        W_est_no_filter, W_est = dag_gnn(X_all, device)
+        W_est_no_filter, W_est = dag_gnn(X_all, lambda_l1=lambda_l1, lambda_l2=lambda_l2, device=device)
     
     return W_est_no_filter, Z_true, Z_knock
 

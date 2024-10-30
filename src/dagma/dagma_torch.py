@@ -259,8 +259,8 @@ class DagmaTorch:
     def minimize(self, 
                  max_iter: float, 
                  lr: float, 
-                 lambda1: float, 
-                 lambda2: float, 
+                 lambda_l1: float, 
+                 lambda_l2: float, 
                  mu: float, 
                  s: float,
                  lr_decay: float = False, 
@@ -281,9 +281,9 @@ class DagmaTorch:
             Maximum number of (sub)gradient iterations.
         lr : float
             Learning rate.
-        lambda1 : float
+        lambda_l1 : float
             L1 penalty coefficient. Only applies to the parameters that induce the weighted adjacency matrix.
-        lambda2 : float
+        lambda_l2 : float
             L2 penalty coefficient. Applies to all the model parameters.
         mu : float
             Weights the score function.
@@ -301,7 +301,7 @@ class DagmaTorch:
             got outside of the domain of M-matrices.
         """
         self.vprint(f'\nMinimize s={s} -- lr={lr}')
-        optimizer = optim.Adam(self.model.parameters(), lr=lr, betas=(.99,.999), weight_decay=mu*lambda2)
+        optimizer = optim.Adam(self.model.parameters(), lr=lr, betas=(.99,.999), weight_decay=mu*lambda_l2)
         if lr_decay is True:
             scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.8)
         obj_prev = 1e16
@@ -313,7 +313,7 @@ class DagmaTorch:
                 return False
             score = self.model.log_mse_loss(X_hat, self.X)
             g_dir_loss = self.model.g_dir_loss(self.X)
-            l1_reg = lambda1 * self.model.l1_reg(regressor)
+            l1_reg = lambda_l1 * self.model.l1_reg(regressor)
             if disable_dag:
                 obj = score + l1_reg + g_dir_loss
             else:
@@ -342,8 +342,8 @@ class DagmaTorch:
 
     def fit(self, 
             X: typing.Union[torch.Tensor, np.ndarray],
-            lambda1: float = .02, 
-            lambda2: float = .005,
+            lambda_l1: float = .02, 
+            lambda_l2: float = .005,
             T: int = 4, 
             mu_init: float = .1, 
             mu_factor: float = .1, 
@@ -363,9 +363,9 @@ class DagmaTorch:
         ----------
         X : typing.Union[torch.Tensor, np.ndarray]
             :math:`(n,d)` dataset.
-        lambda1 : float, optional
+        lambda_l1 : float, optional
             Coefficient of the L1 penalty, by default .02.
-        lambda2 : float, optional
+        lambda_l2 : float, optional
             Coefficient of the L2 penalty, by default .005.
         T : int, optional
             Number of DAGMA iterations, by default 4.
@@ -424,7 +424,7 @@ class DagmaTorch:
             model_copy = copy.deepcopy(self.model)
             lr_decay = False
             while success is False:
-                success = self.minimize(inner_iter, lr, lambda1, lambda2, mu, s_cur, 
+                success = self.minimize(inner_iter, lr, lambda_l1, lambda_l2, mu, s_cur, 
                                     lr_decay, disable_dag=disable_dag)
                 if success is False:
                     self.model.load_state_dict(model_copy.state_dict().copy())
@@ -479,16 +479,16 @@ if __name__ == '__main__':
     model = DagmaTorch(eq_model, device=device, verbose=True)
     print("fit dagma")
     if args.disable_l1:
-        lambda1=0.
+        lambda_l1=0.
     else:
-        lambda1=0.02 # default DAGMA
+        lambda_l1=0.02 # default DAGMA
     
     if args.disable_l2:
-        lambda2=0.
+        lambda_l2=0.
     else:
-        lambda2=0.005 # default DAGMA
+        lambda_l2=0.005 # default DAGMA
 
-    W_est_no_filter, W_est = model.fit(X, lambda1=lambda1, lambda2=lambda2, return_no_filter=True,
+    W_est_no_filter, W_est = model.fit(X, lambda_l1=lambda_l1, lambda_l2=lambda_l2, return_no_filter=True,
                                        disable_dag=args.disable_dag)
     acc = utils_dagma.count_accuracy(B_true, W_est != 0, use_logger=False)
     print(acc)

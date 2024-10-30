@@ -175,45 +175,66 @@ echo "Start fitting NOTEARS from 1 to 10..." > /home/jiahang/dagma/src/dagma/pip
 
 cnt=0
 # fit_W_version=52 # golem
-fit_W_version=54 # dag_gnn
+# fit_W_version=54 # dag_gnn
+# fit_W_version=(52 54)
+models=(golem dag_gnn)
+lambda_l1s=(0.1 0.5 0.9)
+lambda_l2s=(0.1 0.5 0.9)
 ns=(2000)
-nodes=(20 40 60)
-s0_factors=(4 6)
-seedsX=( {1..10..1} )
+nodes=(40)
+s0_factors=(6)
+seedsX=(1)
 
-for n in "${ns[@]}"; do
-    for d in "${nodes[@]}"; do
-        for s0_factor in "${s0_factors[@]}"; do
-            for seedX in "${seedsX[@]}"; do
+for lambda_l1 in "${lambda_l1s[@]}"; do
+    for lambda_l2 in "${lambda_l2s[@]}"; do
+        for model in "${models[@]}"; do
+            for n in "${ns[@]}"; do
+                for d in "${nodes[@]}"; do
+                    for s0_factor in "${s0_factors[@]}"; do
+                        for seedX in "${seedsX[@]}"; do
 
-                s0=$(( d * s0_factor ))
-                X_name="${n}_${d}_${s0}_normX_sym1"
-                dst_name="W_${seedX}_0_normX=sym1"
+                            s0=$(( d * s0_factor ))
+                            X_name="${n}_${d}_${s0}_normX_sym1"
+                            dst_note="_normX=sym1_l1=${lambda_l1}_l2=${lambda_l2}"
+                            dst_name="W_${seedX}_0${dst_note}"
 
-                target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${fit_W_version}/${n}_${d}_${s0}/
-                if [ ! -d "$target_dir$" ]; then
-                    mkdir -p ${target_dir}
-                fi
-                
-                python fit_W.py \
-                    --n=${n} --d=${d} --s0=${s0} \
-                    --seed_X=${seedX} \
-                    --model=dag_gnn \
-                    --X_name=${X_name} \
-                    --dst_version=${fit_W_version} \
-                    --dst_name=${dst_name} \
-                    >/home/jiahang/dagma/src/dagma/simulated_data/v${fit_W_version}/${n}_${d}_${s0}/log_${seedX}_0${dst_note} 2>&1 &
+                            if [ $model = 'golem' ]; then
+                                fit_W_version=52
+                            elif [ $model = 'dag_gnn' ]; then
+                                fit_W_version=54
+                            fi
 
-                # wait
+                            target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${fit_W_version}/${n}_${d}_${s0}/
+                            if [ ! -d "$target_dir$" ]; then
+                                mkdir -p ${target_dir}
+                            fi
+                            
+                            python fit_W.py \
+                                --n=${n} --d=${d} --s0=${s0} \
+                                --seed_X=${seedX} \
+                                --model=${model} \
+                                --lambda_l1=${lambda_l1} \
+                                --lambda_l2=${lambda_l2} \
+                                --X_name=${X_name} \
+                                --dst_version=${fit_W_version} \
+                                --dst_name=${dst_name} \
+                                >/home/jiahang/dagma/src/dagma/simulated_data/v${fit_W_version}/${n}_${d}_${s0}/log_${seedX}_0${dst_note} 2>&1 &
 
-                cnt=$(( cnt + 1 ))
-                _cnt=$(( cnt % 20 ))
-                if [ ${_cnt} -eq 19 ]; then
-                    wait
-                fi
+                            # wait
+
+                            cnt=$(( cnt + 1 ))
+                            _cnt=$(( cnt % 20 ))
+                            if [ ${_cnt} -eq 19 ]; then
+                                wait
+                            fi
+                        done
+                    done
+                done
             done
         done
     done
 done
+
+wait
 
 echo "End fitting NOTEARS from 1 to 10..." > /home/jiahang/dagma/src/dagma/pipe_log.log

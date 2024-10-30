@@ -11,19 +11,19 @@ class GolemModel(nn.Module):
     """Set up the objective function of GOLEM.
 
     Hyperparameters:
-        (1) GOLEM-NV: equal_variances=False, lambda_1=2e-3, lambda_2=5.0.
-        (2) GOLEM-EV: equal_variances=True, lambda_1=2e-2, lambda_2=5.0.
+        (1) GOLEM-NV: equal_variances=False, lambda_l1=2e-3, lambda_dag=5.0.
+        (2) GOLEM-EV: equal_variances=True, lambda_l1=2e-2, lambda_dag=5.0.
     """
 
-    def __init__(self, n, d, lambda_1, lambda_2, equal_variances=True,
+    def __init__(self, n, d, lambda_l1, lambda_dag, equal_variances=True,
                  B_init=None):
         """Initialize self.
 
         Args:
             n (int): Number of samples.
             d (int): Number of nodes.
-            lambda_1 (float): Coefficient of L1 penalty.
-            lambda_2 (float): Coefficient of DAG penalty.
+            lambda_l1 (float): Coefficient of L1 penalty.
+            lambda_dag (float): Coefficient of DAG penalty.
             equal_variances (bool): Whether to assume equal noise variances
                 for likelihood objective. Default: True.
             B_init (torch.Tensor or None): [d, d] weighted matrix for
@@ -32,8 +32,8 @@ class GolemModel(nn.Module):
         super(GolemModel, self).__init__()
         self.n = n
         self.d = d
-        self.lambda_1 = lambda_1
-        self.lambda_2 = lambda_2
+        self.lambda_l1 = lambda_l1
+        self.lambda_dag = lambda_dag
         self.equal_variances = equal_variances
         
         if B_init is not None:
@@ -47,7 +47,7 @@ class GolemModel(nn.Module):
         likelihood = self._compute_likelihood(X, B)
         L1_penalty = self._compute_L1_penalty(B)
         h = self._compute_h(B)
-        score = likelihood + self.lambda_1 * L1_penalty + self.lambda_2 * h
+        score = likelihood + self.lambda_l1 * L1_penalty + self.lambda_dag * h
         return score, likelihood, h
 
     def _preprocess(self, B):
@@ -92,6 +92,7 @@ class GolemModel(nn.Module):
             torch.Tensor: L1 penalty term (scalar-valued).
         """
         return torch.norm(B, p=1)
+
 
     def _compute_h(self, B):
         """Compute DAG penalty.
@@ -176,7 +177,7 @@ def train_iter(model, X, optimizer):
 
     return score.item(), likelihood.item(), h.item(), model.B.detach()
 
-def golem(X, lambda_1, lambda_2, equal_variances=True,
+def golem(X, lambda_l1, lambda_l2, lambda_dag, equal_variances=True,
           num_iter=1e+5, learning_rate=1e-3,
           B_init=None, device='cpu'):
     """Solve the unconstrained optimization problem of GOLEM, which involves
@@ -184,8 +185,8 @@ def golem(X, lambda_1, lambda_2, equal_variances=True,
 
     Args:
         X (numpy.ndarray): [n, d] data matrix.
-        lambda_1 (float): Coefficient of L1 penalty.
-        lambda_2 (float): Coefficient of DAG penalty.
+        lambda_l1 (float): Coefficient of L1 penalty.
+        lambda_dag (float): Coefficient of DAG penalty.
         equal_variances (bool): Whether to assume equal noise variances
             for likelibood objective. Default: True.
         num_iter (int): Number of iterations for training.
@@ -200,18 +201,18 @@ def golem(X, lambda_1, lambda_2, equal_variances=True,
         numpy.ndarray: [d, d] estimated weighted matrix.
 
     Hyperparameters:
-        (1) GOLEM-NV: equal_variances=False, lambda_1=2e-3, lambda_2=5.0.
-        (2) GOLEM-EV: equal_variances=True, lambda_1=2e-2, lambda_2=5.0.
+        (1) GOLEM-NV: equal_variances=False, lambda_l1=2e-3, lambda_dag=5.0.
+        (2) GOLEM-EV: equal_variances=True, lambda_l1=2e-2, lambda_dag=5.0.
     """
     # Center the data
     X = X - X.mean(axis=0, keepdims=True)
 
     # Set up model
     n, d = X.shape
-    model = GolemModel(n, d, lambda_1, lambda_2, equal_variances, B_init).to(device)
+    model = GolemModel(n, d, lambda_l1, lambda_dag, equal_variances, B_init).to(device)
 
     # Training
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=lambda_l2)
     X = torch.tensor(X).to(device)
     score_last = 0.
     for i in range(0, int(num_iter) + 1):
@@ -263,7 +264,7 @@ if __name__ == '__main__':
 
     # GOLEM-EV
     time_st = time()
-    W_est_no_filter = golem(X, lambda_1=2e-2, lambda_2=5.0,
+    W_est_no_filter = golem(X, lambda_l1=2e-2, lambda_dag=5.0,
                   equal_variances=True, device=device)
     print(f"running time: {time() - time_st:.2f}s")
 

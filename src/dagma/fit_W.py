@@ -23,8 +23,11 @@ if __name__ == '__main__':
     parser.add_argument('--X_name', type=str, default="")
     parser.add_argument('--dst_version', type=int, default=None)
     parser.add_argument('--dst_name', type=str, default=None)
-    parser.add_argument('--model', type=str, required=True, default=['dagma', 'notears', 'golem', 'dag_gnn'])
+    parser.add_argument('--model', type=str, required=True, default=['dagma', 'golem', 'dag_gnn'])
     parser.add_argument('--device', type=str, default='cuda:7') 
+
+    parser.add_argument('--lambda_l1', type=float, default=None)
+    parser.add_argument('--lambda_l2', type=float, default=None)
 
     args = parser.parse_args()
 
@@ -45,17 +48,40 @@ if __name__ == '__main__':
     print(f"fit {args.model}")
     time_st = time()
     if args.model == 'dagma':
+
+        lambda_l1, lambda_l2 = 0.02, 0.005
+        if args.lambda_l1:
+            lambda_l1 = args.lambda_l1
+        if args.lambda_l2:
+            lambda_l2 = args.lambda_l2
+
         eq_model = DagmaLinear(d=d, dagma_type='dagma_1', device=device, original=True).to(device)
         model = DagmaTorch(eq_model, device=device, verbose=True)
-        W_est_no_filter, W_est = model.fit(X, return_no_filter=True)
-    elif args.model == 'notears':
+        W_est_no_filter, W_est = model.fit(X, lambda_l1=lambda_l1, lambda_l2=lambda_l2, return_no_filter=True)
+
+    elif args.model == 'notears': # not working yet
         W_est_no_filter, W_est = notears_linear(X, lambda1=0.1, loss_type='l2')
+        
     elif args.model == 'golem':
-        W_est_no_filter = golem(X, lambda_1=2e-2, lambda_2=5.0,
+
+        lambda_l1, lambda_l2 = 0.02, 0.
+        if args.lambda_l1:
+            lambda_l1 = args.lambda_l1
+        if args.lambda_l2:
+            lambda_l2 = args.lambda_l2
+
+        W_est_no_filter = golem(X, lambda_l1=lambda_l1, lambda_l2=lambda_l2, lambda_dag=5.0,
                   equal_variances=True, device=device)
         W_est = postprocess(W_est_no_filter, graph_thres=0.3)
     elif args.model == 'dag_gnn':
-        W_est_no_filter, W_est = dag_gnn(X, device)
+
+        lambda_l1, lambda_l2 = 0., 0.
+        if args.lambda_l1:
+            lambda_l1 = args.lambda_l1
+        if args.lambda_l2:
+            lambda_l2 = args.lambda_l2
+
+        W_est_no_filter, W_est = dag_gnn(X, lambda_l1=lambda_l1, lambda_l2=lambda_l2, device=device)
     print(f"running time: {time() - time_st:.2f}s")
 
                                     

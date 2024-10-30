@@ -34,12 +34,12 @@ def stau(w, tau):
     return torch.sign(w)*w1
 
 
-def update_optimizer(optimizer, original_lr, c_A):
-    '''related LR to c_A, whenever c_A gets big, reduce LR proportionally'''
+def update_optimizer(optimizer, original_lr, c_dag):
+    '''related LR to c_dag, whenever c_dag gets big, reduce LR proportionally'''
     MAX_LR = 1e-2
     MIN_LR = 1e-4
 
-    estimated_lr = original_lr / (math.log10(c_A) + 1e-10)
+    estimated_lr = original_lr / (math.log10(c_dag) + 1e-10)
     if estimated_lr > MAX_LR:
         lr = MAX_LR
     elif estimated_lr < MIN_LR:
@@ -57,7 +57,7 @@ def update_optimizer(optimizer, original_lr, c_A):
 # training:
 #===================================
 
-def train(epoch, lambda_A, c_A, optimizer,
+def train(epoch, lambda_l1, lambda_dag, c_dag, optimizer,
         encoder, decoder, loader, device, data_variable_size,
         rel_rec, rel_send):
     t = time.time()
@@ -78,10 +78,10 @@ def train(epoch, lambda_A, c_A, optimizer,
 
         optimizer.zero_grad()
 
-        enc_x, logits, W_est_no_filter, adj_A_tilt_encoder, z_gap, z_positive, myA, Wa = encoder(data, rel_rec, rel_send)  # logits is of size: [num_sims, z_dims]
+        l1_loss, enc_x, logits, W_est_no_filter, adj_A_tilt_encoder, z_gap, z_positive, myA, Wa = encoder(data, rel_rec, rel_send)  # logits is of size: [num_sims, z_dims]
         edges = logits
 
-        dec_x, output, adj_A_tilt_decoder = decoder(data, edges, data_variable_size * 1, rel_rec, rel_send, W_est_no_filter, adj_A_tilt_encoder, Wa)
+        l1_loss, dec_x, output, adj_A_tilt_decoder = decoder(data, edges, data_variable_size * 1, rel_rec, rel_send, W_est_no_filter, adj_A_tilt_encoder, Wa)
 
         if torch.sum(output != output):
             print('nan error\n')
@@ -101,7 +101,8 @@ def train(epoch, lambda_A, c_A, optimizer,
 
         # compute h(A)
         h_A = _h_A(W_est_no_filter, data_variable_size)
-        loss += lambda_A * h_A + 0.5 * c_A * h_A * h_A + 100. * torch.trace(W_est_no_filter*W_est_no_filter)
+        loss += lambda_dag * h_A + 0.5 * c_dag * h_A * h_A + 100. * torch.trace(W_est_no_filter*W_est_no_filter)
+        loss += l1_loss * lambda_l1
 
 
         loss.backward()
@@ -121,33 +122,35 @@ def train(epoch, lambda_A, c_A, optimizer,
         kl_train.append(loss_kl.item())
         all_loss_train.append(loss.item())
 
-    print('Epoch: {:04d}'.format(epoch),
-          'nll_train: {:.10f}'.format(np.mean(nll_train)),
-          'kl_train: {:.10f}'.format(np.mean(kl_train)),
-          'ELBO_loss: {:.10f}'.format(np.mean(kl_train)  + np.mean(nll_train)),
-          'mse_train: {:.10f}'.format(np.mean(mse_train)),
-          'time: {:.4f}s'.format(time.time() - t))
+    # print('Epoch: {:04d}'.format(epoch),
+    #       'nll_train: {:.10f}'.format(np.mean(nll_train)),
+    #       'kl_train: {:.10f}'.format(np.mean(kl_train)),
+    #       'ELBO_loss: {:.10f}'.format(np.mean(kl_train)  + np.mean(nll_train)),
+    #       'mse_train: {:.10f}'.format(np.mean(mse_train)),
+    #       'time: {:.4f}s'.format(time.time() - t))
 
     ELBO_loss = np.mean(np.mean(kl_train)  + np.mean(nll_train))
     all_loss = np.mean(all_loss_train)
-    print(h_A.item())
+
+    print('Epoch: {:04d}'.format(epoch),
+          'tot loss: {:.6f}'.format(all_loss),
+          'h(A): {:.6f}'.format(h_A.item()),
+          'time: {:.2f}s'.format(time.time() - t))
+
     # return ELBO_loss, np.mean(nll_train), np.mean(mse_train), graph, origin_A
     return all_loss, ELBO_loss, np.mean(nll_train), np.mean(mse_train), W_est, W_est_no_filter
 
 #===================================
 # main
 #===================================
-def dag_gnn(X, device):
+def dag_gnn(X, lambda_l1, lambda_l2, device):
     n = X.shape[0]
     d = X.shape[1]
 
-    best_ELBO_loss = np.inf
-    best_NLL_loss = np.inf
-    best_MSE_loss = np.inf
     best_epoch = 0
     # optimizer step on hyparameters
-    c_A = 1.
-    lambda_A = 0.
+    c_dag = 1.
+    lambda_dag = 0.
     h_A_new = torch.tensor(1.)
     # h_tol = 1e-8
     h_tol = 1e-6
@@ -194,7 +197,7 @@ def dag_gnn(X, device):
     #===================================
     # set up training parameters
     #===================================
-    optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()),lr=lr)
+    optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()),lr=lr, weight_decay=lambda_l2)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=200,
                                     gamma=1.)
 
@@ -207,17 +210,17 @@ def dag_gnn(X, device):
     W_est_no_filter_best = None
 
     for step_k in range(k_max_iter):
-        while c_A < 1e+20:
+        while c_dag < 1e+20:
             all_loss_min = np.inf
             cnt = 0
             for epoch in range(epochs):
                 all_loss, ELBO_loss, NLL_loss, MSE_loss, W_est, W_est_no_filter = train(
-                    epoch, lambda_A, c_A, optimizer, 
+                    epoch, lambda_l1, lambda_dag, c_dag, optimizer, 
                     encoder, decoder, loader, device, data_variable_size,
                     rel_rec, rel_send)
                 # update optimizer
                 scheduler.step()
-                optimizer, lr = update_optimizer(optimizer, lr, c_A)
+                optimizer, lr = update_optimizer(optimizer, lr, c_dag)
                     
                 if all_loss < all_loss_min - 1e-6:
                     best_epoch = epoch
@@ -243,14 +246,14 @@ def dag_gnn(X, device):
             A_new = W_est_no_filter_best.clone()
             h_A_new = _h_A(A_new, data_variable_size)
             if h_A_new.item() > 0.25 * h_A_old:
-                c_A*=10
+                c_dag*=10
             else:
                 break
 
             # update parameters
             # h_A, adj_A are computed in loss anyway, so no need to store
         h_A_old = h_A_new.item()
-        lambda_A += c_A * h_A_new.item()
+        lambda_dag += c_dag * h_A_new.item()
 
         if h_A_new.item() <= h_tol:
             break
