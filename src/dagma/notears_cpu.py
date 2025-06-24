@@ -123,6 +123,7 @@ if __name__ == '__main__':
     B_true = (W_true != 0)
     print("fit notears")
 
+
     # n, d, s0, graph_type, sem_type = 100, 40, 80, 'ER', 'gauss'
     # B_true = utils_dagma.simulate_dag(d, s0, graph_type)
     # W_true = utils_dagma.simulate_parameter(B_true)
