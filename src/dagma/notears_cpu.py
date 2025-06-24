@@ -118,7 +118,7 @@ if __name__ == '__main__':
     # B_true = (W_true != 0)
     # print("fit notears")
 
-    n, d, s0, graph_type, sem_type = 1000, 40, 80, 'ER', 'gauss'
+    n, d, s0, graph_type, sem_type = 100, 20, 50, 'ER', 'gauss'
     B_true = utils_dagma.simulate_dag(d, s0, graph_type)
     W_true = utils_dagma.simulate_parameter(B_true)
     X = utils_dagma.simulate_linear_sem(W_true, n, sem_type)

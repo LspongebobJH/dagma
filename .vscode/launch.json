@@ -10,7 +10,8 @@
             "request": "launch",
             "program": "notears_cpu.py",
             "console": "integratedTerminal",
-            "cwd": "/home/jiahang/dagma/src/dagma",
+            // "cwd": "/home/jiahang/dagma/src/dagma",
+            "cwd": "/Users/jiahang/Documents/dagma/src/dagma",
             "args": [
                 "--d=40",
                 "--s0=160",
