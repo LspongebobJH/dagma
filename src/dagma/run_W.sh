@@ -36,64 +36,70 @@
 
 run() {
     dst_data_version=$1
-    d=$2
-    cuda_idx=$3
+    n=$2
+    d=$3
+    s0_factor=$4
+    cuda_idx=$5
 
-    n=2000
-    s0=$(( d * 6 ))
-    suffixs=(_normX=sym1_option=5_knock=PLS_model=L1+L2
+    s0=$(( d * s0_factor ))
+    suffixs=(_normX=sym1_option=5_knock=PLS
             )
-    seedsX=( {1..3..1} )
+    lambda_l1s=(0.1 0.5 0.9)
+    lambda_l2s=(0.1 0.5 0.9)
+    seedsX=( 1 )
     seedsKnockoff=( 1 )
     seedsW=( 0 )
-    alpha_list=(5 10 20)
-    l1_ratio_list=(0.1 0.5 0.9)
     cnt=0
 
+    models=(golem dag-gnn)
 
-    for suffix in "${suffixs[@]}"; do
-        for alpha in "${alpha_list[@]}"; do
-            for l1_ratio in "${l1_ratio_list[@]}"; do
-                # version=${d}_${s0}${suffix}
-                version=${d}_${s0}${suffix}_alpha=${alpha}_l1_ratio=${l1_ratio}
+    for model in "${models[@]}"; do
+        if [ $model = 'golem' ]; then
+            dst_data_version=53
+        elif [ $model = 'dag-gnn' ]; then
+            dst_data_version=55
+        fi
+        for lambda_l1 in "${lambda_l1s[@]}"; do
+            for lambda_l2 in "${lambda_l2s[@]}"; do
+                for suffix in "${suffixs[@]}"; do
+                    # version=${d}_${s0}${suffix}
+                    version=${n}_${d}_${s0}${suffix}_l1=${lambda_l1}_l2=${lambda_l2}
 
-                target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$version/W
-                if [ ! -d "$target_dir$" ]; then
-                    mkdir -p ${target_dir}
-                fi
+                    target_dir=/home/jiahang/dagma/src/dagma/simulated_data/v${dst_data_version}/v$version/W
+                    if [ ! -d "$target_dir$" ]; then
+                        mkdir -p ${target_dir}
+                    fi
 
-                # for (( seedX=1; seedX<=100; seedX++ )); do
-                for seedKnockoff in "${seedsKnockoff[@]}"; do
-                    for seedX in "${seedsX[@]}"; do
-                        for seedW in "${seedsW[@]}"; do
-                            stdbuf -o0 -e0 \
-                            python gen_copies.py \
-                            --gen_type W_L1+L2 \
-                            --elastic_alpha=${alpha} --elastic_l1_ratio=${l1_ratio} \
-                            --n $n --s0 $s0 --d $d \
-                            --seed_X $seedX \
-                            --seed_knockoff $seedKnockoff \
-                            --seed_model $seedW \
-                            --root_path simulated_data/v${dst_data_version} \
-                            --version ${version} \
-                            --device cuda:${cuda_idx} > simulated_data/v${dst_data_version}/v${version}/W/log_${seedX}_${seedKnockoff}_${seedW} 2>&1 &
+                    for seedKnockoff in "${seedsKnockoff[@]}"; do
+                        for seedX in "${seedsX[@]}"; do
+                            for seedW in "${seedsW[@]}"; do
+                                stdbuf -o0 -e0 \
+                                python gen_copies.py \
+                                --gen_type W_${model} \
+                                --lambda_l1 ${lambda_l1} \
+                                --lambda_l2 ${lambda_l2} \
+                                --n $n --s0 $s0 --d $d \
+                                --seed_X $seedX \
+                                --seed_knockoff $seedKnockoff \
+                                --seed_model $seedW \
+                                --force_save \
+                                --root_path simulated_data/v${dst_data_version} \
+                                --version ${version} \
+                                --device cuda:${cuda_idx} > simulated_data/v${dst_data_version}/v${version}/W/log_${seedX}_${seedKnockoff}_${seedW} 2>&1 &
 
-                            cuda_idx=$(( cuda_idx + 1))
-                            if [ $cuda_idx -eq 8 ]; then
-                                cuda_idx=5
-                            fi
+                                cuda_idx=$(( cuda_idx + 1))
+                                if [ $cuda_idx -eq 7 ]; then
+                                    cuda_idx=5
+                                fi
 
-                            cnt=$(( cnt + 1 ))
-                            _cnt=$(( cnt % 20 ))
-                            
-                            if [ ${_cnt} -eq 19 ]; then
-                                wait
-                            fi
+                                cnt=$(( cnt + 1 ))
+                                _cnt=$(( cnt % 20 ))
+                                
+                                if [ ${_cnt} -eq 19 ]; then
+                                    wait
+                                fi
 
-                            # _seedX=$(( seedX % 20 ))
-                            # if [ ${_seedX} -eq 10 ]; then
-                            #     wait
-                            # fi
+                            done
                         done
                     done
                 done
@@ -102,39 +108,25 @@ run() {
     done
     
 }
-
-data_version=49
-# data_version=47
-
-
-# d=20
-# cuda_idx=5
-# run $data_version $d $cuda_idx
-
-# # wait
-
-# d=40
-# cuda_idx=6
-# run $data_version $d $cuda_idx
-
-# # wait
-
-# d=60
-# cuda_idx=7
-# run $data_version $d $cuda_idx
-
-# wait
-
-# d=80
-# cuda_idx=5
-# run $data_version $d $cuda_idx
+# data_version=55 # dag_gnn
+# data_version=53 # golem
+# data_version=51 # notears
+# data_version=49 # tree
+# data_version=47 # dagma
+data_version=0
 
 echo "Start fitting W of [X, X'] from 1 to 3..." >> /home/jiahang/dagma/src/dagma/pipe_log.log
 
-d=100
-cuda_idx=5
-run $data_version $d $cuda_idx
+n=2000
+nodes=(40)
+s0_factors=(6)
 
-wait
+for d in "${nodes[@]}"; do
+    for s0_factor in "${s0_factors[@]}"; do
+        cuda_idx=5
+        run $data_version $n $d $s0_factor $cuda_idx
+        # wait
+    done
+done
 
 echo "End fitting W of [X, X'] from 1 to 3..." >> /home/jiahang/dagma/src/dagma/pipe_log.log

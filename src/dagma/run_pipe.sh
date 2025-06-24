@@ -1,9 +1,17 @@
-./run.sh
+# ./run_X.sh
+
+# wait
+
+./run_W_vanilla.sh
+
+wait 
+
+./run_knockoff.sh
 
 wait
 
 ./run_W.sh
 
-# wait
+wait
 
 # ./run_fdr.sh

@@ -13,9 +13,10 @@
             // "cwd": "/home/jiahang/dagma/src/dagma",
             "cwd": "/Users/jiahang/Documents/dagma/src/dagma",
             "args": [
-                "--d=40",
-                "--s0=160",
-                // "--src_note=_normX_sym1",
+                "--n=100",
+                "--d=20",
+                "--s0=20",
+                "--src_note=_normX_sym1",
                 "--seed_X=1"
             ]
         },

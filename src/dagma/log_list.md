@@ -3,7 +3,9 @@
 * log_99: based on W_true in [-1, 1] (workable simulations), try different options of knockoff fitting
 * log_100: similar to log_99, but for genie3 and grnboost2
 * * col: column-wise fdr control
-
+* log_101: for notears
+* log_102: for golem
+* log_103: for dag_gnn
 
 
 

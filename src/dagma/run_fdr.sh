@@ -92,34 +92,46 @@
 ####################################################################
 
 run() {
-    data_version=49
-    log_file_global=100
-    # suffixs=(_normX=sym1_option=5_knock=PLS_model=grnboost2_imp=shap
-    #         )
+    data_version=55
+    log_file_global=103
     suffixs=(
-        _option_5_PLS_normX_sym1_grnboost2
+        _normX=sym1_option=5_knock=PLS
     )
     control=global
-    n=2000
-    d=100
+    ns=(2000)
+    nodes=(40)
+    s0_factors=(6)
+    lambda_l1s=(0.1 0.5 0.9)
+    lambda_l2s=(0.1 0.5 0.9)
+    for lambda_l1 in "${lambda_l1s[@]}"; do
+        for lambda_l2 in "${lambda_l2s[@]}"; do
+            for n in "${ns[@]}"; do
+                for d in "${nodes[@]}"; do
+                    for s0_factor in "${s0_factors[@]}"; do
 
-    for suffix in "${suffixs[@]}"; do
+                        for suffix in "${suffixs[@]}"; do
 
-        s0=$(( d * 6 ))
+                            s0=$(( d * s0_factor ))
 
-        # version=${d}_${s0}${suffix}
-        version=${d}_${s0}${suffix}
-        
-        python multi_main.py \
-        --n $n --s0 $s0 --d $d \
-        --control_type=type_3_global \
-        --seed_X_list=1 \
-        --seed_knockoff_list=1 \
-        --seed_model_list=1,10,-1 \
-        --version=$version \
-        --root_path simulated_data/v${data_version} \
-        --n_jobs=4 \
-        --log_file=log_${log_file_global}/log_${data_version}_${version}_model_1-10 &
+                            # version=${d}_${s0}${suffix}
+                            # version=${n}_${d}_${s0}${suffix}
+                            version=${n}_${d}_${s0}${suffix}_l1=${lambda_l1}_l2=${lambda_l2}
+                            
+                            python multi_main.py \
+                            --n $n --s0 $s0 --d $d \
+                            --control_type=type_3_global \
+                            --seed_X_list=1 \
+                            --seed_knockoff_list=1 \
+                            --seed_model_list=0 \
+                            --version=$version \
+                            --root_path simulated_data/v${data_version} \
+                            --n_jobs=4 \
+                            --log_file=log_${log_file_global}/log_${version} &
+                        done
+                    done
+                done
+            done
+        done
     done
     
 

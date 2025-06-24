@@ -4,6 +4,7 @@ import scipy.optimize as sopt
 from scipy.special import expit as sigmoid
 from sklearn.metrics import auc, precision_recall_curve, roc_auc_score
 from tqdm import tqdm
+from time import time
 
 
 def notears_linear(X, lambda1, loss_type, max_iter=100, h_tol=1e-8, rho_max=1e+16, w_threshold=0.3):
@@ -94,34 +95,39 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
+    parser.add_argument('--n', type=int, default=None)
     parser.add_argument('--d', type=int, default=None)
     parser.add_argument('--s0', type=int, default=None)
     parser.add_argument('--seed_X', type=int, default=1)
     parser.add_argument('--src_note', type=str, default="")
     parser.add_argument('--dst_note', type=str, default="")
-    parser.add_argument('--device', type=str, default='cuda:7') 
+    parser.add_argument('--device', type=str, default='cuda:7')
+    parser.add_argument('--force_save', action='store_true', default=False)
 
     # experimentally testing hyperparameters)
     args = parser.parse_args()
     utils.set_random_seed(0)
+
+    time_st = time()
     
-    # n, d = 2000, args.d
-    # s0 = args.s0
-    # version = f"v11/v{d}_{s0}" + args.src_note
-    # device = args.device
-    # root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
-    # data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
+    n, d = args.n, args.d
+    s0 = args.s0
+    version = f"v11/v{n}_{d}_{s0}" + args.src_note
+    device = args.device
+    root_dir = '/home/jiahang/dagma/src/dagma/simulated_data'
+    data_path = os.path.join(root_dir, version, 'X', f'X_{args.seed_X}.pkl')
 
-    # with open(data_path, 'rb') as f:
-    #     data = pickle.load(f)
-    # X, W_true = data['X'], data['W_true']
-    # B_true = (W_true != 0)
-    # print("fit notears")
+    with open(data_path, 'rb') as f:
+        data = pickle.load(f)
+    X, W_true = data['X'], data['W_true']
+    B_true = (W_true != 0)
+    print("fit notears")
 
-    n, d, s0, graph_type, sem_type = 100, 20, 50, 'ER', 'gauss'
-    B_true = utils_dagma.simulate_dag(d, s0, graph_type)
-    W_true = utils_dagma.simulate_parameter(B_true)
-    X = utils_dagma.simulate_linear_sem(W_true, n, sem_type)
+
+    # n, d, s0, graph_type, sem_type = 100, 40, 80, 'ER', 'gauss'
+    # B_true = utils_dagma.simulate_dag(d, s0, graph_type)
+    # W_true = utils_dagma.simulate_parameter(B_true)
+    # X = utils_dagma.simulate_linear_sem(W_true, n, sem_type)
 
     W_est_no_filter, W_est = notears_linear(X, lambda1=0.1, loss_type='l2')
     acc = utils_dagma.count_accuracy(B_true, W_est != 0, use_logger=False)
@@ -130,21 +136,23 @@ if __name__ == '__main__':
     prec, rec, threshold = precision_recall_curve(B_true.astype(int).flatten(), np.abs(W_est).flatten())
     auprc = auc(rec, prec)
     auroc = roc_auc_score(B_true.astype(int).flatten(), np.abs(W_est).flatten())
-
-    prec_trunc, rec_trunc, threshold_trunc = \
-        precision_recall_curve(B_true.astype(int).flatten(), 
-                               np.abs(W_est).flatten())
-    auprc_trunc = auc(rec_trunc, prec_trunc)
-    auroc_trunc = roc_auc_score(B_true.astype(int).flatten(), 
-                                np.abs(W_est).flatten())
-
+    
     print(f"auprc: {auprc:.2f} | auroc: {auroc:.2f}")
-    print(f"auprc_trunc: {auprc_trunc:.2f} | auroc_trunc: {auroc_trunc:.2f}")
 
-    # data_dir = os.path.join(root_dir, "v39", f"{d}_{s0}")
-    # if not os.path.exists(data_dir):
-    #     os.makedirs(data_dir)
-    # data_path = os.path.join(data_dir, f"W_{d}_{s0}_{args.seed_X}_0{args.dst_note}.pkl")
-    # with open(data_path, 'wb') as f:
-    #     pickle.dump(W_est_no_filter, f)
-    # print("DONE")
+    prec, rec, threshold = precision_recall_curve(B_true.astype(int).flatten(), np.abs(W_est_no_filter).flatten())
+    fdp = 1. - prec
+    target_fdp_thresh = np.where(fdp[-1:0:-1] < 0.2)[0][-1]
+    power = rec[-1:0:-1][target_fdp_thresh]
+
+    print(f"Given fdp < 0.2, the maximal power is {power}")
+
+    data_dir = os.path.join(root_dir, "v50", f"{n}_{d}_{s0}")
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    data_path = os.path.join(data_dir, f"W_{args.seed_X}_0{args.dst_note}.pkl")
+    if os.path.exists(data_path) and not args.force_save:
+        raise Exception(f"{data_path} aleady exist")
+    with open(data_path, 'wb') as f:
+        pickle.dump(W_est_no_filter, f)
+    print(f"time: {time() - time_st:.2f}s")
+    print("DONE")
